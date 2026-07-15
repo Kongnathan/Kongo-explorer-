@@ -1,0 +1,6 @@
+{
+  "name": "Kongo Explorer",
+  "description": "Un guide touristique et portail administratif sécurisé interactif pour découvrir le Kongo Central, ses chutes majestueuses de Zongo, ses monuments historiques et ses plages.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

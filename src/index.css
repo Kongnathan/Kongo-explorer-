@@ -1,0 +1,98 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@theme {
+  --color-primary: #00342b;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #004d40;
+  --color-on-primary-container: #7ebdac;
+  --color-secondary: #00629e;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #62b4fe;
+  --color-on-secondary-container: #004470;
+  --color-tertiary: #3e271f;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #573d34;
+  --color-on-tertiary-container: #cca89c;
+  --color-background: #f8faf7;
+  --color-on-background: #191c1b;
+  --color-surface: #f8faf7;
+  --color-on-surface: #191c1b;
+  --color-on-surface-variant: #3f4945;
+  --color-surface-variant: #e1e3e0;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f1;
+  --color-surface-container: #eceeec;
+  --color-surface-container-high: #e7e9e6;
+  --color-surface-container-highest: #e1e3e0;
+  --color-jungle-deep: #1B3022;
+  --color-river-flow: #E1F5FE;
+  --color-earth-clay: #D7CCC8;
+  --color-alert-time: #D32F2F;
+  --color-outline-variant: #bfc9c4;
+  --color-outline: #707975;
+
+  --font-sans: "Hanken Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Custom Utilities and Micro-animations */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-block;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.material-symbols-outlined.fill {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.sticky-card-shadow {
+  box-shadow: 0 4px 20px -2px rgba(0, 52, 43, 0.15);
+}
+
+.login-card-glow {
+  box-shadow: 0 4px 60px -12px rgba(0, 52, 43, 0.12);
+}
+
+.bg-pattern {
+  background-image: radial-gradient(circle at 2px 2px, #00342b10 1px, transparent 0);
+  background-size: 32px 32px;
+}
+
+.timer-disk {
+  border-radius: 50%;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-family: "Hanken Grotesk", sans-serif;
+}
+
