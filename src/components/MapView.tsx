@@ -8,6 +8,7 @@ const API_KEY =
   process.env.GOOGLE_MAPS_PLATFORM_KEY ||
   (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
   (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
+  (typeof window !== "undefined" ? localStorage.getItem("kongo_google_maps_key") : null) ||
   "";
 const hasValidKey = Boolean(API_KEY) && API_KEY !== "YOUR_API_KEY" && API_KEY !== "";
 
@@ -15,6 +16,8 @@ interface MapViewProps {
   locations: Location[];
   onSelectLocation: (id: string) => void;
   onNavigate: (tab: string) => void;
+  unreadNotificationsCount?: number;
+  onOpenNotifications?: () => void;
 }
 
 // Helper component to pan Google Maps smoothly when selected marker or user GPS changes
@@ -29,7 +32,13 @@ function GoogleMapRecenter({ center, zoom }: { center: { lat: number; lng: numbe
   return null;
 }
 
-export default function MapView({ locations, onSelectLocation, onNavigate }: MapViewProps) {
+export default function MapView({
+  locations,
+  onSelectLocation,
+  onNavigate,
+  unreadNotificationsCount = 0,
+  onOpenNotifications,
+}: MapViewProps) {
   const [activeMarkerId, setActiveId] = useState<string | null>("zongo");
   const [activeChip, setActiveChip] = useState("Tous");
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -45,13 +54,10 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
     }, 4500);
   };
 
-  // Map Mode Selector: "topographic" | "google" | "osm" (defaults to google if key is present, otherwise osm)
-  const [mapMode, setMapMode] = useState<"topographic" | "google" | "osm">(
-    hasValidKey ? "google" : "osm"
-  );
+  // Map Mode Selector: "google" (par défaut, mis en avant) | "osm" (OpenStreetMap) | "topographic"
+  const [mapMode, setMapMode] = useState<"google" | "osm" | "topographic">("google");
   // Map Type Selector: "roadmap" (plan classique) | "satellite" (vue satellite)
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
-  const [showKeyModal, setShowKeyModal] = useState(false);
 
   // Leaflet references
   const mapRef = useRef<L.Map | null>(null);
@@ -252,9 +258,11 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
     }
   };
 
+  const useLeaflet = mapMode === "osm" || (mapMode === "google" && !hasValidKey);
+
   // Initialize and update Leaflet Map
   useEffect(() => {
-    if (mapMode !== "osm" || !containerRef.current) {
+    if (!useLeaflet || !containerRef.current) {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -264,9 +272,16 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
       return;
     }
 
-    const tileUrl = mapType === "satellite"
-      ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-      : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    let tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    if (mapMode === "google") {
+      tileUrl = mapType === "satellite"
+        ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+        : "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+    } else {
+      tileUrl = mapType === "satellite"
+        ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    }
 
     if (!mapRef.current) {
       // Create map instance
@@ -306,14 +321,14 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
 
   // Update markers when activeMarkerId changes
   useEffect(() => {
-    if (mapMode === "osm" && mapRef.current) {
+    if (useLeaflet && mapRef.current) {
       renderLeafletMarkers();
     }
-  }, [activeMarkerId]);
+  }, [activeMarkerId, useLeaflet]);
 
   // Pan Leaflet map to selected coordinates
   useEffect(() => {
-    if (mapMode === "osm" && mapRef.current && activeMarkerId) {
+    if (useLeaflet && mapRef.current && activeMarkerId) {
       if (activeMarkerId === "user_gps" && userPos) {
         mapRef.current.flyTo([userPos.lat, userPos.lng], 10, { duration: 1.5 });
       } else {
@@ -323,7 +338,7 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
         }
       }
     }
-  }, [activeMarkerId, mapMode]);
+  }, [activeMarkerId, useLeaflet]);
 
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev + 0.2, 2.2));
@@ -359,47 +374,43 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
       {/* Map Content Area */}
       <main className="flex-1 relative overflow-hidden h-full w-full">
         
-        {/* Toggle between Topographic, OpenStreetMap, and Real Google Maps + Plan/Satellite Toggle */}
+        {/* Toggle between Google Maps, OpenStreetMap, and Topographic + Plan/Satellite Toggle */}
         <div className="absolute top-18 left-1/2 -translate-x-1/2 z-20 flex flex-col sm:flex-row items-center gap-2 max-w-[95vw]">
           <div className="flex bg-surface-container-lowest/90 backdrop-blur-md rounded-full p-1 shadow-lg border border-outline-variant/20 max-w-[90vw] overflow-x-auto no-scrollbar">
             <button
-              onClick={() => setMapMode("topographic")}
-              className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                mapMode === "topographic"
-                  ? "bg-primary text-white"
+              onClick={() => {
+                setMapMode("google");
+              }}
+              className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                mapMode === "google"
+                  ? "bg-primary text-white shadow-md"
                   : "text-on-surface-variant hover:bg-surface-container-high"
               }`}
             >
-              Carte Topo 🎨
+              <span>Google Maps 🗺️</span>
+              <span className="text-[10px] font-mono bg-white/20 text-white px-1.5 py-0.2 rounded-full uppercase">Par défaut</span>
             </button>
+
             <button
               onClick={() => setMapMode("osm")}
               className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 mapMode === "osm"
-                  ? "bg-primary text-white"
+                  ? "bg-primary text-white shadow-md"
                   : "text-on-surface-variant hover:bg-surface-container-high"
               }`}
             >
-              OpenStreetMap 🌐
+              OpenStreetMap (Open Maps) 🌐
             </button>
+
             <button
-              onClick={() => {
-                if (hasValidKey) {
-                  setMapMode("google");
-                } else {
-                  setShowKeyModal(true);
-                }
-              }}
-              className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
-                mapMode === "google"
-                  ? "bg-primary text-white"
+              onClick={() => setMapMode("topographic")}
+              className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                mapMode === "topographic"
+                  ? "bg-primary text-white shadow-md"
                   : "text-on-surface-variant hover:bg-surface-container-high"
               }`}
             >
-              Google Maps 🗺️
-              {!hasValidKey && (
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-              )}
+              Carte Topo 🎨
             </button>
           </div>
 
@@ -462,7 +473,7 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
               }}
             ></div>
           </div>
-        ) : mapMode === "osm" ? (
+        ) : useLeaflet ? (
           /* Live OpenStreetMap Interactive Component */
           <div 
             ref={containerRef} 
@@ -806,8 +817,24 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
           </div>
         )}
 
-        {/* Floating Controls (GPS Locate, Plan/Satellite Toggle, zoom controls) */}
+        {/* Floating Controls (GPS Locate, Notifications, Plan/Satellite Toggle, zoom controls) */}
         <div className="absolute bottom-24 right-4 z-30 flex flex-col gap-3">
+          {/* Notifications Bell Button */}
+          {onOpenNotifications && (
+            <button
+              onClick={onOpenNotifications}
+              className="relative w-12 h-12 rounded-full shadow-lg flex items-center justify-center border bg-surface-container-lowest text-primary border-outline-variant/30 transition-all active:scale-90 cursor-pointer"
+              title="Alertes & Notifications"
+            >
+              <span className="material-symbols-outlined font-bold">notifications</span>
+              {unreadNotificationsCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 text-white font-mono text-[10px] font-bold flex items-center justify-center border-2 border-surface animate-bounce">
+                  {unreadNotificationsCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {/* Plan vs Satellite Toggle Button */}
           <button 
             onClick={() => setMapType(mapType === "roadmap" ? "satellite" : "roadmap")}
@@ -863,61 +890,6 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
           )}
         </div>
       </main>
-
-      {/* Help Modal for Google Maps API Key */}
-      {showKeyModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-          <div className="bg-surface-container-lowest max-w-md w-full p-6 rounded-3xl shadow-2xl border border-outline-variant/30 text-left space-y-4">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-2 text-primary">
-                <span className="material-symbols-outlined text-[26px]">map</span>
-                <h3 className="font-sans text-headline-sm font-bold text-on-surface">Activer Google Maps Live</h3>
-              </div>
-              <button 
-                onClick={() => setShowKeyModal(false)}
-                className="material-symbols-outlined text-outline hover:text-on-surface p-1 rounded-full hover:bg-surface-container-high cursor-pointer"
-              >
-                close
-              </button>
-            </div>
-
-            <p className="font-sans text-body-md text-on-surface-variant leading-relaxed">
-              Pour afficher la véritable carte satellite et routière interactive de Google Maps, vous devez lier votre clé d'API Google Maps Platform.
-            </p>
-
-            <div className="bg-surface-container p-4 rounded-2xl space-y-2 text-xs font-sans text-on-surface">
-              <p className="font-bold text-primary">Comment configurer la clé :</p>
-              <ol className="list-decimal list-inside space-y-1.5 leading-relaxed text-on-surface-variant">
-                <li>Ouvrez les <strong>Paramètres</strong> (icône ⚙️ engrenage, <strong>en haut à droite</strong>).</li>
-                <li>Cliquez sur la section <strong>Secrets</strong>.</li>
-                <li>Ajoutez une clé nommée <code className="bg-surface-container-high px-1.5 py-0.5 rounded font-mono text-primary text-[11px] font-bold">GOOGLE_MAPS_PLATFORM_KEY</code>.</li>
-                <li>Collez votre clé d'API et appuyez sur <strong>Entrée</strong>.</li>
-              </ol>
-            </div>
-
-            <p className="text-label-xs font-mono text-outline leading-relaxed">
-              * L'application se reconstruira automatiquement en quelques secondes après l'enregistrement.
-            </p>
-
-            <div className="flex gap-3 pt-2">
-              <a 
-                href="https://console.cloud.google.com/google/maps-apis/start?utm_campaign=gmp-code-assist-ais" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex-1 bg-secondary text-white py-3 rounded-full font-sans text-xs font-bold text-center hover:bg-secondary-container active:scale-95 transition-all cursor-pointer"
-              >
-                Obtenir une clé Google ↗
-              </a>
-              <button 
-                onClick={() => setShowKeyModal(false)}
-                className="flex-1 bg-primary text-white py-3 rounded-full font-sans text-xs font-bold hover:bg-primary-container active:scale-95 transition-all cursor-pointer"
-              >
-                Compris !
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

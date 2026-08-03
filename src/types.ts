@@ -104,3 +104,16 @@ export interface SubdomainConfig {
   updatedBy?: string;
 }
 
+export interface KongoNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: "SECURITY_ALERT" | "SITE_UPDATE" | "SAFETY_TIPS" | "INFO";
+  severity: "CRITICAL" | "WARNING" | "INFO";
+  locationId?: string;
+  locationTitle?: string;
+  timestamp: string;
+  read: boolean;
+  source?: string;
+}
+

@@ -102,12 +102,79 @@ function getWeatherInfo(code: number): { label: string; icon: string; bg: string
 }
 
 export default function LocalTipsView() {
-  const [activeCategory, setActiveCategory] = useState<"meteo" | "culture" | "eco" | "prep" | "lang">("meteo");
+  const [activeCategory, setActiveCategory] = useState<"meteo" | "devise" | "culture" | "eco" | "prep" | "lang">("meteo");
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loadingWeather, setLoadingWeather] = useState<boolean>(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "success" | "denied">("idle");
   const [selectedCityName, setSelectedCityName] = useState<string>("Matadi");
+
+  // Devises / Currency Converter State
+  const [usdVal, setUsdVal] = useState<string>("10");
+  const [cdfVal, setCdfVal] = useState<string>("28500");
+  const [exchangeRate, setExchangeRate] = useState<number>(2850);
+  const [customRateInput, setCustomRateInput] = useState<string>("2850");
+  const [showRateEdit, setShowRateEdit] = useState<boolean>(false);
+  const [loadingRate, setLoadingRate] = useState<boolean>(false);
+  const [rateLastFetched, setRateLastFetched] = useState<string | null>(null);
+
+  // Fetch live exchange rate USD -> CDF
+  const fetchLiveRate = async () => {
+    setLoadingRate(true);
+    try {
+      const res = await fetch("https://open.er-api.com/v6/latest/USD");
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.rates && data.rates.CDF) {
+          const rate = Math.round(data.rates.CDF);
+          setExchangeRate(rate);
+          setCustomRateInput(rate.toString());
+          setRateLastFetched(new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }));
+          // recalculate CDF based on current USD
+          const currentUsd = parseFloat(usdVal) || 0;
+          setCdfVal(Math.round(currentUsd * rate).toString());
+        }
+      }
+    } catch (e) {
+      console.warn("Using default rate 2850 CDF:", e);
+    } finally {
+      setLoadingRate(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveRate();
+  }, []);
+
+  const handleUsdChange = (val: string) => {
+    setUsdVal(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0) {
+      setCdfVal(Math.round(num * exchangeRate).toString());
+    } else {
+      setCdfVal("");
+    }
+  };
+
+  const handleCdfChange = (val: string) => {
+    setCdfVal(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0 && exchangeRate > 0) {
+      setUsdVal((num / exchangeRate).toFixed(2));
+    } else {
+      setUsdVal("");
+    }
+  };
+
+  const handleSaveCustomRate = () => {
+    const parsed = parseFloat(customRateInput);
+    if (!isNaN(parsed) && parsed > 0) {
+      setExchangeRate(parsed);
+      setShowRateEdit(false);
+      const currentUsd = parseFloat(usdVal) || 0;
+      setCdfVal(Math.round(currentUsd * parsed).toString());
+    }
+  };
 
   const phrases: Phrase[] = [
     { french: "Bonjour (Comment ça va ?)", local: "Mbote (Sango nini ?)", lang: "Lingala" },
@@ -244,6 +311,17 @@ export default function LocalTipsView() {
           >
             <span className="material-symbols-outlined text-[18px]">thermostat</span>
             Météo & Climat
+          </button>
+          <button
+            onClick={() => setActiveCategory("devise")}
+            className={`flex-1 py-3 px-4 rounded-xl font-sans text-label-md font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeCategory === "devise"
+                ? "bg-primary text-white shadow-md scale-[1.02]"
+                : "text-on-surface-variant hover:bg-surface-variant/50"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">payments</span>
+            Convertisseur USD/CDF
           </button>
           <button
             onClick={() => setActiveCategory("culture")}
@@ -466,6 +544,289 @@ export default function LocalTipsView() {
                   </div>
                 );
               })()}
+            </div>
+          )}
+
+          {/* TAB: CONVERTISSEUR DE DEVISES USD / CDF */}
+          {activeCategory === "devise" && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Header Banner & Exchange Rate Info */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-emerald-900/10 via-primary/5 to-amber-900/10 p-5 rounded-3xl border border-emerald-500/20">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-emerald-600 text-[26px]">currency_exchange</span>
+                    <h3 className="font-sans text-headline-md font-bold text-on-surface">
+                      Convertisseur Dollar (USD) ⇄ Franc Congolais (CDF)
+                    </h3>
+                  </div>
+                  <p className="text-xs text-on-surface-variant">
+                    Outil indispensable pour évaluer vos achats locaux au marché, au restaurant ou lors de vos visites.
+                  </p>
+                </div>
+
+                {/* Rate Status Pill */}
+                <div className="flex items-center gap-2 bg-surface-container-lowest p-2.5 rounded-2xl border border-outline-variant/30 shadow-sm">
+                  <div className="text-right">
+                    <span className="block text-[10px] font-mono font-bold text-outline uppercase">Taux de référence :</span>
+                    <span className="font-sans font-black text-sm text-primary">
+                      1 USD = {exchangeRate.toLocaleString("fr-FR")} CDF
+                    </span>
+                  </div>
+                  <button
+                    onClick={fetchLiveRate}
+                    disabled={loadingRate}
+                    title="Mettre à jour le taux de change"
+                    className="p-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <span className={`material-symbols-outlined text-[18px] ${loadingRate ? "animate-spin" : ""}`}>
+                      sync
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setShowRateEdit(!showRateEdit)}
+                    title="Ajuster le taux manuellement"
+                    className="p-2 rounded-xl bg-surface-container-high hover:bg-surface-variant text-on-surface-variant transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Manual Rate Edit Banner if toggled */}
+              {showRateEdit && (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[18px]">tune</span>
+                      Ajuster le taux selon le marché local (Cambistes)
+                    </span>
+                    <button
+                      onClick={() => setShowRateEdit(false)}
+                      className="text-xs text-outline hover:text-on-surface"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold text-on-surface">1 USD =</span>
+                    <input
+                      type="number"
+                      value={customRateInput}
+                      onChange={(e) => setCustomRateInput(e.target.value)}
+                      placeholder="Ex: 2850"
+                      className="w-32 bg-surface-container-lowest border border-outline-variant/40 rounded-xl px-3 py-1.5 text-xs font-bold font-mono text-on-surface focus:outline-none focus:border-primary"
+                    />
+                    <span className="text-xs font-mono font-bold text-on-surface">CDF</span>
+                    <button
+                      onClick={handleSaveCustomRate}
+                      className="bg-primary hover:bg-primary-container text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow cursor-pointer"
+                    >
+                      Appliquer
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-on-surface-variant">
+                    💡 Le taux de change de rue peut légèrement varier selon la ville (Kinshasa, Matadi, Boma, Muanda).
+                  </p>
+                </div>
+              )}
+
+              {/* Interactive Dual Converter Form */}
+              <div className="bg-surface-container p-6 rounded-3xl border border-outline-variant/30 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                  
+                  {/* USD Box */}
+                  <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/30 shadow-sm space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-mono font-bold text-outline uppercase flex items-center gap-1.5">
+                        <span className="text-lg">🇺🇸</span> Dollar Américain (USD)
+                      </label>
+                      <span className="text-xs font-bold text-primary font-mono">$</span>
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        value={usdVal}
+                        onChange={(e) => handleUsdChange(e.target.value)}
+                        placeholder="Montant en USD..."
+                        className="w-full bg-surface-container/60 border border-outline-variant/30 rounded-xl px-4 py-3 text-2xl font-black font-sans text-on-surface focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-all"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-xl text-outline">
+                        $
+                      </span>
+                    </div>
+
+                    {/* Quick Preset Buttons USD */}
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono text-outline block">Accès rapide USD :</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {["1", "5", "10", "20", "50", "100"].map((preset) => (
+                          <button
+                            key={preset}
+                            onClick={() => handleUsdChange(preset)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                              usdVal === preset
+                                ? "bg-primary text-white shadow-sm"
+                                : "bg-surface-container-high hover:bg-surface-variant text-on-surface"
+                            }`}
+                          >
+                            ${preset}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CDF Box */}
+                  <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/30 shadow-sm space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-mono font-bold text-outline uppercase flex items-center gap-1.5">
+                        <span className="text-lg">🇨🇩</span> Franc Congolais (CDF / FC)
+                      </label>
+                      <span className="text-xs font-bold text-emerald-600 font-mono">FC</span>
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        value={cdfVal}
+                        onChange={(e) => handleCdfChange(e.target.value)}
+                        placeholder="Montant en CDF..."
+                        className="w-full bg-surface-container/60 border border-outline-variant/30 rounded-xl px-4 py-3 text-2xl font-black font-sans text-on-surface focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-all"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-sm text-outline">
+                        FC
+                      </span>
+                    </div>
+
+                    {/* Quick Preset Buttons CDF */}
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono text-outline block">Accès rapide Francs :</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { label: "2,5k", val: "2500" },
+                          { label: "5k", val: "5000" },
+                          { label: "10k", val: "10000" },
+                          { label: "20k", val: "20000" },
+                          { label: "50k", val: "50000" },
+                          { label: "100k", val: "100000" }
+                        ].map((p) => (
+                          <button
+                            key={p.val}
+                            onClick={() => handleCdfChange(p.val)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                              cdfVal === p.val
+                                ? "bg-emerald-600 text-white shadow-sm"
+                                : "bg-surface-container-high hover:bg-surface-variant text-on-surface"
+                            }`}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calculation Output Banner */}
+                {usdVal && cdfVal && !isNaN(parseFloat(usdVal)) && (
+                  <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl text-center space-y-1">
+                    <span className="text-xs font-mono text-outline uppercase block">Équivalence estimée</span>
+                    <p className="font-sans text-headline-sm font-extrabold text-primary">
+                      {parseFloat(usdVal).toLocaleString("fr-FR")} $ USD ≈ {Math.round(parseFloat(cdfVal)).toLocaleString("fr-FR")} Francs Congolais
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Practical Price Guide for Tourists in DRC */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b border-outline-variant/20 pb-2">
+                  <span className="material-symbols-outlined text-primary text-[22px]">shopping_bag</span>
+                  <h4 className="font-sans text-title-md font-bold text-on-surface">
+                    Repères de prix usuels au Kongo Central
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    {
+                      icon: "water_drop",
+                      title: "Eau minérale 1.5L",
+                      priceCDF: "2 500 - 3 500 FC",
+                      priceUSD: "~ 1.00 $"
+                    },
+                    {
+                      icon: "restaurant",
+                      title: "Repas local (Liboke/Poisson)",
+                      priceCDF: "15 000 - 30 000 FC",
+                      priceUSD: "~ 5.00 $ à 10.00 $"
+                    },
+                    {
+                      icon: "local_taxi",
+                      title: "Course Taxi urbain (Matadi/Boma)",
+                      priceCDF: "5 000 - 10 000 FC",
+                      priceUSD: "~ 1.75 $ à 3.50 $"
+                    },
+                    {
+                      icon: "sailing",
+                      title: "Balade en pirogue / Bateau",
+                      priceCDF: "30 000 - 60 000 FC",
+                      priceUSD: "~ 10.00 $ à 20.00 $"
+                    },
+                    {
+                      icon: "park",
+                      title: "Entrée Parc / Jardin Botanique",
+                      priceCDF: "28 500 FC",
+                      priceUSD: "~ 10.00 $"
+                    },
+                    {
+                      icon: "nutrition",
+                      title: "Régime de bananes / Fruits",
+                      priceCDF: "3 000 - 8 000 FC",
+                      priceUSD: "~ 1.00 $ à 3.00 $"
+                    }
+                  ].map((item, idx) => (
+                    <div key={idx} className="bg-surface-container p-3.5 rounded-2xl border border-outline-variant/20 flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                      </div>
+                      <div>
+                        <h5 className="font-sans text-xs font-bold text-on-surface">{item.title}</h5>
+                        <p className="font-mono text-xs font-extrabold text-primary mt-0.5">{item.priceCDF}</p>
+                        <span className="text-[10px] font-mono text-outline block">{item.priceUSD}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment Advice Notes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/20 space-y-1.5">
+                  <h5 className="font-sans text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[18px]">payments</span>
+                    Paiement en Francs Congolais (CDF)
+                  </h5>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">
+                    Privilégiez le Franc Congolais pour tous vos achats dans les marchés locaux, transports de rue, petits achats de nourriture et pourboires aux guides.
+                  </p>
+                </div>
+
+                <div className="bg-amber-500/5 p-4 rounded-2xl border border-amber-500/20 space-y-1.5">
+                  <h5 className="font-sans text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[18px]">info</span>
+                    Condition des Billets de Dollars ($)
+                  </h5>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">
+                    Les commerçants refusent souvent les billets de dollars usés, déchirés, ou émis avant 2013. Gardez des billets neufs et lisses pour vos dépenses en USD.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 

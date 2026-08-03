@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Location, SavedLocation, PendingPermit, Circuit } from "./types";
-import { DEFAULT_LOCATIONS, DEFAULT_PENDING_PERMITS } from "./data";
+import { Location, SavedLocation, PendingPermit, Circuit, KongoNotification } from "./types";
+import { DEFAULT_LOCATIONS, DEFAULT_PENDING_PERMITS, DEFAULT_NOTIFICATIONS } from "./data";
 import { DEFAULT_CIRCUITS } from "./circuitsData";
 import ExploreView from "./components/ExploreView";
 import ListView from "./components/ListView";
@@ -13,6 +13,7 @@ import CircuitsView from "./components/CircuitsView";
 import AdminLoginView from "./components/AdminLoginView";
 import AdminPanelView from "./components/AdminPanelView";
 import QuickCaptureModal from "./components/QuickCaptureModal";
+import NotificationCenterModal from "./components/NotificationCenterModal";
 import IntroSplash from "./components/IntroSplash";
 import { collection, onSnapshot, query, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebaseConfig";
@@ -341,6 +342,98 @@ export default function App() {
     }
   };
   
+  // Notifications state & persistence
+  const [notifications, setNotifications] = useState<KongoNotification[]>(() => {
+    const local = localStorage.getItem("kongo_notifications");
+    if (local) {
+      try {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (err) {
+        console.error("Failed to parse local notifications", err);
+      }
+    }
+    return DEFAULT_NOTIFICATIONS;
+  });
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState<boolean>(false);
+
+  const unreadNotificationsCount = notifications.filter(n => !n.read).length;
+
+  const handleMarkAllNotificationsRead = async () => {
+    setNotifications(prev => {
+      const next = prev.map(n => ({ ...n, read: true }));
+      localStorage.setItem("kongo_notifications", JSON.stringify(next));
+      return next;
+    });
+
+    if (isFirebaseConfigured) {
+      for (const notif of notifications) {
+        if (!notif.read) {
+          try {
+            await setDoc(doc(db, "notifications", notif.id), { ...notif, read: true });
+          } catch (err) {
+            console.error("Failed to mark notification read in Firestore:", err);
+          }
+        }
+      }
+    }
+  };
+
+  const handleToggleNotificationRead = async (id: string) => {
+    let updatedNotif: KongoNotification | undefined;
+    setNotifications(prev => {
+      const next = prev.map(n => {
+        if (n.id === id) {
+          updatedNotif = { ...n, read: !n.read };
+          return updatedNotif;
+        }
+        return n;
+      });
+      localStorage.setItem("kongo_notifications", JSON.stringify(next));
+      return next;
+    });
+
+    if (isFirebaseConfigured && updatedNotif) {
+      try {
+        await setDoc(doc(db, "notifications", id), updatedNotif);
+      } catch (err) {
+        console.error("Failed to update notification read state in Firestore:", err);
+      }
+    }
+  };
+
+  const handleDeleteNotification = async (id: string) => {
+    setNotifications(prev => {
+      const next = prev.filter(n => n.id !== id);
+      localStorage.setItem("kongo_notifications", JSON.stringify(next));
+      return next;
+    });
+
+    if (isFirebaseConfigured) {
+      try {
+        await deleteDoc(doc(db, "notifications", id));
+      } catch (err) {
+        console.error("Failed to delete notification from Firestore:", err);
+      }
+    }
+  };
+
+  const handleAddNotification = async (notif: KongoNotification) => {
+    setNotifications(prev => {
+      const next = [notif, ...prev];
+      localStorage.setItem("kongo_notifications", JSON.stringify(next));
+      return next;
+    });
+
+    if (isFirebaseConfigured) {
+      try {
+        await setDoc(doc(db, "notifications", notif.id), notif);
+      } catch (err) {
+        console.error("Failed to save notification to Firestore:", err);
+      }
+    }
+  };
+
   // Saved locations IDs (Persistent travel logs/offline bookmarks)
   const [savedLocationIds, setSavedLocationIds] = useState<string[]>([]);
   
@@ -630,10 +723,47 @@ export default function App() {
       }
     });
 
+    const qNotifs = query(collection(db, "notifications"));
+    const unsubscribeNotifs = onSnapshot(qNotifs, async (snapshot) => {
+      const notifsList: KongoNotification[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        notifsList.push({
+          id: doc.id,
+          title: data.title || "",
+          message: data.message || "",
+          type: data.type || "INFO",
+          severity: data.severity || "INFO",
+          locationId: data.locationId || undefined,
+          locationTitle: data.locationTitle || undefined,
+          timestamp: data.timestamp || "Récemment",
+          read: !!data.read,
+          source: data.source || undefined,
+        });
+      });
+
+      if (notifsList.length > 0) {
+        setNotifications(notifsList);
+        localStorage.setItem("kongo_notifications", JSON.stringify(notifsList));
+      } else {
+        console.log("[Firebase] Firestore 'notifications' is empty. Seeding defaults...");
+        for (const notif of DEFAULT_NOTIFICATIONS) {
+          try {
+            await setDoc(doc(db, "notifications", notif.id), notif);
+          } catch (e) {
+            console.warn("Could not seed notification to Firestore:", e);
+          }
+        }
+      }
+    }, (error) => {
+      console.warn("[Firebase] Failed to listen to 'notifications' collection:", error);
+    });
+
     return () => {
       unsubscribeLocs();
       unsubscribeCircuits();
       unsubscribePending();
+      unsubscribeNotifs();
     };
   }, []);
 
@@ -833,6 +963,9 @@ export default function App() {
             onOpenCapture={() => setIsCaptureOpen(true)}
             savedLocationIds={savedLocationIds}
             onToggleSave={handleToggleSave}
+            notifications={notifications}
+            unreadNotificationsCount={unreadNotificationsCount}
+            onOpenNotifications={() => setIsNotificationModalOpen(true)}
           />
         );
       case "list":
@@ -851,6 +984,8 @@ export default function App() {
             locations={locations}
             onSelectLocation={handleSelectLocation}
             onNavigate={handleNavigate}
+            unreadNotificationsCount={unreadNotificationsCount}
+            onOpenNotifications={() => setIsNotificationModalOpen(true)}
           />
         );
       case "saved":
@@ -1109,6 +1244,19 @@ export default function App() {
         isOpen={isCaptureOpen}
         onClose={() => setIsCaptureOpen(false)}
         onItemAdded={handleItemCaptured}
+      />
+
+      {/* Notification Center Modal */}
+      <NotificationCenterModal
+        isOpen={isNotificationModalOpen}
+        onClose={() => setIsNotificationModalOpen(false)}
+        notifications={notifications}
+        onMarkAllAsRead={handleMarkAllNotificationsRead}
+        onToggleRead={handleToggleNotificationRead}
+        onDeleteNotification={handleDeleteNotification}
+        onAddNotification={handleAddNotification}
+        onSelectLocation={handleSelectLocation}
+        locations={locations}
       />
     </div>
   );

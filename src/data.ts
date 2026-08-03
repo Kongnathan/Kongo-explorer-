@@ -1,4 +1,4 @@
-import { Location, PendingPermit } from "./types";
+import { Location, PendingPermit, KongoNotification } from "./types";
 
 export const DEFAULT_LOCATIONS: Location[] = [
   {
@@ -537,3 +537,67 @@ export const DEFAULT_PENDING_PERMITS: PendingPermit[] = [
     icon: "library_books"
   }
 ];
+
+export const DEFAULT_NOTIFICATIONS: KongoNotification[] = [
+  {
+    id: "notif-1",
+    title: "⚠️ Alerte Météo & Danger RN1 (Mbanza-Ngungu)",
+    message: "Fortes pluies torrentielles signalées sur le tronçon escarpé de Mbanza-Ngungu. Chaussée glissante et risque d'éboulement mineur. Conduite prudente recommandée, véhicules 4x4 conseillés.",
+    type: "SECURITY_ALERT",
+    severity: "CRITICAL",
+    locationId: "grottes_mbanza",
+    locationTitle: "Grottes de Mbanza-Ngungu",
+    timestamp: "Aujourd'hui, 08:30",
+    read: false,
+    source: "Protection Civile Kongo Central & Info Route RN1",
+  },
+  {
+    id: "notif-2",
+    title: "🏛️ Réouverture de la passerelle suspendue de Zongo",
+    message: "La passerelle panoramique des Chutes de Zongo a été entièrement rénovée et sécurisée par l'équipe d'éco-gardes du Seli Safari Resort. L'accès est désormais ouvert à tous les visiteurs.",
+    type: "SITE_UPDATE",
+    severity: "INFO",
+    locationId: "zongo",
+    locationTitle: "Chutes de Zongo",
+    timestamp: "Hier, 14:15",
+    read: false,
+    source: "Direction du Seli Safari Resort & ICCN",
+  },
+  {
+    id: "notif-3",
+    title: "🌊 Consigne de Sécurité : Parc des Mangroves & Moanda",
+    message: "Phénomène de forte marée haute attendu sur la côte atlantique de Moanda ce week-end. Les sorties en pirogue dans les chenaux du Parc doivent s'effectuer obligatoirement avec gilet de sauvetage homologué.",
+    type: "SAFETY_TIPS",
+    severity: "WARNING",
+    locationId: "parc_mangroves",
+    locationTitle: "Parc Marin des Mangroves",
+    timestamp: "2 août 2026",
+    read: true,
+    source: "Éco-gardes ICCN & Marine Riveraine Moanda",
+  },
+  {
+    id: "notif-4",
+    title: "💡 Extension des Illuminations du Pont Maréchal à Matadi",
+    message: "Le Pont Maréchal Mobutu restera illuminé jusqu'à 23h00 tous les vendredis et samedis soir pour permettre de superbes prises de vue nocturnes depuis les belvédères de Matadi.",
+    type: "SITE_UPDATE",
+    severity: "INFO",
+    locationId: "pont_marechal",
+    locationTitle: "Pont Maréchal Mobutu (Matadi)",
+    timestamp: "1 août 2026",
+    read: true,
+    source: "OEBK & Office du Tourisme Kongo Central",
+  },
+  {
+    id: "notif-5",
+    title: "🌿 Saison de Visite Optimale - Jardin Botanique de Kisantu",
+    message: "Période de floraison exceptionnelle des orchidées rares et nénuphars géants au Jardin Botanique de Kisantu. Des visites guidées thématiques sont organisées à 10h et 14h.",
+    type: "INFO",
+    severity: "INFO",
+    locationId: "kisantu",
+    locationTitle: "Jardin Botanique de Kisantu",
+    timestamp: "30 juillet 2026",
+    read: true,
+    source: "Jardin Botanique de Kisantu (JBK)",
+  },
+];
+

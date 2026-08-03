@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Location, PendingPermit } from "../types";
+import { Location, PendingPermit, KongoNotification } from "../types";
 import LazyImage from "./LazyImage";
 
 interface ExploreViewProps {
@@ -10,6 +10,9 @@ interface ExploreViewProps {
   onOpenCapture: () => void;
   savedLocationIds: string[];
   onToggleSave: (id: string) => void;
+  notifications?: KongoNotification[];
+  unreadNotificationsCount?: number;
+  onOpenNotifications?: () => void;
 }
 
 export default function ExploreView({
@@ -19,10 +22,18 @@ export default function ExploreView({
   onNavigate,
   onOpenCapture,
   savedLocationIds,
-  onToggleSave
+  onToggleSave,
+  notifications = [],
+  unreadNotificationsCount = 0,
+  onOpenNotifications
 }: ExploreViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Incontournables");
+
+  // Top unread critical security alert
+  const topCriticalAlert = notifications.find(
+    (n) => !n.read && (n.severity === "CRITICAL" || n.type === "SECURITY_ALERT")
+  );
 
   // Filter chips (non-commercial, informative)
   const categories = [
@@ -65,7 +76,23 @@ export default function ExploreView({
             </h1>
           </div>
           
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
+            {/* Notification Bell Button with Badge */}
+            {onOpenNotifications && (
+              <button
+                onClick={onOpenNotifications}
+                className="relative p-2 rounded-xl bg-surface-container hover:bg-surface-variant text-on-surface border border-outline-variant/30 transition-all cursor-pointer flex items-center justify-center"
+                title="Centre d'Alertes & Notifications"
+              >
+                <span className="material-symbols-outlined text-[20px]">notifications</span>
+                {unreadNotificationsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 text-white font-mono text-[10px] font-bold flex items-center justify-center border-2 border-surface animate-bounce">
+                    {unreadNotificationsCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             <button 
               onClick={() => onNavigate("tips")}
               className="px-3.5 py-1.5 bg-primary/10 text-primary rounded-full font-sans text-xs font-bold hover:bg-primary/20 transition-all cursor-pointer flex items-center gap-1"
@@ -78,7 +105,39 @@ export default function ExploreView({
       </header>
 
       <main className="max-w-7xl mx-auto px-5 space-y-6 mt-4">
+        {/* Prominent Safety Alert Banner if Critical Notification exists */}
+        {topCriticalAlert && (
+          <section className="bg-red-500/10 border-2 border-red-500/40 rounded-2xl p-4 flex items-start gap-3 shadow-md animate-pulse">
+            <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+              <span className="material-symbols-outlined text-[22px]">warning</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="font-mono text-[11px] font-bold uppercase text-red-600 tracking-wider">
+                  ALERTE SÉCURITÉ URGENTE
+                </span>
+                {onOpenNotifications && (
+                  <button
+                    onClick={onOpenNotifications}
+                    className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <span>Consulter toutes les alertes ({unreadNotificationsCount})</span>
+                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                  </button>
+                )}
+              </div>
+              <h4 className="font-sans text-xs font-bold text-on-surface mt-0.5">
+                {topCriticalAlert.title}
+              </h4>
+              <p className="text-xs font-sans text-on-surface-variant leading-relaxed mt-1">
+                {topCriticalAlert.message}
+              </p>
+            </div>
+          </section>
+        )}
+
         {/* Slogan Banner with Hidden Admin Entrance in Signature */}
+
         <section className="py-2 text-center md:text-left space-y-2 max-w-2xl">
           <div 
             onClick={() => onNavigate("admin-login")}
