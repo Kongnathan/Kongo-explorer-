@@ -5,6 +5,7 @@ import ReportModal from "./ReportModal";
 import RouteDirectionsModal from "./RouteDirectionsModal";
 import { VideoPlayer } from "./VideoPlayer";
 import { openExternalGpsRoute } from "../lib/geoUtils";
+import BackButton from "./BackButton";
 
 interface DetailViewProps {
   locationId: string;
@@ -270,13 +271,7 @@ export default function DetailView({
       {/* Top AppBar */}
       <header className="w-full top-0 sticky bg-surface-container-low/95 backdrop-blur-md z-40 shadow-sm h-16">
         <div className="flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-full">
-          <button 
-            onClick={onBack}
-            aria-label="Retour" 
-            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-variant/50 transition-colors active:scale-95 duration-100 cursor-pointer text-primary"
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </button>
+          <BackButton onClick={onBack} variant="subtle" />
           <h1 className="font-sans text-headline-md font-bold text-primary">Fiche Destination</h1>
           
           <button 

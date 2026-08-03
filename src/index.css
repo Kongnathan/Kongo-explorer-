@@ -1,19 +1,45 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
-@theme {
+/* -------------------------------------------------------------------------- */
+/* 1. PALETTE DE COULEURS & DESIGN TOKENS (CSS VARIABLES)                     */
+/* Thématique Kongo Explorer : Nature (Vert Jungle), Culture (Terre/Argile),   */
+/* Aventure (Or Soleil / Ambre) & Fleuve (Bleu Congo)                        */
+/* -------------------------------------------------------------------------- */
+:root {
+  /* Primary - Vert Jungle Profond */
   --color-primary: #00342b;
   --color-on-primary: #ffffff;
   --color-primary-container: #004d40;
   --color-on-primary-container: #7ebdac;
+  --color-primary-hover: #002720;
+  --color-primary-active: #001f19;
+
+  /* Accent / Secondary - Or Soleil & Fleuve Congo */
+  --color-accent: #d97706;
+  --color-on-accent: #ffffff;
+  --color-accent-container: #fef3c7;
+  --color-on-accent-container: #78350f;
+  
   --color-secondary: #00629e;
   --color-on-secondary: #ffffff;
-  --color-secondary-container: #62b4fe;
-  --color-on-secondary-container: #004470;
+  --color-secondary-container: #e0f2fe;
+  --color-on-secondary-container: #0369a1;
+
+  /* Tertiary - Terre & Argile du Kongo */
   --color-tertiary: #3e271f;
   --color-on-tertiary: #ffffff;
   --color-tertiary-container: #573d34;
   --color-on-tertiary-container: #cca89c;
+
+  /* Status Tokens */
+  --color-success: #10b981;
+  --color-on-success: #ffffff;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-on-error: #ffffff;
+
+  /* Surfaces & Neutrals (Light Mode) */
   --color-background: #f8faf7;
   --color-on-background: #191c1b;
   --color-surface: #f8faf7;
@@ -25,15 +51,276 @@
   --color-surface-container: #eceeec;
   --color-surface-container-high: #e7e9e6;
   --color-surface-container-highest: #e1e3e0;
-  --color-jungle-deep: #1B3022;
-  --color-river-flow: #E1F5FE;
-  --color-earth-clay: #D7CCC8;
-  --color-alert-time: #D32F2F;
-  --color-outline-variant: #bfc9c4;
+
+  /* Outlines & Borders */
   --color-outline: #707975;
+  --color-outline-variant: #bfc9c4;
+
+  /* Specific Thematic Colors */
+  --color-jungle-deep: #1b3022;
+  --color-river-flow: #e1f5fe;
+  --color-earth-clay: #d7ccc8;
+  --color-alert-time: #d32f2f;
+
+  /* Radii & Elevation Tokens */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  --shadow-subtle: 0 2px 8px -2px rgba(0, 52, 43, 0.08);
+  --shadow-elevation: 0 4px 20px -2px rgba(0, 52, 43, 0.15);
+  --shadow-active: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode Tokens Support */
+.dark,
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #0f1412;
+    --color-on-background: #e1e3e0;
+    --color-surface: #0f1412;
+    --color-on-surface: #e1e3e0;
+    --color-on-surface-variant: #bfc9c4;
+    --color-surface-variant: #262e2a;
+    --color-surface-container-lowest: #141a17;
+    --color-surface-container-low: #19201c;
+    --color-surface-container: #1e2622;
+    --color-surface-container-high: #242d28;
+    --color-surface-container-highest: #2b3530;
+    
+    --color-outline: #8a938e;
+    --color-outline-variant: #3f4945;
+    
+    --color-primary-container: #00342b;
+    --color-on-primary-container: #a3e0d0;
+  }
+}
+
+@theme {
+  --color-primary: var(--color-primary);
+  --color-on-primary: var(--color-on-primary);
+  --color-primary-container: var(--color-primary-container);
+  --color-on-primary-container: var(--color-on-primary-container);
+  
+  --color-accent: var(--color-accent);
+  --color-on-accent: var(--color-on-accent);
+  --color-accent-container: var(--color-accent-container);
+  --color-on-accent-container: var(--color-on-accent-container);
+
+  --color-secondary: var(--color-secondary);
+  --color-on-secondary: var(--color-on-secondary);
+  --color-secondary-container: var(--color-secondary-container);
+  --color-on-secondary-container: var(--color-on-secondary-container);
+  
+  --color-tertiary: var(--color-tertiary);
+  --color-on-tertiary: var(--color-on-tertiary);
+  --color-tertiary-container: var(--color-tertiary-container);
+  --color-on-tertiary-container: var(--color-on-tertiary-container);
+
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+
+  --color-background: var(--color-background);
+  --color-on-background: var(--color-on-background);
+  --color-surface: var(--color-surface);
+  --color-on-surface: var(--color-on-surface);
+  --color-on-surface-variant: var(--color-on-surface-variant);
+  --color-surface-variant: var(--color-surface-variant);
+  --color-surface-container-lowest: var(--color-surface-container-lowest);
+  --color-surface-container-low: var(--color-surface-container-low);
+  --color-surface-container: var(--color-surface-container);
+  --color-surface-container-high: var(--color-surface-container-high);
+  --color-surface-container-highest: var(--color-surface-container-highest);
+  --color-jungle-deep: var(--color-jungle-deep);
+  --color-river-flow: var(--color-river-flow);
+  --color-earth-clay: var(--color-earth-clay);
+  --color-alert-time: var(--color-alert-time);
+  --color-outline-variant: var(--color-outline-variant);
+  --color-outline: var(--color-outline);
 
   --font-sans: "Hanken Grotesk", "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 2. GLOBAL PWA ACCESSIBILITY & TAP HIGHLIGHT SUPPRESSION                     */
+/* -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+body {
+  font-family: "Hanken Grotesk", sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  user-select: none; /* Prevents text selection glitches on PWA touch drag */
+}
+
+/* Allow text selection inside readable content blocks */
+p, h1, h2, h3, h4, h5, h6, span, input, textarea {
+  user-select: text;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 3. SYSTÈME DE BOUTONS INTERACTIFS PWA (CSS CLASSES)                        */
+/* -------------------------------------------------------------------------- */
+.btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  min-height: 44px; /* Minimum recommended touch target size */
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  touch-action: manipulation;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-subtle);
+}
+
+.btn-base:hover {
+  transform: translateY(-1px);
+}
+
+.btn-base:active {
+  transform: scale(0.96) translateY(0);
+  opacity: 0.9;
+  box-shadow: var(--shadow-active);
+}
+
+.btn-base:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.btn-base:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Button Variants */
+.btn-primary {
+  composes: btn-base;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.btn-primary:hover {
+  background-color: var(--color-primary-container);
+}
+
+.btn-accent {
+  composes: btn-base;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+.btn-accent:hover {
+  background-color: #b45309;
+}
+
+.btn-secondary {
+  composes: btn-base;
+  background-color: var(--color-secondary);
+  color: var(--color-on-secondary);
+}
+
+.btn-outline {
+  composes: btn-base;
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-outline-variant);
+}
+.btn-outline:hover {
+  background-color: var(--color-surface-container-high);
+  border-color: var(--color-primary);
+}
+
+.btn-ghost {
+  composes: btn-base;
+  background-color: transparent;
+  color: var(--color-on-surface);
+  box-shadow: none;
+}
+.btn-ghost:hover {
+  background-color: var(--color-surface-container);
+}
+
+/* Icon Buttons (Floating & Round Touch Controls) */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-container-lowest);
+  color: var(--color-primary);
+  border: 1px solid var(--color-outline-variant);
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.2s ease,
+              border-color 0.2s ease,
+              box-shadow 0.2s ease;
+  box-shadow: var(--shadow-subtle);
+}
+
+.btn-icon:hover {
+  background-color: var(--color-surface-container-high);
+  transform: scale(1.04);
+}
+
+.btn-icon:active {
+  transform: scale(0.90);
+  box-shadow: var(--shadow-active);
+}
+
+/* Specialized PWA Back Button Style */
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  color: var(--color-primary);
+  border: 1px solid rgba(0, 52, 43, 0.12);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.2s ease,
+              box-shadow 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.btn-back:hover {
+  background-color: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+}
+
+.btn-back:active {
+  transform: scale(0.88);
+  background-color: var(--color-surface-container-high);
 }
 
 /* Custom Utilities and Micro-animations */
@@ -66,12 +353,8 @@
 }
 
 .bg-pattern {
-  background-image: radial-gradient(circle at 2px 2px, #00342b10 1px, transparent 0);
+  background-image: radial-gradient(circle at 2px 2px, rgba(0, 52, 43, 0.06) 1px, transparent 0);
   background-size: 32px 32px;
-}
-
-.timer-disk {
-  border-radius: 50%;
 }
 
 @keyframes pulse-subtle {
@@ -92,7 +375,4 @@
   animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-body {
-  font-family: "Hanken Grotesk", sans-serif;
-}
 
