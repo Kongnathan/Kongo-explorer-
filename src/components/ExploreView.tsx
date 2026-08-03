@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Location, PendingPermit } from "../types";
+import LazyImage from "./LazyImage";
 
 interface ExploreViewProps {
   locations: Location[];
@@ -48,14 +49,19 @@ export default function ExploreView({
     <div className="flex-1 pb-24 font-sans animate-fade-in bg-background text-on-background">
       {/* Header banner */}
       <header className="w-full top-0 sticky z-50 bg-surface-container-low/95 backdrop-blur-md shadow-sm">
-        <div className="flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">
-          {/* Static Elegant Logo */}
+        <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">
+          {/* Subtle watermark background logo */}
+          <div 
+            className="absolute inset-0 bg-[url('/icon.svg')] bg-no-repeat bg-center bg-contain opacity-[0.08] pointer-events-none -z-10" 
+            id="header-bg-logo-explore"
+          />
+          {/* Static Elegant Logo with Real Icon */}
           <div className="flex items-center gap-3 select-none">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-[20px] fill">explore</span>
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20">
+              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo" />
             </div>
             <h1 className="font-sans text-headline-md font-bold text-primary">
-              Kongo Central Explorer
+              Kongo Explorer
             </h1>
           </div>
           
@@ -184,12 +190,30 @@ export default function ExploreView({
                       </span>
                     </button>
 
-                    <div className="relative h-52 w-full overflow-hidden">
-                      <div 
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" 
-                        style={{ backgroundImage: `url('${loc.image}')` }}
-                      ></div>
+                    <div className="relative h-52 w-full overflow-hidden bg-surface-variant">
+                      <LazyImage 
+                        src={loc.image} 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                        alt={loc.title}
+                      />
                       
+                      {/* Top Badges */}
+                      <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+                        <span className="bg-primary/90 backdrop-blur-md text-white font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                          {loc.category}
+                        </span>
+                        <span className="bg-black/60 backdrop-blur-md text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/20">
+                          {loc.accessType === "4X4" ? "🚙 4x4" : loc.accessType === "MARCHE" ? "🥾 Marche" : "🚗 Voiture"}
+                        </span>
+                      </div>
+
+                      {loc.rating && (
+                        <div className="absolute top-3 right-14 z-10 bg-amber-500 text-slate-950 font-mono text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[13px] fill">star</span>
+                          <span>{loc.rating}</span>
+                        </div>
+                      )}
+
                       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/85 via-black/30 to-transparent text-white">
                         <p className="font-sans text-[18px] font-bold tracking-tight">{loc.title}</p>
                         <p className="font-sans text-xs opacity-90 flex items-center mt-1 font-medium">
@@ -248,13 +272,14 @@ export default function ExploreView({
         </footer>
       </main>
 
-      {/* Floating Action Button for Map view */}
+      {/* Floating Action Button for Map view / Nearby search */}
       <button 
         onClick={() => onNavigate("map")}
-        className="fixed bottom-24 right-5 w-14 h-14 bg-primary text-white rounded-2xl shadow-xl flex items-center justify-center active:scale-90 transition-transform z-40 hover:brightness-110 cursor-pointer"
-        title="Voir sur la carte"
+        className="fixed bottom-24 right-5 bg-primary text-white px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 font-sans font-bold text-xs hover:bg-primary-container active:scale-95 transition-all z-40 cursor-pointer border border-white/20"
+        title="Autour de moi - Géolocaliser les sites proches"
       >
-        <span className="material-symbols-outlined text-[24px]">map</span>
+        <span className="material-symbols-outlined text-[20px]">near_me</span>
+        <span>Autour de moi</span>
       </button>
     </div>
   );

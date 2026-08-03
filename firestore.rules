@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /locations/{locationId} {
+      allow read, write: if true;
+
+      match /ratings/{ratingId} {
+        allow read, write: if true;
+      }
+    }
+
+    match /circuits/{circuitId} {
+      allow read, write: if true;
+    }
+
+    match /pendingPermits/{permitId} {
+      allow read, write: if true;
+    }
+
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
+
+    match /subdomains/{subdomain} {
+      allow read, write: if true;
+    }
+  }
+}

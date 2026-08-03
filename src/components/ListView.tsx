@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Location, PendingPermit } from "../types";
+import LazyImage from "./LazyImage";
 
 interface ListViewProps {
   locations: Location[];
@@ -46,10 +47,17 @@ export default function ListView({
     <div className="flex-1 pb-24 font-sans animate-fade-in bg-background text-on-background">
       {/* TopAppBar */}
       <header className="w-full top-0 sticky z-40 bg-surface-container-low shadow-sm">
-        <div className="flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[28px]">list_alt</span>
-            <h1 className="font-sans text-headline-md font-bold text-primary">Répertoire Complet</h1>
+        <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">
+          {/* Subtle watermark background logo */}
+          <div 
+            className="absolute inset-0 bg-[url('/icon.svg')] bg-no-repeat bg-center bg-contain opacity-[0.08] pointer-events-none -z-10" 
+            id="header-bg-logo-list"
+          />
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20">
+              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo" />
+            </div>
+            <h1 className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</h1>
           </div>
           <button 
             onClick={onOpenCapture}
@@ -93,12 +101,12 @@ export default function ListView({
               onClick={() => onSelectLocation(loc.id)}
             >
               <div className="h-48 w-full bg-surface-variant relative">
-                <img 
+                <LazyImage 
                   className="w-full h-full object-cover" 
                   alt={loc.title} 
                   src={loc.image} 
                 />
-                <div className={`absolute top-3 right-3 text-white text-[10px] px-2.5 py-1 rounded-full font-mono font-bold tracking-wider ${getTagColor(loc.category)}`}>
+                <div className={`absolute top-3 right-3 text-white text-[10px] px-2.5 py-1 rounded-full font-mono font-bold tracking-wider z-10 ${getTagColor(loc.category)}`}>
                   {loc.category.toUpperCase()}
                 </div>
               </div>

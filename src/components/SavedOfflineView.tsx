@@ -30,10 +30,17 @@ export default function SavedOfflineView({
     <div className="flex-1 pb-24 font-sans bg-background text-on-background animate-fade-in">
       {/* Header */}
       <header className="w-full top-0 sticky z-40 bg-surface-container-low shadow-sm">
-        <div className="flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[28px]">offline_pin</span>
-            <h1 className="font-sans text-headline-md font-bold text-primary">Carnet de Route</h1>
+        <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">
+          {/* Subtle watermark background logo */}
+          <div 
+            className="absolute inset-0 bg-[url('/icon.svg')] bg-no-repeat bg-center bg-contain opacity-[0.08] pointer-events-none -z-10" 
+            id="header-bg-logo-saved"
+          />
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20">
+              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo" />
+            </div>
+            <h1 className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</h1>
           </div>
           <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
@@ -87,10 +94,17 @@ export default function SavedOfflineView({
                   className="bg-surface-container-lowest rounded-3xl p-4 border border-outline-variant/30 shadow-md flex gap-4 hover:border-primary/20 transition-all cursor-pointer relative"
                   onClick={() => onSelectLocation(item.locationId)}
                 >
-                  <div 
-                    className="w-24 h-24 rounded-2xl bg-cover bg-center flex-none"
-                    style={{ backgroundImage: `url('${item.image}')` }}
-                  ></div>
+                  <div className="w-24 h-24 rounded-2xl bg-surface-variant overflow-hidden flex-none">
+                    <img 
+                      src={item.image} 
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover" 
+                      alt={item.title}
+                      onError={(e) => {
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=300&auto=format&fit=crop&q=80";
+                      }}
+                    />
+                  </div>
                   
                   <div className="flex-grow flex flex-col justify-between pr-6">
                     <div>

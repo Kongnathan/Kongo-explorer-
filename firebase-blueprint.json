@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "locations": {
+      "title": "Location",
+      "description": "Exploration destinations with photo galleries, ratings, and detailed attributes",
+      "type": "document",
+      "path": "locations/{locationId}",
+      "fields": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "locationName": { "type": "string" },
+        "image": { "type": "string" },
+        "category": { "type": "string" },
+        "status": { "type": "string" },
+        "rating": { "type": "number", "description": "Average rating from 1 to 5" },
+        "ratingSum": { "type": "number", "description": "Sum of all ratings" },
+        "ratingCount": { "type": "number", "description": "Total number of user ratings submitted" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of last update" }
+      }
+    },
+    "circuits": {
+      "title": "Circuit",
+      "description": "Travel itineraries and circuits with stops and images",
+      "type": "document",
+      "path": "circuits/{circuitId}",
+      "fields": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "duration": { "type": "string" },
+        "badge": { "type": "string" },
+        "image": { "type": "string" },
+        "description": { "type": "string" },
+        "bestFor": { "type": "string" },
+        "accessType": { "type": "string" }
+      }
+    },
+    "userRatings": {
+      "title": "User Rating",
+      "description": "Individual ratings submitted by users for a location",
+      "type": "document",
+      "path": "locations/{locationId}/ratings/{ratingId}",
+      "fields": {
+        "rating": { "type": "number", "description": "Rating score between 1 and 5" },
+        "comment": { "type": "string", "description": "Optional user feedback comment" },
+        "createdAt": { "type": "string", "description": "Timestamp of rating submission" }
+      }
+    },
+    "pendingPermits": {
+      "title": "Pending Permit",
+      "description": "Quick notes and pending permit requests",
+      "type": "document",
+      "path": "pendingPermits/{permitId}",
+      "fields": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "status": { "type": "string" },
+        "icon": { "type": "string" }
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Application settings including subdomain configuration",
+      "type": "document",
+      "path": "settings/{settingId}",
+      "fields": {
+        "subdomain": { "type": "string" },
+        "fullUrl": { "type": "string" },
+        "status": { "type": "string" }
+      }
+    },
+    "subdomains": {
+      "title": "Subdomains",
+      "description": "Reserved subdomain names",
+      "type": "document",
+      "path": "subdomains/{subdomain}",
+      "fields": {
+        "subdomain": { "type": "string" }
+      }
+    }
+  }
+}

@@ -71,15 +71,26 @@ app.post("/api/upload", (req, res) => {
 });
 
 // File-based simple persistence database
-const dbPath = path.join(process.cwd(), "db.json");
+const dbPath = path.join("/tmp", "kongo_explorer_db.json");
 
 let locationsList: Location[] = [...DEFAULT_LOCATIONS];
 let pendingPermits: PendingPermit[] = [...DEFAULT_PENDING_PERMITS];
 let voiceNotes: VoiceNote[] = [];
+let subdomainConfig = {
+  subdomain: "explore",
+  fullUrl: "https://explore.kongoexplorer.cd",
+  status: "ACTIVE",
+  updatedAt: new Date().toISOString(),
+  dnsRecords: [
+    { type: "CNAME", name: "explore", value: "ais-dev-fe2khec5btgm2wbcvmdjto.cloudrun.app" },
+    { type: "A", name: "@", value: "130.50.0.64" }
+  ],
+  sslStatus: "Actif (TLS 1.3 - Auto-renew)"
+};
 
 function saveDb() {
   try {
-    fs.writeFileSync(dbPath, JSON.stringify({ locationsList, pendingPermits, voiceNotes }, null, 2), "utf-8");
+    fs.writeFileSync(dbPath, JSON.stringify({ locationsList, pendingPermits, voiceNotes, subdomainConfig }, null, 2), "utf-8");
   } catch (error) {
     console.error("[DB Error] Failed to write database to disk:", error);
   }
@@ -89,10 +100,40 @@ function loadDb() {
   try {
     if (fs.existsSync(dbPath)) {
       const data = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
-      if (Array.isArray(data.locationsList)) locationsList = data.locationsList;
-      if (Array.isArray(data.pendingPermits)) pendingPermits = data.pendingPermits;
-      if (Array.isArray(data.voiceNotes)) voiceNotes = data.voiceNotes;
-      console.log("[DB] Loaded existing data from db.json");
+      if (Array.isArray(data.locationsList)) {
+        const defaultMap = new Map(DEFAULT_LOCATIONS.map(l => [l.id, l]));
+        const mergedList = data.locationsList.map((l: any) => {
+          const defaultLoc = defaultMap.get(l.id);
+          if (defaultLoc) {
+            return {
+              ...defaultLoc,
+              ...l,
+            };
+          }
+          return l;
+        });
+
+        const existingIds = new Set(mergedList.map((l: any) => l.id));
+        const missingDefaults = DEFAULT_LOCATIONS.filter(l => !existingIds.has(l.id));
+        locationsList = [...mergedList, ...missingDefaults];
+      } else {
+        locationsList = [...DEFAULT_LOCATIONS];
+      }
+      if (Array.isArray(data.pendingPermits)) {
+        const existingIds = new Set(data.pendingPermits.map((p: any) => p.id));
+        const missingDefaults = DEFAULT_PENDING_PERMITS.filter(p => !existingIds.has(p.id));
+        pendingPermits = [...data.pendingPermits, ...missingDefaults];
+      } else {
+        pendingPermits = [...DEFAULT_PENDING_PERMITS];
+      }
+      if (Array.isArray(data.voiceNotes)) {
+        voiceNotes = data.voiceNotes;
+      }
+      if (data.subdomainConfig && typeof data.subdomainConfig.subdomain === "string") {
+        subdomainConfig = data.subdomainConfig;
+      }
+      console.log("[DB] Loaded existing data from db.json and merged missing default locations");
+      saveDb();
     } else {
       saveDb();
     }
@@ -119,6 +160,7 @@ app.post("/api/locations", (req, res) => {
     locationName: req.body.locationName || "Kongo Central",
     category: req.body.category || "Incontournables",
     image: req.body.image || "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800",
+    videoUrl: req.body.videoUrl || undefined,
     description: req.body.description || "",
     status: req.body.status || "PUBLISHED",
     coords: req.body.coords || { x: 50, y: 50 },
@@ -178,6 +220,111 @@ app.post("/api/pending", (req, res) => {
   saveDb();
   res.status(201).json(newPermit);
 });
+
+// Update/Edit pending permit (Admin Panel)
+app.put("/api/pending/:id", (req, res) => {
+  const { id } = req.params;
+  const idx = pendingPermits.findIndex(p => p.id === id);
+  if (idx !== -1) {
+    pendingPermits[idx] = { ...pendingPermits[idx], ...req.body };
+    saveDb();
+    res.json(pendingPermits[idx]);
+  } else {
+    res.status(404).json({ error: "Fiche utilisateur non trouvée" });
+  }
+});
+
+// Delete pending permit (Admin Panel)
+app.delete("/api/pending/:id", (req, res) => {
+  const { id } = req.params;
+  pendingPermits = pendingPermits.filter(p => p.id !== id);
+  saveDb();
+  res.json({ success: true });
+});
+
+// 2b. Subdomain management API
+const RESERVED_SUBDOMAINS = new Set([
+  "admin", "api", "app", "www", "mail", "ftp", "localhost", "root", 
+  "staging", "dev", "kongo", "kongoexplorer", "explorer", "test", 
+  "demo", "ns", "dns", "blog", "shop", "store", "sys", "system"
+]);
+
+app.get("/api/subdomain", (req, res) => {
+  res.json(subdomainConfig);
+});
+
+app.post("/api/subdomain/validate", (req, res) => {
+  const { subdomain } = req.body;
+  if (!subdomain || typeof subdomain !== "string") {
+    return res.status(400).json({ valid: false, errors: ["Le sous-domaine est requis."] });
+  }
+
+  const normalized = subdomain.trim().toLowerCase();
+  const errors: string[] = [];
+
+  if (normalized.length < 3) {
+    errors.push("Le sous-domaine doit comporter au moins 3 caractères.");
+  }
+  if (normalized.length > 63) {
+    errors.push("Le sous-domaine ne peut dépasser 63 caractères.");
+  }
+  if (!/^[a-z0-9-]+$/.test(normalized)) {
+    errors.push("Seuls les lettres minuscules, chiffres et tirets sont autorisés.");
+  }
+  if (normalized.startsWith("-") || normalized.endsWith("-")) {
+    errors.push("Le sous-domaine ne doit ni commencer ni se terminer par un tiret.");
+  }
+  if (normalized.includes("--")) {
+    errors.push("Les tirets consécutifs ne sont pas autorisés.");
+  }
+  if (RESERVED_SUBDOMAINS.has(normalized)) {
+    errors.push(`'${normalized}' est un terme réservé par le système.`);
+  }
+
+  const isValid = errors.length === 0;
+  return res.json({
+    valid: isValid,
+    subdomain: normalized,
+    errors,
+    fullUrl: `https://${normalized}.kongoexplorer.cd`
+  });
+});
+
+app.post("/api/subdomain", (req, res) => {
+  const { subdomain } = req.body;
+  if (!subdomain || typeof subdomain !== "string") {
+    return res.status(400).json({ error: "Chaine de sous-domaine requise." });
+  }
+
+  const normalized = subdomain.trim().toLowerCase();
+  
+  // Validation checks
+  if (normalized.length < 3 || normalized.length > 63) {
+    return res.status(400).json({ error: "Longueur invalide (3 à 63 caractères)." });
+  }
+  if (!/^[a-z0-9-]+$/.test(normalized) || normalized.startsWith("-") || normalized.endsWith("-")) {
+    return res.status(400).json({ error: "Format de sous-domaine non conforme." });
+  }
+  if (RESERVED_SUBDOMAINS.has(normalized)) {
+    return res.status(400).json({ error: "Ce sous-domaine est réservé par le système." });
+  }
+
+  subdomainConfig = {
+    subdomain: normalized,
+    fullUrl: `https://${normalized}.kongoexplorer.cd`,
+    status: "ACTIVE",
+    updatedAt: new Date().toISOString(),
+    dnsRecords: [
+      { type: "CNAME", name: normalized, value: "ais-dev-fe2khec5btgm2wbcvmdjto.cloudrun.app" },
+      { type: "A", name: "@", value: "130.50.0.64" }
+    ],
+    sslStatus: "Actif (TLS 1.3 - Let's Encrypt)"
+  };
+
+  saveDb();
+  res.json({ success: true, config: subdomainConfig });
+});
+
 
 // 3. Smart Process Voice/Text Capture (Gemini API Integration)
 app.post("/api/voice-capture", async (req, res) => {

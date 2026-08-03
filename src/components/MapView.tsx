@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Location } from "../types";
-import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
+import { APIProvider, Map, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps";
 import L from "leaflet";
+import { getUserGeolocation } from "../lib/geoUtils";
 
 const API_KEY =
   process.env.GOOGLE_MAPS_PLATFORM_KEY ||
@@ -16,22 +17,47 @@ interface MapViewProps {
   onNavigate: (tab: string) => void;
 }
 
+// Helper component to pan Google Maps smoothly when selected marker or user GPS changes
+function GoogleMapRecenter({ center, zoom }: { center: { lat: number; lng: number } | null; zoom?: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (map && center && typeof center.lat === "number" && typeof center.lng === "number") {
+      map.panTo(center);
+      if (zoom) map.setZoom(zoom);
+    }
+  }, [map, center, zoom]);
+  return null;
+}
+
 export default function MapView({ locations, onSelectLocation, onNavigate }: MapViewProps) {
   const [activeMarkerId, setActiveId] = useState<string | null>("zongo");
-  const [activeChip, setActiveChip] = useState("Incontournables");
+  const [activeChip, setActiveChip] = useState("Tous");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [mapCenter, setMapCenter] = useState({ x: 0, y: 0 });
+
+  // Toast message state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(prev => (prev === msg ? null : prev));
+    }, 4500);
+  };
 
   // Map Mode Selector: "topographic" | "google" | "osm" (defaults to google if key is present, otherwise osm)
   const [mapMode, setMapMode] = useState<"topographic" | "google" | "osm">(
     hasValidKey ? "google" : "osm"
   );
+  // Map Type Selector: "roadmap" (plan classique) | "satellite" (vue satellite)
+  const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
   const [showKeyModal, setShowKeyModal] = useState(false);
 
   // Leaflet references
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markersLayerGroupRef = useRef<L.LayerGroup | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
 
   // User GPS Tracking States
   const [userPos, setUserPos] = useState<{
@@ -44,97 +70,104 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
   } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
+  const watchIdRef = useRef<number | null>(null);
 
-  const handleGetGPSLocation = () => {
-    if (!navigator.geolocation) {
-      setGpsError("La géolocalisation n'est pas supportée par votre navigateur.");
-      alert("La géolocalisation n'est pas supportée par votre navigateur.");
-      return;
-    }
-
+  const handleGetGPSLocation = (silent = false) => {
     setIsLocating(true);
     setGpsError(null);
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        
-        let x = 50;
-        let y = 50;
-        let isMocked = false;
+    const updatePositionState = (lat: number, lng: number, accuracy?: number, isMocked = false, isFirst = false) => {
+      let x = 50;
+      let y = 50;
 
-        // Check if user is in DRC or Kongo Central province
-        const inKongoCentral = (latitude >= -6.2 && latitude <= -4.0 && longitude >= 12.0 && longitude <= 16.0);
+      // Project coordinates for topographic map layer
+      const inKongoCentral = (lat >= -6.2 && lat <= -4.0 && lng >= 12.0 && lng <= 16.0);
 
-        if (inKongoCentral) {
-          x = 10 + ((longitude - 12.35) / (15.30 - 12.35)) * 80;
-          y = 15 + ((latitude - (-4.30)) / ((-5.90) - (-4.30))) * 70;
-        } else {
-          isMocked = true;
-          // Deterministic projection so different lat/lng gets different spots
-          x = 35 + (Math.abs(longitude) % 30);
-          y = 40 + (Math.abs(latitude) % 30);
-        }
+      if (inKongoCentral) {
+        x = 10 + ((lng - 12.35) / (15.30 - 12.35)) * 80;
+        y = 15 + ((lat - (-4.30)) / ((-5.90) - (-4.30))) * 70;
+      } else {
+        // Deterministic projection so different lat/lng gets different spots on topo map
+        x = 35 + (Math.abs(lng) % 30);
+        y = 40 + (Math.abs(lat) % 30);
+      }
 
-        // Keep within safe map bounds
-        x = Math.max(10, Math.min(90, x));
-        y = Math.max(15, Math.min(85, y));
+      x = Math.max(10, Math.min(90, x));
+      y = Math.max(15, Math.min(85, y));
 
-        setUserPos({
-          x,
-          y,
-          lat: latitude,
-          lng: longitude,
-          accuracy,
-          isMocked
-        });
-        
-        setIsLocating(false);
+      setUserPos({
+        x,
+        y,
+        lat,
+        lng,
+        accuracy,
+        isMocked
+      });
+      
+      setIsLocating(false);
+
+      if (isFirst || !silent) {
         setActiveId("user_gps");
         setZoomLevel(1.3);
-
         if (isMocked) {
-          alert(`📍 GPS activé !\n\nCoordonnées réelles : ${latitude.toFixed(5)}°, ${longitude.toFixed(5)}° (Précision : ${Math.round(accuracy)}m).\n\nComme vous êtes hors du Kongo Central, votre position a été projetée sur notre carte interactive.`);
+          showToast(`ℹ️ Signal GPS faible : Position simulée aux Chutes de Zongo (${lat.toFixed(4)}°, ${lng.toFixed(4)}°)`);
         } else {
-          alert(`📍 GPS activé avec succès ! Vous êtes localisé en temps réel au Kongo Central (${latitude.toFixed(5)}°, ${longitude.toFixed(5)}°).`);
+          showToast(`📍 GPS Détecté : ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`);
         }
+      }
+    };
+
+    getUserGeolocation(
+      (pos) => {
+        updatePositionState(pos.lat, pos.lng, pos.accuracy, pos.isMocked || false, true);
+
+        // Continuous watch for real-time updates
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+        }
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (watchPos) => {
+            updatePositionState(
+              watchPos.coords.latitude,
+              watchPos.coords.longitude,
+              watchPos.coords.accuracy,
+              false,
+              false
+            );
+          },
+          (err) => console.warn("Watch position update error:", err),
+          { enableHighAccuracy: false, timeout: 20000, maximumAge: 10000 }
+        );
       },
-      (error) => {
-        console.error("GPS Error:", error);
+      (errorMsg, fallbackPos) => {
         setIsLocating(false);
-        
-        let msg = "Impossible d'accéder à votre position GPS.";
-        if (error.code === 1) {
-          msg = "Permission GPS refusée. Veuillez autoriser la localisation dans les réglages de votre navigateur.";
-        } else if (error.code === 2) {
-          msg = "La position GPS est indisponible.";
-        } else if (error.code === 3) {
-          msg = "Délai d'attente de la géolocalisation dépassé.";
+        setGpsError(errorMsg);
+
+        if (fallbackPos) {
+          updatePositionState(fallbackPos.lat, fallbackPos.lng, fallbackPos.accuracy, true, true);
         }
-        
-        setGpsError(msg);
-        
-        // Fallback simulated coordinates to keep GPS active
-        const mockLat = -4.7825; 
-        const mockLng = 14.3541;
-        setUserPos({
-          x: 45,
-          y: 35,
-          lat: mockLat,
-          lng: mockLng,
-          accuracy: 15,
-          isMocked: true
-        });
-        setActiveId("user_gps");
-        setZoomLevel(1.3);
-        
-        alert(`ℹ️ Mode de Simulation GPS activé !\n\nL'accès au GPS réel a échoué ou a été restreint par le navigateur (${msg}).\n\nUne position de simulation éco-garde a été configurée aux chutes de Zongo : ${mockLat}°, ${mockLng}°.`);
+
+        if (!silent) {
+          showToast(`⚠️ ${errorMsg}`);
+        }
       },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      { timeoutMs: 15000 }
     );
   };
 
+  // Auto-locate on mount
+  useEffect(() => {
+    handleGetGPSLocation(true);
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
+
   const categories = [
+    { name: "Tous", icon: "apps", color: "bg-primary text-white" },
     { name: "Incontournables", icon: "star", color: "bg-amber-500 text-white" },
     { name: "Nature", icon: "forest", color: "bg-emerald-600 text-white" },
     { name: "Histoire", icon: "history_edu", color: "bg-orange-700 text-white" },
@@ -142,9 +175,11 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
   ];
 
   // Dynamically filter markers based on active tab
-  const activeCategoryLocations = locations.filter(
-    loc => loc.category === activeChip && loc.status === "PUBLISHED"
-  );
+  const activeCategoryLocations = locations.filter(loc => {
+    if (loc.status !== "PUBLISHED") return false;
+    if (activeChip === "Tous") return true;
+    return loc.category === activeChip || loc.id === activeMarkerId;
+  });
 
   // Render markers inside OpenStreetMap (Leaflet)
   const renderLeafletMarkers = () => {
@@ -224,9 +259,14 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
         mapRef.current.remove();
         mapRef.current = null;
         markersLayerGroupRef.current = null;
+        tileLayerRef.current = null;
       }
       return;
     }
+
+    const tileUrl = mapType === "satellite"
+      ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+      : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
     if (!mapRef.current) {
       // Create map instance
@@ -235,7 +275,7 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
         attributionControl: false,
       }).setView([-5.3, 14.1], 8.2);
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      tileLayerRef.current = L.tileLayer(tileUrl, {
         maxZoom: 19,
       }).addTo(map);
 
@@ -243,15 +283,26 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
       L.control.attribution({ position: "bottomright" }).addTo(map);
 
       mapRef.current = map;
+
+      // Invalidate size to prevent tile clipping/gray box bugs
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
+    } else {
+      if (tileLayerRef.current) {
+        tileLayerRef.current.setUrl(tileUrl);
+      }
+      setTimeout(() => {
+        mapRef.current?.invalidateSize();
+      }, 250);
     }
 
     renderLeafletMarkers();
 
-    // Clean up on unmount or mapMode change
     return () => {
       // kept simple
     };
-  }, [mapMode, activeChip, userPos]);
+  }, [mapMode, mapType, activeChip, userPos]);
 
   // Update markers when activeMarkerId changes
   useEffect(() => {
@@ -287,10 +338,17 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
     <div className="flex-1 h-screen w-screen flex flex-col bg-background text-on-background relative overflow-hidden animate-fade-in font-sans">
       {/* TopAppBar */}
       <header className="w-full top-0 sticky z-40 bg-surface-container-low shadow-sm h-16">
-        <div className="flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-full">
+        <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-full">
+          {/* Subtle watermark background logo */}
+          <div 
+            className="absolute inset-0 bg-[url('/icon.svg')] bg-no-repeat bg-center bg-contain opacity-[0.08] pointer-events-none -z-10" 
+            id="header-bg-logo-map"
+          />
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary text-[26px]">map</span>
-            <h1 className="font-sans text-headline-md font-bold text-primary">Carte Kongo Central</h1>
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20">
+              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo" />
+            </div>
+            <h1 className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</h1>
           </div>
           <span className="text-on-surface-variant text-xs font-mono font-semibold bg-surface-container px-3 py-1 rounded-full">
             {mapMode === "google" ? "Mode Google Maps" : mapMode === "osm" ? "Mode OpenStreetMap" : "Mode Topographique"}
@@ -301,48 +359,92 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
       {/* Map Content Area */}
       <main className="flex-1 relative overflow-hidden h-full w-full">
         
-        {/* Toggle between Topographic, OpenStreetMap, and Real Google Maps */}
-        <div className="absolute top-18 left-1/2 -translate-x-1/2 z-20 flex bg-surface-container-lowest/90 backdrop-blur-md rounded-full p-1 shadow-lg border border-outline-variant/20 max-w-[90vw] overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => setMapMode("topographic")}
-            className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              mapMode === "topographic"
-                ? "bg-primary text-white"
-                : "text-on-surface-variant hover:bg-surface-container-high"
-            }`}
-          >
-            Carte Topo 🎨
-          </button>
-          <button
-            onClick={() => setMapMode("osm")}
-            className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              mapMode === "osm"
-                ? "bg-primary text-white"
-                : "text-on-surface-variant hover:bg-surface-container-high"
-            }`}
-          >
-            OpenStreetMap 🌐
-          </button>
-          <button
-            onClick={() => {
-              if (hasValidKey) {
-                setMapMode("google");
-              } else {
-                setShowKeyModal(true);
-              }
-            }}
-            className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
-              mapMode === "google"
-                ? "bg-primary text-white"
-                : "text-on-surface-variant hover:bg-surface-container-high"
-            }`}
-          >
-            Google Maps 🗺️
-            {!hasValidKey && (
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-            )}
-          </button>
+        {/* Toggle between Topographic, OpenStreetMap, and Real Google Maps + Plan/Satellite Toggle */}
+        <div className="absolute top-18 left-1/2 -translate-x-1/2 z-20 flex flex-col sm:flex-row items-center gap-2 max-w-[95vw]">
+          <div className="flex bg-surface-container-lowest/90 backdrop-blur-md rounded-full p-1 shadow-lg border border-outline-variant/20 max-w-[90vw] overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setMapMode("topographic")}
+              className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                mapMode === "topographic"
+                  ? "bg-primary text-white"
+                  : "text-on-surface-variant hover:bg-surface-container-high"
+              }`}
+            >
+              Carte Topo 🎨
+            </button>
+            <button
+              onClick={() => setMapMode("osm")}
+              className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                mapMode === "osm"
+                  ? "bg-primary text-white"
+                  : "text-on-surface-variant hover:bg-surface-container-high"
+              }`}
+            >
+              OpenStreetMap 🌐
+            </button>
+            <button
+              onClick={() => {
+                if (hasValidKey) {
+                  setMapMode("google");
+                } else {
+                  setShowKeyModal(true);
+                }
+              }}
+              className={`px-4 py-1.5 rounded-full font-sans text-xs font-bold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
+                mapMode === "google"
+                  ? "bg-primary text-white"
+                  : "text-on-surface-variant hover:bg-surface-container-high"
+              }`}
+            >
+              Google Maps 🗺️
+              {!hasValidKey && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              )}
+            </button>
+          </div>
+
+          {/* Plan / Satellite Toggle Pill */}
+          <div className="flex bg-surface-container-lowest/95 backdrop-blur-md rounded-full p-1 shadow-lg border border-outline-variant/30 items-center gap-0.5">
+            <button
+              onClick={() => setMapType("roadmap")}
+              className={`px-3 py-1 rounded-full font-sans text-xs font-bold transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
+                mapType === "roadmap"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-on-surface-variant hover:bg-surface-container-high"
+              }`}
+              title="Vue Plan Classique"
+            >
+              <span className="material-symbols-outlined text-[15px]">map</span>
+              <span>Plan</span>
+            </button>
+            <button
+              onClick={() => setMapType("satellite")}
+              className={`px-3 py-1 rounded-full font-sans text-xs font-bold transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
+                mapType === "satellite"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-on-surface-variant hover:bg-surface-container-high"
+              }`}
+              title="Vue Satellite Haute Résolution"
+            >
+              <span className="material-symbols-outlined text-[15px]">satellite_alt</span>
+              <span>Satellite</span>
+            </button>
+          </div>
         </div>
+
+        {/* Toast Notification Overlay */}
+        {toastMessage && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-surface-container-lowest/95 backdrop-blur-md px-4 py-2.5 rounded-full shadow-2xl border border-primary/20 flex items-center gap-2.5 text-xs font-sans font-bold text-on-surface animate-fade-in max-w-[90vw]">
+            <span className="material-symbols-outlined text-primary text-[18px]">my_location</span>
+            <span>{toastMessage}</span>
+            <button 
+              onClick={() => setToastMessage(null)} 
+              className="ml-2 text-outline hover:text-on-surface p-0.5 rounded-full cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[14px]">close</span>
+            </button>
+          </div>
+        )}
 
         {/* MAP RENDER AREA */}
         {mapMode === "topographic" ? (
@@ -375,11 +477,26 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
                 defaultCenter={{ lat: -5.3, lng: 14.1 }} // Focus on Kongo Central Matadi/Mbanza-Ngungu center
                 defaultZoom={8.2}
                 mapId="DEMO_MAP_ID"
+                mapTypeId={mapType === "satellite" ? "hybrid" : "roadmap"}
                 internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
                 style={{ width: "100%", height: "100%" }}
                 mapTypeControl={true}
                 gestureHandling="greedy"
               >
+                <GoogleMapRecenter 
+                  center={
+                    activeMarkerId === "user_gps" && userPos
+                      ? { lat: userPos.lat, lng: userPos.lng }
+                      : activeMarkerId
+                        ? (() => {
+                            const loc = locations.find(l => l.id === activeMarkerId);
+                            return loc && loc.lat && loc.lng ? { lat: loc.lat, lng: loc.lng } : null;
+                          })()
+                        : null
+                  } 
+                  zoom={activeMarkerId === "user_gps" ? 11 : 10}
+                />
+
                 {activeCategoryLocations.map(loc => {
                   if (!loc.lat || !loc.lng) return null;
                   const isActive = activeMarkerId === loc.id;
@@ -402,10 +519,14 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
                   <AdvancedMarker
                     position={{ lat: userPos.lat, lng: userPos.lng }}
                     onClick={() => setActiveId("user_gps")}
+                    title="Votre position GPS"
                   >
-                    <Pin background="#2563eb" glyphColor="#fff" borderColor="#1d4ed8">
-                      <span className="material-symbols-outlined text-[10px] text-white">person</span>
-                    </Pin>
+                    <div className="relative flex items-center justify-center cursor-pointer group">
+                      <div className="absolute -inset-3 rounded-full bg-blue-500/30 animate-ping"></div>
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center shadow-xl border-2 border-white bg-blue-600 text-white font-bold ring-4 ring-blue-500/30 group-hover:scale-110 transition-transform">
+                        <span className="material-symbols-outlined text-[18px]">my_location</span>
+                      </div>
+                    </div>
                   </AdvancedMarker>
                 )}
               </Map>
@@ -602,7 +723,15 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
                 
                 <div className="flex gap-4">
                   {selectedLoc.image && (
-                    <img src={selectedLoc.image} alt={selectedLoc.title} className="w-20 h-20 rounded-xl object-cover flex-none shadow-sm" />
+                    <img 
+                      src={selectedLoc.image} 
+                      alt={selectedLoc.title} 
+                      referrerPolicy="no-referrer"
+                      className="w-20 h-20 rounded-xl object-cover flex-none shadow-sm" 
+                      onError={(e) => {
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=300&auto=format&fit=crop&q=80";
+                      }}
+                    />
                   )}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-sans text-body-lg font-bold text-on-surface truncate">{selectedLoc.title}</h3>
@@ -677,8 +806,24 @@ export default function MapView({ locations, onSelectLocation, onNavigate }: Map
           </div>
         )}
 
-        {/* Floating Controls (GPS Locate, zoom controls) */}
+        {/* Floating Controls (GPS Locate, Plan/Satellite Toggle, zoom controls) */}
         <div className="absolute bottom-24 right-4 z-30 flex flex-col gap-3">
+          {/* Plan vs Satellite Toggle Button */}
+          <button 
+            onClick={() => setMapType(mapType === "roadmap" ? "satellite" : "roadmap")}
+            className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center border transition-all active:scale-90 cursor-pointer ${
+              mapType === "satellite" 
+                ? "bg-amber-600 text-white border-amber-500 shadow-amber-900/20" 
+                : "bg-surface-container-lowest text-primary border-outline-variant/30"
+            }`}
+            title={mapType === "roadmap" ? "Passer en vue Satellite" : "Passer en vue Plan"}
+          >
+            <span className="material-symbols-outlined font-bold">
+              {mapType === "satellite" ? "map" : "satellite_alt"}
+            </span>
+          </button>
+
+          {/* GPS Locate Button */}
           <button 
             onClick={handleGetGPSLocation}
             className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center border transition-all active:scale-90 cursor-pointer ${
