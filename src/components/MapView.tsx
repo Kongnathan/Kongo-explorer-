@@ -22,7 +22,12 @@ interface MapViewProps {
 
 // Helper component to pan Google Maps smoothly when selected marker or user GPS changes
 function GoogleMapRecenter({ center, zoom }: { center: { lat: number; lng: number } | null; zoom?: number }) {
-  const map = useMap();
+  let map: any = null;
+  try {
+    map = useMap();
+  } catch {
+    map = null;
+  }
   useEffect(() => {
     if (map && center && typeof center.lat === "number" && typeof center.lng === "number") {
       map.panTo(center);

@@ -37,8 +37,15 @@ function GoogleMapsRouteRenderer({
   travelMode: "DRIVING" | "WALKING" | "BICYCLING";
   onRouteCalculated?: (distanceKm: number, durationMin: number, steps: RouteStep[]) => void;
 }) {
-  const map = useMap();
-  const routesLib = useMapsLibrary("routes");
+  let map: any = null;
+  let routesLib: any = null;
+  try {
+    map = useMap();
+    routesLib = useMapsLibrary("routes");
+  } catch {
+    map = null;
+    routesLib = null;
+  }
   const polylinesRef = useRef<google.maps.Polyline[]>([]);
 
   useEffect(() => {
