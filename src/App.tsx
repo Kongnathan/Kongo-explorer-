@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Location, SavedLocation, PendingPermit, Circuit, KongoNotification } from "./types";
 import { DEFAULT_LOCATIONS, DEFAULT_PENDING_PERMITS, DEFAULT_NOTIFICATIONS } from "./data";
@@ -16,6 +16,7 @@ import AdminPanelView from "./components/AdminPanelView";
 import QuickCaptureModal from "./components/QuickCaptureModal";
 import NotificationCenterModal from "./components/NotificationCenterModal";
 import IntroSplash from "./components/IntroSplash";
+import NotFoundView from "./components/NotFoundView";
 import { collection, onSnapshot, query, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebaseConfig";
 import { 
@@ -245,58 +246,74 @@ function deserializeCircuitFromFirestore(id: string, data: any): Circuit {
 }
 
 
+function DetailRouteWrapper({
+  locations,
+  onNavigate,
+  savedLocationIds,
+  onToggleSave,
+  onUpdateLocation,
+  isAdminAuthenticated,
+}: {
+  locations: Location[];
+  onNavigate: (tab: string) => void;
+  savedLocationIds: string[];
+  onToggleSave: (id: string) => void;
+  onUpdateLocation: (loc: Location) => void;
+  isAdminAuthenticated: boolean;
+}) {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  // If locations list is ready and the requested ID is not found, display 404
+  const foundLoc = locations.find((l) => l.id === id);
+  if (!foundLoc && locations.length > 0) {
+    return <NotFoundView />;
+  }
+
+  return (
+    <DetailView
+      locationId={id || ""}
+      locations={locations}
+      onBack={() => {
+        if (window.history.length > 1) {
+          navigate(-1);
+        } else {
+          navigate("/destinations");
+        }
+      }}
+      onNavigate={onNavigate}
+      savedLocationIds={savedLocationIds}
+      onToggleSave={onToggleSave}
+      onUpdateLocation={onUpdateLocation}
+      isAdminAuthenticated={isAdminAuthenticated}
+    />
+  );
+}
+
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [currentTab, setCurrentTab] = useState<string>("explore");
-  const [prevTab, setPrevTab] = useState<string>("explore");
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  // Navigation helpers between views
+  const handleNavigate = (tab: string) => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    switch (tab) {
+      case "explore": navigate("/"); break;
+      case "list": navigate("/destinations"); break;
+      case "map": navigate("/carte"); break;
+      case "circuits": navigate("/circuits"); break;
+      case "saved": navigate("/carnet"); break;
+      case "tips": navigate("/conseils"); break;
+      case "admin-login": navigate("/admin/login"); break;
+      case "admin-panel": navigate("/admin"); break;
+      default: navigate("/"); break;
+    }
+  };
 
-  // Synchronize browser URL pathname with active tab and destination view
-  useEffect(() => {
-    const path = location.pathname;
-    if (path.startsWith("/destinations/")) {
-      const id = path.replace("/destinations/", "").trim();
-      if (id) {
-        setSelectedLocationId(id);
-        setCurrentTab("detail");
-        return;
-      }
-    }
-    if (path === "/destinations" || path === "/list") {
-      setCurrentTab("list");
-      return;
-    }
-    if (path === "/carte" || path === "/map") {
-      setCurrentTab("map");
-      return;
-    }
-    if (path === "/circuits") {
-      setCurrentTab("circuits");
-      return;
-    }
-    if (path === "/carnet" || path === "/saved") {
-      setCurrentTab("saved");
-      return;
-    }
-    if (path === "/conseils" || path === "/tips") {
-      setCurrentTab("tips");
-      return;
-    }
-    if (path === "/admin/login") {
-      setCurrentTab("admin-login");
-      return;
-    }
-    if (path === "/admin" || path === "/admin/panel") {
-      setCurrentTab("admin-panel");
-      return;
-    }
-    if (path === "/" || path === "/explore") {
-      setCurrentTab("explore");
-      return;
-    }
-  }, [location.pathname]);
+  const handleSelectLocation = (id: string) => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    navigate(`/destinations/${id}`);
+  };
   
   // App data states
   const [locations, setLocations] = useState<Location[]>(() => {
@@ -816,45 +833,6 @@ export default function App() {
     };
   }, []);
 
-  // Handler to navigate between tabs with browser history URL update
-  const handleNavigate = (tab: string) => {
-    setPrevTab(currentTab);
-    setCurrentTab(tab);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-    let targetPath = "/";
-    switch (tab) {
-      case "explore": targetPath = "/"; break;
-      case "list": targetPath = "/destinations"; break;
-      case "map": targetPath = "/carte"; break;
-      case "circuits": targetPath = "/circuits"; break;
-      case "saved": targetPath = "/carnet"; break;
-      case "tips": targetPath = "/conseils"; break;
-      case "admin-login": targetPath = "/admin/login"; break;
-      case "admin-panel": targetPath = "/admin"; break;
-      default: targetPath = "/"; break;
-    }
-    if (location.pathname !== targetPath) {
-      navigate(targetPath);
-    }
-  };
-
-  const handleSelectLocation = (id: string) => {
-    setSelectedLocationId(id);
-    setPrevTab(currentTab);
-    setCurrentTab("detail");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    const targetPath = `/destinations/${id}`;
-    if (location.pathname !== targetPath) {
-      navigate(targetPath);
-    }
-  };
-
-  const handleBackFromDetail = () => {
-    const fallbackTab = prevTab === "detail" ? "explore" : prevTab;
-    handleNavigate(fallbackTab);
-  };
-
   // Save / Unsaves offline locations workflow
   const handleToggleSave = (locId: string) => {
     let updatedSaves: string[];
@@ -1019,162 +997,16 @@ export default function App() {
     };
   });
 
-  // Render correct view panel
-  const renderContent = () => {
-    switch (currentTab) {
-      case "explore":
-        return (
-          <ExploreView
-            locations={locations}
-            pendingPermits={pendingPermits}
-            onSelectLocation={handleSelectLocation}
-            onNavigate={handleNavigate}
-            onOpenCapture={() => setIsCaptureOpen(true)}
-            savedLocationIds={savedLocationIds}
-            onToggleSave={handleToggleSave}
-            notifications={notifications}
-            unreadNotificationsCount={unreadNotificationsCount}
-            onOpenNotifications={() => setIsNotificationModalOpen(true)}
-          />
-        );
-      case "list":
-        return (
-          <ListView
-            locations={locations}
-            pendingPermits={pendingPermits}
-            onSelectLocation={handleSelectLocation}
-            onNavigate={handleNavigate}
-            onOpenCapture={() => setIsCaptureOpen(true)}
-          />
-        );
-      case "map":
-        return (
-          <MapView
-            locations={locations}
-            onSelectLocation={handleSelectLocation}
-            onNavigate={handleNavigate}
-            unreadNotificationsCount={unreadNotificationsCount}
-            onOpenNotifications={() => setIsNotificationModalOpen(true)}
-          />
-        );
-      case "saved":
-        return (
-          <SavedOfflineView
-            savedLocations={mappedSavedLocations}
-            locations={locations}
-            onSelectLocation={handleSelectLocation}
-            onNavigate={handleNavigate}
-            onRemoveSave={handleRemoveSave}
-          />
-        );
-      case "circuits":
-        return (
-          <CircuitsView
-            locations={locations}
-            circuits={circuits}
-            onSelectLocation={handleSelectLocation}
-            onNavigate={handleNavigate}
-          />
-        );
-      case "tips":
-        return <LocalTipsView />;
-      case "detail":
-        if (!selectedLocationId) return null;
-        return (
-          <DetailView
-            locationId={selectedLocationId}
-            locations={locations}
-            onBack={handleBackFromDetail}
-            onNavigate={handleNavigate}
-            savedLocationIds={savedLocationIds}
-            onToggleSave={handleToggleSave}
-            onUpdateLocation={handleUpdateLocation}
-            isAdminAuthenticated={isAdminAuthenticated}
-          />
-        );
-      case "admin-login":
-        if (isAdminAuthenticated) {
-          return (
-            <AdminPanelView
-              locations={locations}
-              circuits={circuits}
-              pendingPermits={pendingPermits}
-              onAddLocation={handleAddLocation}
-              onUpdateLocation={handleUpdateLocation}
-              onDeleteLocation={handleDeleteLocation}
-              onUpdatePendingPermit={handleUpdatePendingPermit}
-              onDeletePendingPermit={handleDeletePendingPermit}
-              onSaveCircuit={handleSaveCircuit}
-              onAddCircuit={handleAddCircuit}
-              onDeleteCircuit={handleDeleteCircuit}
-              onLogout={() => {
-                setIsAdminAuthenticated(false);
-                sessionStorage.removeItem("kongo_admin_authenticated");
-                handleNavigate("explore");
-              }}
-            />
-          );
-        }
-        return (
-          <AdminLoginView
-            onLoginSuccess={() => {
-              setIsAdminAuthenticated(true);
-              sessionStorage.setItem("kongo_admin_authenticated", "true");
-              setCurrentTab("admin-panel");
-            }}
-            onCancel={() => handleNavigate("explore")}
-          />
-        );
-      case "admin-panel":
-        if (!isAdminAuthenticated) {
-          return (
-            <AdminLoginView
-              onLoginSuccess={() => {
-                setIsAdminAuthenticated(true);
-                sessionStorage.setItem("kongo_admin_authenticated", "true");
-                setCurrentTab("admin-panel");
-              }}
-              onCancel={() => handleNavigate("explore")}
-            />
-          );
-        }
-        return (
-          <AdminPanelView
-            locations={locations}
-            circuits={circuits}
-            pendingPermits={pendingPermits}
-            onAddLocation={handleAddLocation}
-            onUpdateLocation={handleUpdateLocation}
-            onDeleteLocation={handleDeleteLocation}
-            onUpdatePendingPermit={handleUpdatePendingPermit}
-            onDeletePendingPermit={handleDeletePendingPermit}
-            onSaveCircuit={handleSaveCircuit}
-            onAddCircuit={handleAddCircuit}
-            onDeleteCircuit={handleDeleteCircuit}
-            onLogout={() => {
-              setIsAdminAuthenticated(false);
-              sessionStorage.removeItem("kongo_admin_authenticated");
-              handleNavigate("explore");
-            }}
-          />
-        );
-      default:
-        return (
-          <ExploreView
-            locations={locations}
-            pendingPermits={pendingPermits}
-            onSelectLocation={handleSelectLocation}
-            onNavigate={handleNavigate}
-            onOpenCapture={() => setIsCaptureOpen(true)}
-            savedLocationIds={savedLocationIds}
-            onToggleSave={handleToggleSave}
-          />
-        );
-    }
-  };
+  // Navigation tab indicators
+  const isDetailPage = location.pathname.startsWith("/destinations/") && location.pathname !== "/destinations";
+  const isAdminPage = location.pathname.startsWith("/admin");
+  const showBottomNav = !isDetailPage && !isAdminPage;
 
-  // Only render user-facing bottom bar if NOT on admin-login, admin-panel, or detail views
-  const showBottomNav = ["explore", "map", "circuits", "saved", "tips", "list"].includes(currentTab);
+  const isExploreActive = location.pathname === "/" || location.pathname === "/explore";
+  const isMapActive = location.pathname === "/carte" || location.pathname === "/map";
+  const isCircuitsActive = location.pathname === "/circuits";
+  const isSavedActive = location.pathname === "/carnet" || location.pathname === "/saved";
+  const isTipsActive = location.pathname === "/conseils" || location.pathname === "/tips";
 
   return (
     <div className="min-h-screen bg-background text-on-background relative flex flex-col pb-20">
@@ -1217,18 +1049,163 @@ export default function App() {
         </div>
       )}
 
-      {/* Dynamic Screen Content with Smooth Tab Transitions */}
+      {/* Dynamic Screen Content with Smooth Route Transitions */}
       <div className="flex-1 flex flex-col relative overflow-x-hidden">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentTab}
+            key={location.pathname}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="w-full flex-1 flex flex-col"
           >
-            {renderContent()}
+            <Routes location={location}>
+              {/* Public Routes from sitemap.xml */}
+              <Route
+                path="/"
+                element={
+                  <ExploreView
+                    locations={locations}
+                    pendingPermits={pendingPermits}
+                    onSelectLocation={handleSelectLocation}
+                    onNavigate={handleNavigate}
+                    onOpenCapture={() => setIsCaptureOpen(true)}
+                    savedLocationIds={savedLocationIds}
+                    onToggleSave={handleToggleSave}
+                    notifications={notifications}
+                    unreadNotificationsCount={unreadNotificationsCount}
+                    onOpenNotifications={() => setIsNotificationModalOpen(true)}
+                  />
+                }
+              />
+              <Route path="/explore" element={<Navigate to="/" replace />} />
+              <Route
+                path="/destinations"
+                element={
+                  <ListView
+                    locations={locations}
+                    pendingPermits={pendingPermits}
+                    onSelectLocation={handleSelectLocation}
+                    onNavigate={handleNavigate}
+                    onOpenCapture={() => setIsCaptureOpen(true)}
+                  />
+                }
+              />
+              <Route path="/list" element={<Navigate to="/destinations" replace />} />
+              <Route
+                path="/carte"
+                element={
+                  <MapView
+                    locations={locations}
+                    onSelectLocation={handleSelectLocation}
+                    onNavigate={handleNavigate}
+                    unreadNotificationsCount={unreadNotificationsCount}
+                    onOpenNotifications={() => setIsNotificationModalOpen(true)}
+                  />
+                }
+              />
+              <Route path="/map" element={<Navigate to="/carte" replace />} />
+              <Route
+                path="/circuits"
+                element={
+                  <CircuitsView
+                    locations={locations}
+                    circuits={circuits}
+                    onSelectLocation={handleSelectLocation}
+                    onNavigate={handleNavigate}
+                  />
+                }
+              />
+              <Route
+                path="/conseils"
+                element={<LocalTipsView />}
+              />
+              <Route path="/tips" element={<Navigate to="/conseils" replace />} />
+              <Route
+                path="/carnet"
+                element={
+                  <SavedOfflineView
+                    savedLocations={mappedSavedLocations}
+                    locations={locations}
+                    onSelectLocation={handleSelectLocation}
+                    onNavigate={handleNavigate}
+                    onRemoveSave={handleRemoveSave}
+                  />
+                }
+              />
+              <Route path="/saved" element={<Navigate to="/carnet" replace />} />
+              <Route
+                path="/destinations/:id"
+                element={
+                  <DetailRouteWrapper
+                    locations={locations}
+                    onNavigate={handleNavigate}
+                    savedLocationIds={savedLocationIds}
+                    onToggleSave={handleToggleSave}
+                    onUpdateLocation={handleUpdateLocation}
+                    isAdminAuthenticated={isAdminAuthenticated}
+                  />
+                }
+              />
+
+              {/* Administration Routes */}
+              <Route
+                path="/admin/login"
+                element={
+                  isAdminAuthenticated ? (
+                    <Navigate to="/admin" replace />
+                  ) : (
+                    <AdminLoginView
+                      onLoginSuccess={() => {
+                        setIsAdminAuthenticated(true);
+                        sessionStorage.setItem("kongo_admin_authenticated", "true");
+                        navigate("/admin");
+                      }}
+                      onCancel={() => navigate("/")}
+                    />
+                  )
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  !isAdminAuthenticated ? (
+                    <AdminLoginView
+                      onLoginSuccess={() => {
+                        setIsAdminAuthenticated(true);
+                        sessionStorage.setItem("kongo_admin_authenticated", "true");
+                        navigate("/admin");
+                      }}
+                      onCancel={() => navigate("/")}
+                    />
+                  ) : (
+                    <AdminPanelView
+                      locations={locations}
+                      circuits={circuits}
+                      pendingPermits={pendingPermits}
+                      onAddLocation={handleAddLocation}
+                      onUpdateLocation={handleUpdateLocation}
+                      onDeleteLocation={handleDeleteLocation}
+                      onUpdatePendingPermit={handleUpdatePendingPermit}
+                      onDeletePendingPermit={handleDeletePendingPermit}
+                      onSaveCircuit={handleSaveCircuit}
+                      onAddCircuit={handleAddCircuit}
+                      onDeleteCircuit={handleDeleteCircuit}
+                      onLogout={() => {
+                        setIsAdminAuthenticated(false);
+                        sessionStorage.removeItem("kongo_admin_authenticated");
+                        navigate("/");
+                      }}
+                    />
+                  )
+                }
+              />
+              <Route path="/admin/panel" element={<Navigate to="/admin" replace />} />
+
+              {/* 404 Fallback Route for non-existent pages */}
+              <Route path="*" element={<NotFoundView />} />
+            </Routes>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -1236,100 +1213,85 @@ export default function App() {
       {/* Global Bottom Navigation Bar */}
       {showBottomNav && (
         <nav className="fixed bottom-0 left-0 right-0 h-20 bg-surface-container-lowest border-t border-outline-variant/30 z-50 flex items-center justify-around px-2 shadow-2xl backdrop-blur-md">
-          <a 
-            href="/"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavigate("explore");
-            }}
+          <Link 
+            to="/"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer no-underline ${
-              currentTab === "explore" 
+              isExploreActive 
                 ? "text-primary font-bold scale-105" 
                 : "text-on-surface-variant hover:text-primary"
             }`}
             title="Explorer les merveilles du Kongo"
           >
-            <span className={`material-symbols-outlined text-[22px] ${currentTab === "explore" ? "fill text-primary" : "text-outline"}`}>
+            <span className={`material-symbols-outlined text-[22px] ${isExploreActive ? "fill text-primary" : "text-outline"}`}>
               explore
             </span>
             <span className="text-[10px] font-sans mt-0.5 font-semibold">Explorer</span>
-          </a>
+          </Link>
 
-          <a 
-            href="/carte"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavigate("map");
-            }}
+          <Link 
+            to="/carte"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer no-underline ${
-              currentTab === "map" 
+              isMapActive 
                 ? "text-primary font-bold scale-105" 
                 : "text-on-surface-variant hover:text-primary"
             }`}
             title="Carte interactive du Kongo Central"
           >
-            <span className={`material-symbols-outlined text-[22px] ${currentTab === "map" ? "fill text-primary" : "text-outline"}`}>
+            <span className={`material-symbols-outlined text-[22px] ${isMapActive ? "fill text-primary" : "text-outline"}`}>
               near_me
             </span>
             <span className="text-[10px] font-sans mt-0.5 font-semibold">Carte</span>
-          </a>
+          </Link>
 
-          <a 
-            href="/circuits"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavigate("circuits");
-            }}
+          <Link 
+            to="/circuits"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer no-underline ${
-              currentTab === "circuits" 
+              isCircuitsActive 
                 ? "text-primary font-bold scale-105" 
                 : "text-on-surface-variant hover:text-primary"
             }`}
             title="Circuits & Itinéraires thématiques"
           >
-            <span className={`material-symbols-outlined text-[22px] ${currentTab === "circuits" ? "fill text-primary" : "text-outline"}`}>
+            <span className={`material-symbols-outlined text-[22px] ${isCircuitsActive ? "fill text-primary" : "text-outline"}`}>
               route
             </span>
             <span className="text-[10px] font-sans mt-0.5 font-semibold">Circuits</span>
-          </a>
+          </Link>
 
-          <a 
-            href="/carnet"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavigate("saved");
-            }}
+          <Link 
+            to="/carnet"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer no-underline ${
-              currentTab === "saved" 
+              isSavedActive 
                 ? "text-primary font-bold scale-105" 
                 : "text-on-surface-variant hover:text-primary"
             }`}
             title="Carnet de voyage hors-ligne"
           >
-            <span className={`material-symbols-outlined text-[22px] ${currentTab === "saved" ? "fill text-primary" : "text-outline"}`}>
+            <span className={`material-symbols-outlined text-[22px] ${isSavedActive ? "fill text-primary" : "text-outline"}`}>
               bookmark
             </span>
             <span className="text-[10px] font-sans mt-0.5 font-semibold">Carnet</span>
-          </a>
+          </Link>
 
-          <a 
-            href="/conseils"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavigate("tips");
-            }}
+          <Link 
+            to="/conseils"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer no-underline ${
-              currentTab === "tips" 
+              isTipsActive 
                 ? "text-primary font-bold scale-105" 
                 : "text-on-surface-variant hover:text-primary"
             }`}
             title="Conseils pratiques, météo et culture"
           >
-            <span className={`material-symbols-outlined text-[22px] ${currentTab === "tips" ? "fill text-primary" : "text-outline"}`}>
+            <span className={`material-symbols-outlined text-[22px] ${isTipsActive ? "fill text-primary" : "text-outline"}`}>
               info
             </span>
             <span className="text-[10px] font-sans mt-0.5 font-semibold">Conseils</span>
-          </a>
+          </Link>
         </nav>
       )}
 

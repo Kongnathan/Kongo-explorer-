@@ -1,5 +1,5 @@
-const CACHE_SHELL_NAME = "kongo-explorer-shell-v2";
-const CACHE_IMAGE_NAME = "kongo-explorer-images-v2";
+const CACHE_SHELL_NAME = "kongo-explorer-shell-v3";
+const CACHE_IMAGE_NAME = "kongo-explorer-images-v3";
 
 const ASSETS_TO_CACHE = [
   "/",
@@ -71,11 +71,12 @@ self.addEventListener("fetch", (event) => {
   
   const url = new URL(event.request.url);
   
-  // Ignore non-http(s) requests, SEO crawlers files (robots.txt, sitemap.xml), and Vite HMR / internal API
+  // Explicitly NEVER intercept or cache SEO crawler files (robots.txt, sitemap.xml), API routes, or Vite internals
   if (url.protocol !== "http:" && url.protocol !== "https:") return;
   if (
     url.pathname === "/robots.txt" ||
     url.pathname === "/sitemap.xml" ||
+    url.pathname.endsWith("/sitemap.xml") ||
     url.pathname.startsWith("/api/") || 
     url.pathname.includes("@vite") || 
     url.pathname.includes("hmr") ||
@@ -92,17 +93,17 @@ self.addEventListener("fetch", (event) => {
           // If cached, return immediately & trigger background update
           if (cachedResponse) {
             fetch(event.request).then((networkResponse) => {
-              if (networkResponse && (networkResponse.status === 200 || networkResponse.type === "opaque" || networkResponse.type === "cors" || networkResponse.type === "basic")) {
+              if (networkResponse && networkResponse.ok && networkResponse.status === 200) {
                 cache.put(event.request, networkResponse.clone());
               }
             }).catch(() => {/* Silent fail on background update if offline */});
             return cachedResponse;
           }
 
-          // If not in cache, fetch from network and store
+          // If not in cache, fetch from network and store if valid 200 OK
           return fetch(event.request)
             .then((networkResponse) => {
-              if (networkResponse && (networkResponse.status === 200 || networkResponse.type === "opaque" || networkResponse.type === "cors" || networkResponse.type === "basic")) {
+              if (networkResponse && networkResponse.ok && networkResponse.status === 200) {
                 cache.put(event.request, networkResponse.clone());
               }
               return networkResponse;
@@ -124,10 +125,11 @@ self.addEventListener("fetch", (event) => {
   }
 
   // 2. STRATEGY FOR HTML / SHELL ASSETS: NETWORK FIRST WITH CACHE FALLBACK
+  // Note: NEVER cache navigation or shell error responses (404, 500, etc.)
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        if (response && response.status === 200 && response.type === "basic") {
+        if (response && response.ok && response.status === 200) {
           const responseToCache = response.clone();
           caches.open(CACHE_SHELL_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
@@ -139,7 +141,7 @@ self.addEventListener("fetch", (event) => {
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
           if (event.request.mode === "navigate") {
-            return caches.match("/");
+            return caches.match("/index.html").then((htmlRes) => htmlRes || caches.match("/"));
           }
           return new Response("Hors connexion. Cette ressource n'est pas disponible sans internet.", {
             status: 503,
@@ -150,4 +152,3 @@ self.addEventListener("fetch", (event) => {
       })
   );
 });
-

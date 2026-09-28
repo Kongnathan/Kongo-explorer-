@@ -1,5 +1,4 @@
-import React from "react";
-import { Helmet } from "react-helmet-async";
+import React, { useEffect } from "react";
 
 interface SEOProps {
   title?: string;
@@ -29,8 +28,14 @@ export default function SEO({
   const canonicalUrl = `${BASE_URL}${normalizedPath === "/" ? "/" : normalizedPath}`;
   const resolvedImage = image.startsWith("http") ? image : `${BASE_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = title;
+    }
+  }, [title]);
+
   return (
-    <Helmet>
+    <>
       {/* Title */}
       <title>{title}</title>
       <meta name="title" content={title} />
@@ -61,6 +66,6 @@ export default function SEO({
           {JSON.stringify(jsonLd)}
         </script>
       )}
-    </Helmet>
+    </>
   );
 }
