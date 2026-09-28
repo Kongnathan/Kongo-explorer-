@@ -6,6 +6,7 @@ import RouteDirectionsModal from "./RouteDirectionsModal";
 import { VideoPlayer } from "./VideoPlayer";
 import { openExternalGpsRoute } from "../lib/geoUtils";
 import BackButton from "./BackButton";
+import SEO from "./SEO";
 
 interface DetailViewProps {
   locationId: string;
@@ -266,13 +267,43 @@ export default function DetailView({
     }
   };
 
+  const destinationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TouristAttraction",
+    "name": loc.title,
+    "description": loc.description,
+    "image": galleryImages[0] || loc.image,
+    "touristType": ["EcoTourism", "CulturalTourism"],
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": loc.locationName,
+      "addressRegion": "Kongo Central",
+      "addressCountry": "CD"
+    },
+    ...(loc.lat && loc.lng ? {
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": loc.lat,
+        "longitude": loc.lng
+      }
+    } : {})
+  };
+
   return (
     <div className="flex-1 pb-32 font-sans bg-background text-on-background animate-fade-in">
+      <SEO
+        title={`${loc.title} – Guide Kongo Explorer`}
+        description={loc.description.length > 155 ? `${loc.description.slice(0, 152)}...` : loc.description}
+        canonicalPath={`/destinations/${loc.id}`}
+        image={galleryImages[0] || loc.image}
+        jsonLd={destinationJsonLd}
+      />
+
       {/* Top AppBar */}
       <header className="w-full top-0 sticky bg-surface-container-low/95 backdrop-blur-md z-40 shadow-sm h-16">
         <div className="flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-full">
           <BackButton onClick={onBack} variant="subtle" />
-          <h1 className="font-sans text-headline-md font-bold text-primary">Fiche Destination</h1>
+          <span className="font-sans text-headline-md font-bold text-primary">Fiche Destination</span>
           
           <button 
             onClick={() => onToggleSave(loc.id)}
@@ -350,11 +381,11 @@ export default function DetailView({
               </>
             )}
 
-            {/* Title & Location Overlay */}
+            {/* Title & Location Overlay: Single H1 */}
             <div className="absolute bottom-4 left-4 right-4 text-white z-10 pointer-events-none">
-              <h2 className="text-white text-headline-lg-mobile md:text-headline-lg font-bold font-sans drop-shadow-md">
+              <h1 className="text-white text-headline-lg-mobile md:text-headline-lg font-bold font-sans drop-shadow-md">
                 {loc.title}
-              </h2>
+              </h1>
               <div className="flex items-center gap-2 mt-1">
                 <span className="material-symbols-outlined text-white text-[18px]">location_on</span>
                 <p className="text-white/90 font-mono text-xs drop-shadow">{loc.locationName}, RD Congo</p>

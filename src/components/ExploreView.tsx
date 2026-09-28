@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Location, PendingPermit, KongoNotification } from "../types";
 import LazyImage from "./LazyImage";
+import SEO from "./SEO";
 
 interface ExploreViewProps {
   locations: Location[];
@@ -53,11 +54,14 @@ export default function ExploreView({
     return matchesSearch && matchesCategory && loc.status === "PUBLISHED";
   });
 
-  // Nearby/Featured highlights for bento section (selecting other locations)
-  const highlights = locations.filter(loc => loc.id !== "grottes_mbanza" && loc.id !== "parc_mangroves");
-
   return (
     <div className="flex-1 pb-24 font-sans animate-fade-in bg-background text-on-background">
+      <SEO
+        title="Kongo Explorer – Guide touristique du Kongo Central"
+        description="Explorez le Kongo Central : chutes de Zongo, circuits touristiques, cartes interactives et patrimoine historique de la RDC avec le guide Kongo Explorer."
+        canonicalPath="/"
+      />
+
       {/* Header banner */}
       <header className="w-full top-0 sticky z-50 bg-surface-container-low/95 backdrop-blur-md shadow-sm">
         <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">
@@ -66,15 +70,20 @@ export default function ExploreView({
             className="absolute inset-0 bg-[url('/icon.svg')] bg-no-repeat bg-center bg-contain opacity-[0.08] pointer-events-none -z-10" 
             id="header-bg-logo-explore"
           />
-          {/* Static Elegant Logo with Real Icon */}
-          <div className="flex items-center gap-3 select-none">
+          {/* Static Elegant Logo with Real Icon and Real Link */}
+          <a 
+            href="/"
+            onClick={(e) => { e.preventDefault(); onNavigate("explore"); }}
+            className="flex items-center gap-3 select-none hover:opacity-90 transition-opacity"
+            title="Kongo Explorer – Accueil"
+          >
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20">
-              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo" />
+              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo Kongo Explorer" />
             </div>
-            <h1 className="font-sans text-headline-md font-bold text-primary">
+            <span className="font-sans text-headline-md font-bold text-primary">
               Kongo Explorer
-            </h1>
-          </div>
+            </span>
+          </a>
           
           <div className="flex items-center gap-2">
             {/* Notification Bell Button with Badge */}
@@ -93,13 +102,15 @@ export default function ExploreView({
               </button>
             )}
 
-            <button 
-              onClick={() => onNavigate("tips")}
+            <a 
+              href="/conseils"
+              onClick={(e) => { e.preventDefault(); onNavigate("tips"); }}
               className="px-3.5 py-1.5 bg-primary/10 text-primary rounded-full font-sans text-xs font-bold hover:bg-primary/20 transition-all cursor-pointer flex items-center gap-1"
+              title="Conseils Pratiques & Météo"
             >
               <span className="material-symbols-outlined text-[14px]">gavel</span>
               Conseils
-            </button>
+            </a>
           </div>
         </div>
       </header>
@@ -136,19 +147,19 @@ export default function ExploreView({
           </section>
         )}
 
-        {/* Slogan Banner with Hidden Admin Entrance in Signature */}
-
+        {/* Slogan Banner with Single Primary H1 */}
         <section className="py-2 text-center md:text-left space-y-2 max-w-2xl">
-          <div 
-            onClick={() => onNavigate("admin-login")}
-            className="inline-block text-[11px] font-mono text-on-surface-variant/35 tracking-[0.25em] uppercase cursor-default select-none transition-colors active:text-on-surface-variant/60"
-            style={{ WebkitTapHighlightColor: "transparent" }}
+          <a 
+            href="/admin/login"
+            onClick={(e) => { e.preventDefault(); onNavigate("admin-login"); }}
+            className="inline-block text-[11px] font-mono text-on-surface-variant/35 tracking-[0.25em] uppercase cursor-pointer select-none transition-colors hover:text-on-surface-variant/60"
+            title="Accès administration"
           >
             apk by nathan king
-          </div>
-          <h2 className="font-sans text-headline-lg-mobile md:text-headline-lg text-primary font-extrabold leading-tight tracking-tight">
+          </a>
+          <h1 className="font-sans text-headline-lg-mobile md:text-headline-lg text-primary font-extrabold leading-tight tracking-tight">
             Explorez les merveilles du Kongo Central
-          </h2>
+          </h1>
           <p className="text-on-surface-variant text-body-md leading-relaxed">
             Parcourez les paysages sauvages, l'histoire majestueuse et l'incroyable biodiversité de la province du Kongo Central. Une plateforme éducative et collaborative sans intérêt commercial.
           </p>
@@ -230,19 +241,27 @@ export default function ExploreView({
               {filteredLocations.map((loc) => {
                 const isSaved = savedLocationIds.includes(loc.id);
                 return (
-                  <div 
+                  <a 
                     key={loc.id} 
-                    className="group bg-surface-container-lowest rounded-[28px] overflow-hidden border border-outline-variant/30 flex flex-col hover:shadow-lg hover:border-primary/20 transition-all cursor-pointer relative"
-                    onClick={() => onSelectLocation(loc.id)}
+                    href={`/destinations/${loc.id}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onSelectLocation(loc.id);
+                    }}
+                    className="group bg-surface-container-lowest rounded-[28px] overflow-hidden border border-outline-variant/30 flex flex-col hover:shadow-lg hover:border-primary/20 transition-all cursor-pointer relative text-inherit no-underline"
+                    title={`Consulter la fiche détaillée : ${loc.title}`}
                   >
                     {/* Bookmark Indicator (Save for offline) */}
                     <button
+                      type="button"
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         onToggleSave(loc.id);
                       }}
                       className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-md flex items-center justify-center text-primary active:scale-90 transition-all cursor-pointer"
                       title={isSaved ? "Retirer du carnet" : "Sauvegarder pour le hors-ligne"}
+                      aria-label={isSaved ? "Retirer du carnet" : "Sauvegarder pour le hors-ligne"}
                     >
                       <span className="material-symbols-outlined text-[20px]">
                         {isSaved ? "bookmark" : "bookmark_border"}
@@ -253,7 +272,7 @@ export default function ExploreView({
                       <LazyImage 
                         src={loc.image} 
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                        alt={loc.title}
+                        alt={`Photographie de ${loc.title} au Kongo Central`}
                       />
                       
                       {/* Top Badges */}
@@ -298,7 +317,7 @@ export default function ExploreView({
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </a>
                 );
               })}
             </div>
@@ -317,6 +336,7 @@ export default function ExploreView({
             </p>
           </div>
           <button 
+            type="button"
             onClick={onOpenCapture}
             className="px-5 py-3 bg-secondary text-white rounded-full font-sans text-xs font-bold hover:brightness-110 active:scale-95 transition-transform flex items-center gap-2 cursor-pointer shadow-md"
           >
@@ -332,14 +352,18 @@ export default function ExploreView({
       </main>
 
       {/* Floating Action Button for Map view / Nearby search */}
-      <button 
-        onClick={() => onNavigate("map")}
+      <a 
+        href="/carte"
+        onClick={(e) => {
+          e.preventDefault();
+          onNavigate("map");
+        }}
         className="fixed bottom-24 right-5 bg-primary text-white px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 font-sans font-bold text-xs hover:bg-primary-container active:scale-95 transition-all z-40 cursor-pointer border border-white/20"
         title="Autour de moi - Géolocaliser les sites proches"
       >
         <span className="material-symbols-outlined text-[20px]">near_me</span>
         <span>Autour de moi</span>
-      </button>
+      </a>
     </div>
   );
 }

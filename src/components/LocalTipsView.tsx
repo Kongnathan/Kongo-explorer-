@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import SEO from "./SEO";
 
 interface Phrase {
   french: string;
@@ -262,6 +263,12 @@ export default function LocalTipsView() {
 
   return (
     <div className="flex-1 pb-24 font-sans bg-background text-on-background animate-fade-in">
+      <SEO
+        title="Conseils Pratiques, Météo & Culture – Kongo Explorer"
+        description="Guide pratique pour votre voyage au Kongo Central : météo en direct par ville, coutumes locales, lexique Kikongo et conseils des écogardes."
+        canonicalPath="/conseils"
+      />
+
       {/* Sticky Header */}
       <header className="w-full top-0 sticky z-40 bg-surface-container-low shadow-sm backdrop-blur-md">
         <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">
@@ -269,12 +276,16 @@ export default function LocalTipsView() {
             className="absolute inset-0 bg-[url('/icon.svg')] bg-no-repeat bg-center bg-contain opacity-[0.08] pointer-events-none -z-10" 
             id="header-bg-logo-tips"
           />
-          <div className="flex items-center gap-3">
+          <a
+            href="/"
+            className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+            title="Kongo Explorer – Accueil"
+          >
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20">
-              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo" />
+              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo Kongo Explorer" />
             </div>
-            <h1 className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</h1>
-          </div>
+            <span className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</span>
+          </a>
           <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-mono font-bold uppercase">
             Guide & Météo
           </span>
@@ -282,7 +293,7 @@ export default function LocalTipsView() {
       </header>
 
       <main className="max-w-4xl mx-auto px-5 pt-6 space-y-6">
-        {/* Intro Hero Banner */}
+        {/* Intro Hero Banner with Single H1 */}
         <section className="bg-gradient-to-br from-primary via-primary-container to-secondary text-white p-6 rounded-3xl shadow-xl space-y-3 relative overflow-hidden">
           <div className="absolute -right-6 -bottom-6 opacity-10 pointer-events-none">
             <span className="material-symbols-outlined text-[150px]">partly_cloudy_day</span>
@@ -291,9 +302,9 @@ export default function LocalTipsView() {
             <span className="material-symbols-outlined text-[16px] text-amber-300">wb_sunny</span>
             <span>Conseils Météo & Planification de Séjour</span>
           </div>
-          <h2 className="font-sans text-headline-lg-mobile md:text-headline-md font-bold leading-tight">
-            Anticipez votre itinéraire au Kongo Central
-          </h2>
+          <h1 className="font-sans text-headline-lg-mobile md:text-headline-md font-bold leading-tight">
+            Conseils Pratiques, Météo & Culture au Kongo Central
+          </h1>
           <p className="text-white/90 text-body-md leading-relaxed">
             Consultez les conditions météorologiques en direct grâce à la géolocalisation pour planifier vos visites aux cascades, plages et forêts tropicales.
           </p>

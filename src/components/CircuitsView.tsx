@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Circuit, Location } from "../types";
 import { DEFAULT_CIRCUITS } from "../circuitsData";
 import { openExternalGpsRoute } from "../lib/geoUtils";
+import SEO from "./SEO";
 
 interface CircuitsViewProps {
   locations: Location[];
@@ -29,6 +30,12 @@ export default function CircuitsView({
 
   return (
     <div className="min-h-screen bg-background text-on-background pb-28">
+      <SEO
+        title="Circuits & Itinéraires au Kongo Central – Kongo Explorer"
+        description="Parcours thématiques et circuits optimisés de 2 à 3 jours au Kongo Central. Conseils de trajet, accès 4x4 ou voiture et étapes incontournables."
+        canonicalPath="/circuits"
+      />
+
       {/* Top Header Banner */}
       <div className="bg-primary text-white pt-8 pb-10 px-4 md:px-8 relative overflow-hidden shadow-lg">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent pointer-events-none" />
@@ -195,7 +202,7 @@ export default function CircuitsView({
                             <div className="h-28 rounded-xl overflow-hidden shadow-sm">
                               <img
                                 src={stopImg}
-                                alt={stop.title}
+                                alt={`Photographie de l'étape : ${stop.title}`}
                                 referrerPolicy="no-referrer"
                                 className="w-full h-full object-cover"
                               />
@@ -215,13 +222,18 @@ export default function CircuitsView({
                         {/* Action buttons for stop */}
                         <div className="mt-4 pt-3 border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-2">
                           {matchedLoc && (
-                            <button
-                              onClick={() => onSelectLocation(matchedLoc.id)}
-                              className="px-3 py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-xs font-sans font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                            <a
+                              href={`/destinations/${matchedLoc.id}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                onSelectLocation(matchedLoc.id);
+                              }}
+                              className="px-3 py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-xs font-sans font-bold transition-all cursor-pointer flex items-center gap-1.5 no-underline"
+                              title={`Consulter la fiche détaillée : ${matchedLoc.title}`}
                             >
                               <span className="material-symbols-outlined text-[16px]">visibility</span>
                               <span>Voir la Fiche Complète</span>
-                            </button>
+                            </a>
                           )}
 
                           {matchedLoc?.lat && matchedLoc?.lng && (

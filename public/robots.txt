@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kongo-explorer.vercel.app/sitemap.xml

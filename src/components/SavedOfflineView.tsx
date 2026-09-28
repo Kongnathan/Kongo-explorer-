@@ -1,5 +1,6 @@
 import React from "react";
 import { Location, SavedLocation } from "../types";
+import SEO from "./SEO";
 
 interface SavedOfflineViewProps {
   savedLocations: SavedLocation[];
@@ -28,6 +29,12 @@ export default function SavedOfflineView({
 
   return (
     <div className="flex-1 pb-24 font-sans bg-background text-on-background animate-fade-in">
+      <SEO
+        title="Carnet de Voyage Hors-Ligne – Kongo Explorer"
+        description="Consultez vos fiches de voyage et destinations favorites enregistrées pour une utilisation hors connexion lors de vos déplacements."
+        canonicalPath="/carnet"
+      />
+
       {/* Header */}
       <header className="w-full top-0 sticky z-40 bg-surface-container-low shadow-sm">
         <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">
@@ -36,12 +43,17 @@ export default function SavedOfflineView({
             className="absolute inset-0 bg-[url('/icon.svg')] bg-no-repeat bg-center bg-contain opacity-[0.08] pointer-events-none -z-10" 
             id="header-bg-logo-saved"
           />
-          <div className="flex items-center gap-3">
+          <a
+            href="/"
+            onClick={(e) => { e.preventDefault(); onNavigate("explore"); }}
+            className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+            title="Kongo Explorer – Accueil"
+          >
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20">
-              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo" />
+              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo Kongo Explorer" />
             </div>
-            <h1 className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</h1>
-          </div>
+            <span className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</span>
+          </a>
           <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
             MODE HORS-LIGNE ACTIF
@@ -50,13 +62,15 @@ export default function SavedOfflineView({
       </header>
 
       <main className="max-w-4xl mx-auto px-5 pt-6 space-y-6">
-        {/* Explanation Card */}
+        {/* Explanation Card with Single H1 */}
         <section className="bg-surface-container border border-outline-variant/30 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row gap-4 items-center">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
             <span className="material-symbols-outlined text-[36px]">download_done</span>
           </div>
           <div className="space-y-1 text-center md:text-left">
-            <h3 className="font-sans text-body-lg font-bold text-primary">Destinations enregistrées sur l'appareil</h3>
+            <h1 className="font-sans text-headline-lg-mobile md:text-headline-md font-bold text-primary">
+              Carnet de voyage hors-ligne
+            </h1>
             <p className="text-on-surface-variant text-sm leading-relaxed">
               Les fiches détaillées, conseils pratiques et coordonnées GPS des sites ci-dessous sont stockés dans le stockage local de votre téléphone (PWA). Vous pouvez y accéder librement même sans aucune connexion internet au fond des parcs ou gorges.
             </p>
@@ -70,18 +84,20 @@ export default function SavedOfflineView({
               <span className="material-symbols-outlined text-[32px]">favorite_border</span>
             </div>
             <div>
-              <h4 className="font-sans text-body-lg font-bold text-on-surface">Votre carnet de voyage est vide</h4>
+              <h2 className="font-sans text-body-lg font-bold text-on-surface">Votre carnet de voyage est vide</h2>
               <p className="text-on-surface-variant text-sm mt-1 max-w-md mx-auto">
                 Parcourez les merveilles naturelles et culturelles du Congo et cliquez sur "Sauvegarder" pour les stocker sur votre téléphone avant de partir en expédition.
               </p>
             </div>
-            <button 
-              onClick={() => onNavigate("explore")}
-              className="bg-primary text-white px-6 py-2.5 rounded-full font-sans text-label-md font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-md inline-flex items-center gap-2"
+            <a 
+              href="/"
+              onClick={(e) => { e.preventDefault(); onNavigate("explore"); }}
+              className="bg-primary text-white px-6 py-2.5 rounded-full font-sans text-label-md font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-md inline-flex items-center gap-2 no-underline"
+              title="Découvrir les sites"
             >
               <span className="material-symbols-outlined text-[18px]">explore</span>
               Découvrir les sites
-            </button>
+            </a>
           </div>
         ) : (
           <div className="space-y-4">
@@ -89,17 +105,22 @@ export default function SavedOfflineView({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {savedItemsWithDetails.map((item) => (
-                <div 
+                <a 
                   key={item.id}
-                  className="bg-surface-container-lowest rounded-3xl p-4 border border-outline-variant/30 shadow-md flex gap-4 hover:border-primary/20 transition-all cursor-pointer relative"
-                  onClick={() => onSelectLocation(item.locationId)}
+                  href={`/destinations/${item.locationId}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectLocation(item.locationId);
+                  }}
+                  className="bg-surface-container-lowest rounded-3xl p-4 border border-outline-variant/30 shadow-md flex gap-4 hover:border-primary/20 transition-all cursor-pointer relative text-inherit no-underline"
+                  title={`Consulter : ${item.title}`}
                 >
                   <div className="w-24 h-24 rounded-2xl bg-surface-variant overflow-hidden flex-none">
                     <img 
                       src={item.image} 
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover" 
-                      alt={item.title}
+                      alt={`Photographie de ${item.title} au Kongo Central`}
                       onError={(e) => {
                         e.currentTarget.src = "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=300&auto=format&fit=crop&q=80";
                       }}
@@ -125,7 +146,9 @@ export default function SavedOfflineView({
 
                   {/* Remove Button */}
                   <button 
+                    type="button"
                     onClick={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       if (confirm(`Retirer "${item.title}" de votre carnet ?`)) {
                         onRemoveSave(item.locationId);
@@ -133,16 +156,18 @@ export default function SavedOfflineView({
                     }}
                     className="absolute top-3 right-3 text-on-surface-variant/40 hover:text-alert-time p-1 rounded-full hover:bg-surface-variant transition-colors"
                     title="Retirer"
+                    aria-label={`Retirer ${item.title} du carnet`}
                   >
                     <span className="material-symbols-outlined text-[20px]">delete</span>
                   </button>
-                </div>
+                </a>
               ))}
             </div>
 
             {/* Offline Simulation Button */}
             <div className="pt-6 text-center">
               <button
+                type="button"
                 onClick={() => {
                   alert("Simulateur PWA :\nVos fiches de voyage et cartes géographiques locales sont synchronisées localement sur l'appareil et ne subiront aucune perte en cas de coupure réseau.");
                 }}

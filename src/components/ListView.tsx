@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Location, PendingPermit } from "../types";
 import LazyImage from "./LazyImage";
+import SEO from "./SEO";
 
 interface ListViewProps {
   locations: Location[];
@@ -45,6 +46,12 @@ export default function ListView({
 
   return (
     <div className="flex-1 pb-24 font-sans animate-fade-in bg-background text-on-background">
+      <SEO
+        title="Fiches & Destinations Touristiques – Kongo Explorer"
+        description="Découvrez la liste complète des sites incontournables, réserves naturelles, grottes et monuments historiques du Kongo Central en RD Congo."
+        canonicalPath="/destinations"
+      />
+
       {/* TopAppBar */}
       <header className="w-full top-0 sticky z-40 bg-surface-container-low shadow-sm">
         <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">
@@ -53,15 +60,22 @@ export default function ListView({
             className="absolute inset-0 bg-[url('/icon.svg')] bg-no-repeat bg-center bg-contain opacity-[0.08] pointer-events-none -z-10" 
             id="header-bg-logo-list"
           />
-          <div className="flex items-center gap-3">
+          <a
+            href="/"
+            onClick={(e) => { e.preventDefault(); onNavigate("explore"); }}
+            className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+            title="Kongo Explorer – Accueil"
+          >
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20">
-              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo" />
+              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo Kongo Explorer" />
             </div>
-            <h1 className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</h1>
-          </div>
+            <span className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</span>
+          </a>
           <button 
+            type="button"
             onClick={onOpenCapture}
-            className="active:scale-95 duration-100 hover:bg-surface-variant/50 transition-colors p-2 rounded-full"
+            className="active:scale-95 duration-100 hover:bg-surface-variant/50 transition-colors p-2 rounded-full cursor-pointer"
+            title="Note vocale"
           >
             <span className="material-symbols-outlined text-primary">search</span>
           </button>
@@ -86,24 +100,31 @@ export default function ListView({
           ))}
         </div>
 
-        {/* Header */}
+        {/* Single H1 Header for this view */}
         <div className="space-y-1 px-1">
-          <h2 className="font-sans text-headline-lg-mobile text-primary font-bold">Fiches d'exploration</h2>
+          <h1 className="font-sans text-headline-lg-mobile md:text-headline-lg text-primary font-bold">
+            Fiches d'exploration du Kongo Central
+          </h1>
           <p className="text-on-surface-variant text-body-md">Découvrez le patrimoine écologique et culturel de la région à votre rythme.</p>
         </div>
 
-        {/* Destination Cards */}
+        {/* Destination Cards with real links */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredLocations.map(loc => (
-            <div 
+            <a 
               key={loc.id} 
-              className="bg-surface-container-lowest rounded-3xl overflow-hidden hover:shadow-lg transition-all border border-outline-variant/30 flex flex-col hover:border-primary/25 cursor-pointer"
-              onClick={() => onSelectLocation(loc.id)}
+              href={`/destinations/${loc.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                onSelectLocation(loc.id);
+              }}
+              className="bg-surface-container-lowest rounded-3xl overflow-hidden hover:shadow-lg transition-all border border-outline-variant/30 flex flex-col hover:border-primary/25 cursor-pointer text-inherit no-underline"
+              title={`Consulter la fiche : ${loc.title}`}
             >
               <div className="h-48 w-full bg-surface-variant relative">
                 <LazyImage 
                   className="w-full h-full object-cover" 
-                  alt={loc.title} 
+                  alt={`Photographie de ${loc.title} au Kongo Central`} 
                   src={loc.image} 
                 />
                 <div className={`absolute top-3 right-3 text-white text-[10px] px-2.5 py-1 rounded-full font-mono font-bold tracking-wider z-10 ${getTagColor(loc.category)}`}>
@@ -126,25 +147,27 @@ export default function ListView({
                 </p>
                 
                 <div className="mt-auto pt-4 flex gap-2 border-t border-outline-variant/10">
-                  <button 
-                    onClick={() => onSelectLocation(loc.id)}
-                    className="w-full bg-primary/10 text-primary py-2 rounded-xl font-sans text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-2 hover:bg-primary/20"
+                  <span 
+                    className="w-full bg-primary/10 text-primary py-2 rounded-xl font-sans text-xs font-bold transition-all flex items-center justify-center gap-2 group-hover:bg-primary/20"
                   >
                     <span>Consulter la fiche</span>
                     <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  </button>
+                  </span>
                 </div>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       </main>
 
       {/* Voice Capture FAB */}
       <button 
+        type="button"
         id="fab-capture"
         onClick={onOpenCapture}
         className="fixed bottom-24 right-6 w-14 h-14 bg-primary text-white rounded-2xl shadow-xl flex items-center justify-center z-50 active:scale-90 transition-transform cursor-pointer hover:brightness-110"
+        title="Note de voyage vocale"
+        aria-label="Note de voyage vocale"
       >
         <span className="material-symbols-outlined text-[24px] fill">mic</span>
       </button>

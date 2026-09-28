@@ -3,6 +3,7 @@ import { Location } from "../types";
 import { APIProvider, Map, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps";
 import L from "leaflet";
 import { getUserGeolocation } from "../lib/geoUtils";
+import SEO from "./SEO";
 
 const API_KEY =
   process.env.GOOGLE_MAPS_PLATFORM_KEY ||
@@ -356,6 +357,14 @@ export default function MapView({
 
   return (
     <div className="flex-1 h-screen w-screen flex flex-col bg-background text-on-background relative overflow-hidden animate-fade-in font-sans">
+      <SEO
+        title="Carte Interactive du Kongo Central – Kongo Explorer"
+        description="Explorez la carte interactive du Kongo Central : géolocalisez les cascades, parcs, sites historiques et planifiez votre itinéraire de voyage."
+        canonicalPath="/carte"
+      />
+
+      <h1 className="sr-only">Carte interactive du Kongo Central</h1>
+
       {/* TopAppBar */}
       <header className="w-full top-0 sticky z-40 bg-surface-container-low shadow-sm h-16">
         <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-full">
@@ -364,12 +373,17 @@ export default function MapView({
             className="absolute inset-0 bg-[url('/icon.svg')] bg-no-repeat bg-center bg-contain opacity-[0.08] pointer-events-none -z-10" 
             id="header-bg-logo-map"
           />
-          <div className="flex items-center gap-3">
+          <a
+            href="/"
+            onClick={(e) => { e.preventDefault(); onNavigate("explore"); }}
+            className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+            title="Kongo Explorer – Accueil"
+          >
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20">
-              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo" />
+              <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo Kongo Explorer" />
             </div>
-            <h1 className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</h1>
-          </div>
+            <span className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</span>
+          </a>
           <span className="text-on-surface-variant text-xs font-mono font-semibold bg-surface-container px-3 py-1 rounded-full">
             {mapMode === "google" ? "Mode Google Maps" : mapMode === "osm" ? "Mode OpenStreetMap" : "Mode Topographique"}
           </span>

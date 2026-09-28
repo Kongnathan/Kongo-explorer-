@@ -71,9 +71,11 @@ self.addEventListener("fetch", (event) => {
   
   const url = new URL(event.request.url);
   
-  // Ignore non-http(s) requests and Vite HMR / internal API
+  // Ignore non-http(s) requests, SEO crawlers files (robots.txt, sitemap.xml), and Vite HMR / internal API
   if (url.protocol !== "http:" && url.protocol !== "https:") return;
   if (
+    url.pathname === "/robots.txt" ||
+    url.pathname === "/sitemap.xml" ||
     url.pathname.startsWith("/api/") || 
     url.pathname.includes("@vite") || 
     url.pathname.includes("hmr") ||

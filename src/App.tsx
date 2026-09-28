@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Location, SavedLocation, PendingPermit, Circuit, KongoNotification } from "./types";
 import { DEFAULT_LOCATIONS, DEFAULT_PENDING_PERMITS, DEFAULT_NOTIFICATIONS } from "./data";
@@ -245,9 +246,57 @@ function deserializeCircuitFromFirestore(id: string, data: any): Circuit {
 
 
 export default function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [currentTab, setCurrentTab] = useState<string>("explore");
   const [prevTab, setPrevTab] = useState<string>("explore");
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+
+  // Synchronize browser URL pathname with active tab and destination view
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.startsWith("/destinations/")) {
+      const id = path.replace("/destinations/", "").trim();
+      if (id) {
+        setSelectedLocationId(id);
+        setCurrentTab("detail");
+        return;
+      }
+    }
+    if (path === "/destinations" || path === "/list") {
+      setCurrentTab("list");
+      return;
+    }
+    if (path === "/carte" || path === "/map") {
+      setCurrentTab("map");
+      return;
+    }
+    if (path === "/circuits") {
+      setCurrentTab("circuits");
+      return;
+    }
+    if (path === "/carnet" || path === "/saved") {
+      setCurrentTab("saved");
+      return;
+    }
+    if (path === "/conseils" || path === "/tips") {
+      setCurrentTab("tips");
+      return;
+    }
+    if (path === "/admin/login") {
+      setCurrentTab("admin-login");
+      return;
+    }
+    if (path === "/admin" || path === "/admin/panel") {
+      setCurrentTab("admin-panel");
+      return;
+    }
+    if (path === "/" || path === "/explore") {
+      setCurrentTab("explore");
+      return;
+    }
+  }, [location.pathname]);
   
   // App data states
   const [locations, setLocations] = useState<Location[]>(() => {
@@ -767,11 +816,27 @@ export default function App() {
     };
   }, []);
 
-  // Handler to navigate between tabs
+  // Handler to navigate between tabs with browser history URL update
   const handleNavigate = (tab: string) => {
     setPrevTab(currentTab);
     setCurrentTab(tab);
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    let targetPath = "/";
+    switch (tab) {
+      case "explore": targetPath = "/"; break;
+      case "list": targetPath = "/destinations"; break;
+      case "map": targetPath = "/carte"; break;
+      case "circuits": targetPath = "/circuits"; break;
+      case "saved": targetPath = "/carnet"; break;
+      case "tips": targetPath = "/conseils"; break;
+      case "admin-login": targetPath = "/admin/login"; break;
+      case "admin-panel": targetPath = "/admin"; break;
+      default: targetPath = "/"; break;
+    }
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
+    }
   };
 
   const handleSelectLocation = (id: string) => {
@@ -779,11 +844,15 @@ export default function App() {
     setPrevTab(currentTab);
     setCurrentTab("detail");
     window.scrollTo({ top: 0, behavior: "smooth" });
+    const targetPath = `/destinations/${id}`;
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
+    }
   };
 
   const handleBackFromDetail = () => {
-    setCurrentTab(prevTab === "detail" ? "explore" : prevTab);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const fallbackTab = prevTab === "detail" ? "explore" : prevTab;
+    handleNavigate(fallbackTab);
   };
 
   // Save / Unsaves offline locations workflow
@@ -1167,75 +1236,100 @@ export default function App() {
       {/* Global Bottom Navigation Bar */}
       {showBottomNav && (
         <nav className="fixed bottom-0 left-0 right-0 h-20 bg-surface-container-lowest border-t border-outline-variant/30 z-50 flex items-center justify-around px-2 shadow-2xl backdrop-blur-md">
-          <button 
-            onClick={() => handleNavigate("explore")}
-            className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer ${
+          <a 
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              handleNavigate("explore");
+            }}
+            className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer no-underline ${
               currentTab === "explore" 
                 ? "text-primary font-bold scale-105" 
                 : "text-on-surface-variant hover:text-primary"
             }`}
+            title="Explorer les merveilles du Kongo"
           >
             <span className={`material-symbols-outlined text-[22px] ${currentTab === "explore" ? "fill text-primary" : "text-outline"}`}>
               explore
             </span>
             <span className="text-[10px] font-sans mt-0.5 font-semibold">Explorer</span>
-          </button>
+          </a>
 
-          <button 
-            onClick={() => handleNavigate("map")}
-            className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer ${
+          <a 
+            href="/carte"
+            onClick={(e) => {
+              e.preventDefault();
+              handleNavigate("map");
+            }}
+            className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer no-underline ${
               currentTab === "map" 
                 ? "text-primary font-bold scale-105" 
                 : "text-on-surface-variant hover:text-primary"
             }`}
+            title="Carte interactive du Kongo Central"
           >
             <span className={`material-symbols-outlined text-[22px] ${currentTab === "map" ? "fill text-primary" : "text-outline"}`}>
               near_me
             </span>
             <span className="text-[10px] font-sans mt-0.5 font-semibold">Carte</span>
-          </button>
+          </a>
 
-          <button 
-            onClick={() => handleNavigate("circuits")}
-            className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer ${
+          <a 
+            href="/circuits"
+            onClick={(e) => {
+              e.preventDefault();
+              handleNavigate("circuits");
+            }}
+            className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer no-underline ${
               currentTab === "circuits" 
                 ? "text-primary font-bold scale-105" 
                 : "text-on-surface-variant hover:text-primary"
             }`}
+            title="Circuits & Itinéraires thématiques"
           >
             <span className={`material-symbols-outlined text-[22px] ${currentTab === "circuits" ? "fill text-primary" : "text-outline"}`}>
               route
             </span>
             <span className="text-[10px] font-sans mt-0.5 font-semibold">Circuits</span>
-          </button>
+          </a>
 
-          <button 
-            onClick={() => handleNavigate("saved")}
-            className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer ${
+          <a 
+            href="/carnet"
+            onClick={(e) => {
+              e.preventDefault();
+              handleNavigate("saved");
+            }}
+            className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer no-underline ${
               currentTab === "saved" 
                 ? "text-primary font-bold scale-105" 
                 : "text-on-surface-variant hover:text-primary"
             }`}
+            title="Carnet de voyage hors-ligne"
           >
             <span className={`material-symbols-outlined text-[22px] ${currentTab === "saved" ? "fill text-primary" : "text-outline"}`}>
               bookmark
             </span>
             <span className="text-[10px] font-sans mt-0.5 font-semibold">Carnet</span>
-          </button>
+          </a>
 
-          <button 
-            onClick={() => handleNavigate("tips")}
-            className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer ${
+          <a 
+            href="/conseils"
+            onClick={(e) => {
+              e.preventDefault();
+              handleNavigate("tips");
+            }}
+            className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer no-underline ${
               currentTab === "tips" 
                 ? "text-primary font-bold scale-105" 
                 : "text-on-surface-variant hover:text-primary"
             }`}
+            title="Conseils pratiques, météo et culture"
           >
             <span className={`material-symbols-outlined text-[22px] ${currentTab === "tips" ? "fill text-primary" : "text-outline"}`}>
               info
             </span>
             <span className="text-[10px] font-sans mt-0.5 font-semibold">Conseils</span>
-          </button>
+          </a>
         </nav>
       )}
 
