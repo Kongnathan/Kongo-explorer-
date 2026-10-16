@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import SEO from "./SEO";
 
 interface Phrase {
   french: string;
@@ -263,12 +262,6 @@ export default function LocalTipsView() {
 
   return (
     <div className="flex-1 pb-24 font-sans bg-background text-on-background animate-fade-in">
-      <SEO
-        title="Conseils Pratiques, Météo & Culture – Kongo Explorer"
-        description="Guide pratique pour votre voyage au Kongo Central : météo en direct par ville, coutumes locales, lexique Kikongo et conseils des écogardes."
-        canonicalPath="/conseils"
-      />
-
       {/* Sticky Header */}
       <header className="w-full top-0 sticky z-40 bg-surface-container-low shadow-sm backdrop-blur-md">
         <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">

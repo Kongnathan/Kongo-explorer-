@@ -17,6 +17,7 @@ import QuickCaptureModal from "./components/QuickCaptureModal";
 import NotificationCenterModal from "./components/NotificationCenterModal";
 import IntroSplash from "./components/IntroSplash";
 import NotFoundView from "./components/NotFoundView";
+import RouteSEO from "./components/SEO";
 import { collection, onSnapshot, query, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebaseConfig";
 import { 
@@ -1010,6 +1011,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background text-on-background relative flex flex-col pb-20">
+      {/* Dynamic SEO Head Manager: updates title, meta description, canonical link, og tags, and twitter cards on each route change */}
+      <RouteSEO locations={locations} />
+
       {/* 3D Immersive Intro Splash Screen */}
       {showSplash && <IntroSplash onComplete={() => setShowSplash(false)} />}
       {/* PWA Install Banner */}

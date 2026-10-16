@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Location, PendingPermit, KongoNotification } from "../types";
 import LazyImage from "./LazyImage";
-import SEO from "./SEO";
 
 interface ExploreViewProps {
   locations: Location[];
@@ -56,12 +55,6 @@ export default function ExploreView({
 
   return (
     <div className="flex-1 pb-24 font-sans animate-fade-in bg-background text-on-background">
-      <SEO
-        title="Kongo Explorer – Guide touristique du Kongo Central"
-        description="Explorez le Kongo Central : chutes de Zongo, circuits touristiques, cartes interactives et patrimoine historique de la RDC avec le guide Kongo Explorer."
-        canonicalPath="/"
-      />
-
       {/* Header banner */}
       <header className="w-full top-0 sticky z-50 bg-surface-container-low/95 backdrop-blur-md shadow-sm">
         <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">

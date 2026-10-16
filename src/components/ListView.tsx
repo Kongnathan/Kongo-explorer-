@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Location, PendingPermit } from "../types";
 import LazyImage from "./LazyImage";
-import SEO from "./SEO";
 
 interface ListViewProps {
   locations: Location[];
@@ -46,12 +45,6 @@ export default function ListView({
 
   return (
     <div className="flex-1 pb-24 font-sans animate-fade-in bg-background text-on-background">
-      <SEO
-        title="Fiches & Destinations Touristiques – Kongo Explorer"
-        description="Découvrez la liste complète des sites incontournables, réserves naturelles, grottes et monuments historiques du Kongo Central en RD Congo."
-        canonicalPath="/destinations"
-      />
-
       {/* TopAppBar */}
       <header className="w-full top-0 sticky z-40 bg-surface-container-low shadow-sm">
         <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">

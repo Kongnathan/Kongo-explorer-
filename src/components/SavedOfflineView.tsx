@@ -1,6 +1,5 @@
 import React from "react";
 import { Location, SavedLocation } from "../types";
-import SEO from "./SEO";
 
 interface SavedOfflineViewProps {
   savedLocations: SavedLocation[];
@@ -29,12 +28,6 @@ export default function SavedOfflineView({
 
   return (
     <div className="flex-1 pb-24 font-sans bg-background text-on-background animate-fade-in">
-      <SEO
-        title="Carnet de Voyage Hors-Ligne – Kongo Explorer"
-        description="Consultez vos fiches de voyage et destinations favorites enregistrées pour une utilisation hors connexion lors de vos déplacements."
-        canonicalPath="/carnet"
-      />
-
       {/* Header */}
       <header className="w-full top-0 sticky z-40 bg-surface-container-low shadow-sm">
         <div className="relative flex items-center justify-between px-5 py-2 w-full max-w-7xl mx-auto h-16">

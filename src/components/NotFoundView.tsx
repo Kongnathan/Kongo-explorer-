@@ -1,16 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import SEO from "./SEO";
 
 export default function NotFoundView() {
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 py-16 text-center">
-      <SEO
-        title="Page non trouvée (404) – Kongo Explorer"
-        description="La page que vous tentez d'ouvrir n'existe pas ou a été déplacée. Revenez à l'accueil pour explorer le Kongo Central."
-        canonicalPath="/404"
-      />
-
       <div className="w-24 h-24 mb-6 rounded-3xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
         <span className="material-symbols-outlined text-5xl">travel_explore</span>
       </div>

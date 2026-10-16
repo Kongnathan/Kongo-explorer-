@@ -3,7 +3,6 @@ import { Location } from "../types";
 import { APIProvider, Map, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps";
 import L from "leaflet";
 import { getUserGeolocation } from "../lib/geoUtils";
-import SEO from "./SEO";
 
 const API_KEY =
   process.env.GOOGLE_MAPS_PLATFORM_KEY ||
@@ -357,12 +356,6 @@ export default function MapView({
 
   return (
     <div className="flex-1 h-screen w-screen flex flex-col bg-background text-on-background relative overflow-hidden animate-fade-in font-sans">
-      <SEO
-        title="Carte Interactive du Kongo Central – Kongo Explorer"
-        description="Explorez la carte interactive du Kongo Central : géolocalisez les cascades, parcs, sites historiques et planifiez votre itinéraire de voyage."
-        canonicalPath="/carte"
-      />
-
       <h1 className="sr-only">Carte interactive du Kongo Central</h1>
 
       {/* TopAppBar */}

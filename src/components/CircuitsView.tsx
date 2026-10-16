@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Circuit, Location } from "../types";
 import { DEFAULT_CIRCUITS } from "../circuitsData";
 import { openExternalGpsRoute } from "../lib/geoUtils";
-import SEO from "./SEO";
 
 interface CircuitsViewProps {
   locations: Location[];
@@ -30,12 +29,6 @@ export default function CircuitsView({
 
   return (
     <div className="min-h-screen bg-background text-on-background pb-28">
-      <SEO
-        title="Circuits & Itinéraires au Kongo Central – Kongo Explorer"
-        description="Parcours thématiques et circuits optimisés de 2 à 3 jours au Kongo Central. Conseils de trajet, accès 4x4 ou voiture et étapes incontournables."
-        canonicalPath="/circuits"
-      />
-
       {/* Top Header Banner */}
       <div className="bg-primary text-white pt-8 pb-10 px-4 md:px-8 relative overflow-hidden shadow-lg">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent pointer-events-none" />
