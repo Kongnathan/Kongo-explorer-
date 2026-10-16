@@ -34,6 +34,31 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#039;");
 }
 
+/**
+ * Produit une meta description propre (max ~155 caractères) :
+ * coupe à la fin d'une phrase si possible, sinon à la fin d'un mot.
+ */
+function toMetaDescription(text: string, max = 155): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+
+  const window = clean.slice(0, max);
+
+  // 1. Dernière fin de phrase dans la fenêtre (assez longue pour être utile)
+  const sentenceEnd = Math.max(
+    window.lastIndexOf(". "),
+    window.lastIndexOf("! "),
+    window.lastIndexOf("? ")
+  );
+  if (sentenceEnd >= 80) return window.slice(0, sentenceEnd + 1);
+
+  // 2. Sinon, dernier mot entier + points de suspension
+  const cut = window.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  const base = (lastSpace > 80 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:–-]+$/, "");
+  return `${base}…`;
+}
+
 function getPreRenderPages(): PreRenderPage[] {
   const pages: PreRenderPage[] = [
     // 1. Accueil
@@ -194,7 +219,7 @@ function getPreRenderPages(): PreRenderPage[] {
     const locUrl = `${BASE_URL}/destinations/${loc.id}`;
     const resolvedImg = resolveImage(loc.image);
     const locTitle = `${loc.title} – Kongo Explorer`;
-    const locDesc = loc.description.length > 155 ? `${loc.description.slice(0, 152)}...` : loc.description;
+    const locDesc = toMetaDescription(loc.description);
 
     pages.push({
       path: `/destinations/${loc.id}`,
