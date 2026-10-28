@@ -104,16 +104,67 @@ export interface SubdomainConfig {
   updatedBy?: string;
 }
 
-export interface KongoNotification {
+export type TourismCategory =
+  | "Lieu à visiter"
+  | "Événement"
+  | "Hébergement"
+  | "Restaurant"
+  | "Conseil pratique"
+  | "Transport";
+
+export type TourismPostStatus = 
+  | "pending" 
+  | "validated" 
+  | "rejected" 
+  | "VALIDATED" 
+  | "PENDING" 
+  | "REJECTED";
+
+export interface TourismPost {
   id: string;
   title: string;
-  message: string;
-  type: "SECURITY_ALERT" | "SITE_UPDATE" | "SAFETY_TIPS" | "INFO";
-  severity: "CRITICAL" | "WARNING" | "INFO";
-  locationId?: string;
-  locationTitle?: string;
-  timestamp: string;
-  read: boolean;
-  source?: string;
+  category: TourismCategory;
+  location: string;
+  date: string;
+  author: string;
+  authorId?: string;
+  authorEmail?: string;
+  photo: string;
+  gallery?: string[];
+  summary: string;
+  content: string;
+  status: TourismPostStatus;
+  rejectionReason?: string;
+  contactPhone?: string;
+  priceRange?: string;
+  featured?: boolean;
+  reportsCount?: number;
+  createdAt: string;
+  updatedAt?: string;
 }
+
+export interface TourismReport {
+  id: string;
+  postId: string;
+  postTitle: string;
+  postCategory?: string;
+  postLocation?: string;
+  reason: string;
+  details?: string;
+  reportedBy?: string;
+  reportedByEmail?: string;
+  reportedAt: string;
+  status: "pending" | "resolved" | "dismissed";
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  role: "admin" | "user";
+  createdAt: string;
+}
+
+
 

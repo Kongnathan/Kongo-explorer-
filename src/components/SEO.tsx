@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { Location } from "../types";
-import { DEFAULT_LOCATIONS } from "../data";
+import { Location, TourismPost } from "../types";
+import { DEFAULT_LOCATIONS, DEFAULT_TOURISMPPOSTS } from "../data";
 
 export interface RouteMetadata {
   title: string;
@@ -104,9 +104,13 @@ export function updateDocumentHead(meta: RouteMetadata): void {
 }
 
 /**
- * Computes exact SEO metadata depending on the current pathname and available locations
+ * Computes exact SEO metadata depending on the current pathname and available locations/tourism posts
  */
-export function computeRouteMetadata(pathname: string, locations: Location[] = []): RouteMetadata {
+export function computeRouteMetadata(
+  pathname: string, 
+  locations: Location[] = [],
+  tourismPosts: TourismPost[] = []
+): RouteMetadata {
   const cleanPath = pathname.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
 
   // Case: Destination detail page (/destinations/:id)
@@ -164,6 +168,61 @@ export function computeRouteMetadata(pathname: string, locations: Location[] = [
     };
   }
 
+  // Case: Tourism post detail page (/infos-tourisme/:id or /actualites/:id or /news/:id)
+  if (cleanPath.startsWith("/infos-tourisme/") || cleanPath.startsWith("/actualites/") || cleanPath.startsWith("/news/")) {
+    const postId = cleanPath.replace(/^\/(infos-tourisme|actualites|news)\//, "").split("/")[0].trim().toLowerCase();
+    const post =
+      tourismPosts.find((p) => p.id.toLowerCase() === postId) ||
+      DEFAULT_TOURISMPPOSTS.find((p) => p.id.toLowerCase() === postId);
+
+    if (post) {
+      const canonicalUrl = `${BASE_URL}/infos-tourisme/${post.id}`;
+      const resolvedImage = resolveImageUrl(post.photo);
+      const title = `${post.title} – Infos Tourisme Kongo Explorer`;
+      const description = post.summary || post.content.slice(0, 155);
+
+      return {
+        title,
+        description,
+        canonicalUrl,
+        image: resolvedImage,
+        type: "article",
+        jsonLd: {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": post.title,
+          "description": description,
+          "image": resolvedImage,
+          "datePublished": post.createdAt,
+          "author": {
+            "@type": "Person",
+            "name": post.author || "Kongo Explorer",
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Kongo Explorer",
+            "logo": {
+              "@type": "ImageObject",
+              "url": DEFAULT_IMAGE,
+            },
+          },
+          "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": canonicalUrl,
+          },
+        },
+      };
+    }
+
+    return {
+      title: "Info Tourisme – Kongo Explorer",
+      description: "Actualité touristique, événement et bons plans de voyage au Kongo Central.",
+      canonicalUrl: `${BASE_URL}${cleanPath}`,
+      image: DEFAULT_IMAGE,
+      type: "article",
+    };
+  }
+
   // Predefined routes
   switch (cleanPath) {
     case "/":
@@ -216,6 +275,25 @@ export function computeRouteMetadata(pathname: string, locations: Location[] = [
         type: "website",
       };
 
+    case "/infos-tourisme":
+    case "/actualites":
+    case "/news":
+      return {
+        title: "Infos Tourisme & Actualités – Kongo Explorer",
+        description:
+          "Actualités touristiques du Kongo Central : nouveaux lieux à visiter, événements culturels, hébergements vérifiés, restaurants et conseils transports.",
+        canonicalUrl: `${BASE_URL}/infos-tourisme`,
+        image: DEFAULT_IMAGE,
+        type: "website",
+        jsonLd: {
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "Infos Tourisme Kongo Central",
+          "url": `${BASE_URL}/infos-tourisme`,
+          "description": "Portail d'informations touristiques officielles, publications et bons plans pour visiter le Kongo Central.",
+        },
+      };
+
     case "/conseils":
     case "/tips":
       return {
@@ -244,7 +322,7 @@ export function computeRouteMetadata(pathname: string, locations: Location[] = [
       return {
         title: "Administration – Kongo Explorer",
         description:
-          "Portail d'administration sécurisé pour la gestion des destinations et circuits touristiques du Kongo Central.",
+          "Portail d'administration sécurisé pour la gestion des destinations, circuits et publications touristiques du Kongo Central.",
         canonicalUrl: `${BASE_URL}/admin`,
         image: DEFAULT_IMAGE,
         type: "website",
@@ -265,12 +343,12 @@ export function computeRouteMetadata(pathname: string, locations: Location[] = [
 /**
  * Custom hook to dynamically update document head on every route change
  */
-export function useRouteSEO(locations: Location[] = []): RouteMetadata {
+export function useRouteSEO(locations: Location[] = [], tourismPosts: TourismPost[] = []): RouteMetadata {
   const location = useLocation();
 
   const meta = useMemo(() => {
-    return computeRouteMetadata(location.pathname, locations);
-  }, [location.pathname, locations]);
+    return computeRouteMetadata(location.pathname, locations, tourismPosts);
+  }, [location.pathname, locations, tourismPosts]);
 
   useEffect(() => {
     updateDocumentHead(meta);
@@ -283,8 +361,14 @@ export function useRouteSEO(locations: Location[] = []): RouteMetadata {
  * Global component placed once at the router level in App.tsx
  * Dynamically synchronizes document head tags and renders hoisted meta tags
  */
-export function RouteSEO({ locations = [] }: { locations?: Location[] }) {
-  const meta = useRouteSEO(locations);
+export function RouteSEO({ 
+  locations = [], 
+  tourismPosts = [] 
+}: { 
+  locations?: Location[]; 
+  tourismPosts?: TourismPost[];
+}) {
+  const meta = useRouteSEO(locations, tourismPosts);
 
   return (
     <>

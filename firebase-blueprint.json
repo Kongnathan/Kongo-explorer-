@@ -76,6 +76,81 @@
       "fields": {
         "subdomain": { "type": "string" }
       }
+    },
+    "tourismPosts": {
+      "title": "Tourism Post (Legacy)",
+      "description": "Legacy tourism posts collection",
+      "type": "document",
+      "path": "tourismPosts/{postId}",
+      "fields": {
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "location": { "type": "string" },
+        "date": { "type": "string" },
+        "author": { "type": "string" },
+        "photo": { "type": "string" },
+        "gallery": { "type": "array" },
+        "summary": { "type": "string" },
+        "content": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "tourism_posts": {
+      "title": "Tourism Post",
+      "description": "User-submitted tourism publications with photo gallery, category, location, and status",
+      "type": "document",
+      "path": "tourism_posts/{postId}",
+      "fields": {
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "location": { "type": "string" },
+        "date": { "type": "string" },
+        "author": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorEmail": { "type": "string" },
+        "photo": { "type": "string" },
+        "gallery": { "type": "array" },
+        "summary": { "type": "string" },
+        "content": { "type": "string" },
+        "status": { "type": "string", "description": "pending, validated, or rejected" },
+        "rejectionReason": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "priceRange": { "type": "string" },
+        "reportsCount": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "validatedAt": { "type": "string" }
+      }
+    },
+    "reports": {
+      "title": "Report",
+      "description": "Community reports for inappropriate tourism publications",
+      "type": "document",
+      "path": "reports/{reportId}",
+      "fields": {
+        "postId": { "type": "string" },
+        "postTitle": { "type": "string" },
+        "reason": { "type": "string" },
+        "details": { "type": "string" },
+        "reporterEmail": { "type": "string" },
+        "reporterId": { "type": "string" },
+        "status": { "type": "string", "description": "pending or resolved" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "users": {
+      "title": "User Profile",
+      "description": "Authenticated user profiles with roles (user or admin)",
+      "type": "document",
+      "path": "users/{userId}",
+      "fields": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "description": "user or admin" },
+        "createdAt": { "type": "string" }
+      }
     }
   }
 }

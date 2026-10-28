@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Location, PendingPermit, SubdomainConfig, Circuit } from "../types";
+import { Location, PendingPermit, SubdomainConfig, Circuit, TourismPost, TourismReport } from "../types";
 import CircuitManager from "./CircuitManager";
+import TourismPostsManager from "./TourismPostsManager";
+import TourismModerationView from "./TourismModerationView";
 import { VideoPlayer } from "./VideoPlayer";
 import adminProfileImg from "../assets/images/regenerated_image_1784273845010.jpg";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -936,6 +938,8 @@ interface AdminPanelViewProps {
   locations: Location[];
   circuits?: Circuit[];
   pendingPermits: PendingPermit[];
+  tourismPosts?: TourismPost[];
+  reports?: TourismReport[];
   onAddLocation: (loc: Location) => void;
   onUpdateLocation: (loc: Location) => void;
   onDeleteLocation: (id: string) => void;
@@ -944,6 +948,12 @@ interface AdminPanelViewProps {
   onSaveCircuit?: (updatedCircuit: Circuit) => void;
   onAddCircuit?: (newCircuit: Circuit) => void;
   onDeleteCircuit?: (circuitId: string) => void;
+  onAddTourismPost?: (post: TourismPost) => void;
+  onUpdateTourismPost?: (post: TourismPost) => Promise<void> | void;
+  onDeleteTourismPost?: (id: string) => Promise<void> | void;
+  onValidateTourismPost?: (id: string) => Promise<void> | void;
+  onRejectTourismPost?: (id: string, reason: string) => Promise<void> | void;
+  onResolveReport?: (id: string) => Promise<void> | void;
   onLogout: () => void;
 }
 
@@ -951,6 +961,8 @@ export default function AdminPanelView({
   locations,
   circuits = [],
   pendingPermits,
+  tourismPosts = [],
+  reports = [],
   onAddLocation,
   onUpdateLocation,
   onDeleteLocation,
@@ -959,6 +971,12 @@ export default function AdminPanelView({
   onSaveCircuit = () => {},
   onAddCircuit = () => {},
   onDeleteCircuit = () => {},
+  onAddTourismPost = () => {},
+  onUpdateTourismPost = () => {},
+  onDeleteTourismPost = () => {},
+  onValidateTourismPost = async () => {},
+  onRejectTourismPost = async () => {},
+  onResolveReport = async () => {},
   onLogout
 }: AdminPanelViewProps) {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -1348,6 +1366,8 @@ export default function AdminPanelView({
     Urbain: locations.filter(l => l.category === "Urbain").length,
   };
 
+  const pendingTourismCount = tourismPosts.filter(p => String(p.status).toLowerCase() === "pending").length + reports.filter(r => r.status === "pending").length;
+
   return (
     <div className="min-h-screen bg-background text-on-surface font-sans flex flex-col md:flex-row relative">
       {/* Navigation Drawer (SideNav) */}
@@ -1386,6 +1406,27 @@ export default function AdminPanelView({
             <span className="bg-surface-container-high text-on-surface-variant text-[11px] px-2 py-0.5 rounded-full font-bold">
               {totalLocations}
             </span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab("TourismPosts")}
+            className={`w-[calc(100%-16px)] flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all font-sans text-body-md text-left cursor-pointer ${
+              activeTab === "TourismPosts"
+                ? "bg-primary-container text-on-primary-container font-semibold"
+                : "text-on-surface-variant hover:bg-surface-container-high"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">verified_user</span>
+            <span className="flex-1">Modération Tourisme</span>
+            {pendingTourismCount > 0 ? (
+              <span className="bg-amber-600 text-white text-[11px] px-2.5 py-0.5 rounded-full font-bold animate-pulse">
+                {pendingTourismCount}
+              </span>
+            ) : (
+              <span className="bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 text-[11px] px-2 py-0.5 rounded-full font-bold">
+                {tourismPosts.length}
+              </span>
+            )}
           </button>
 
           <button 
@@ -1491,6 +1532,7 @@ export default function AdminPanelView({
             <h2 className="font-sans text-headline-sm font-bold text-primary">
               {activeTab === "Dashboard" && "Statistiques du Portail"}
               {activeTab === "Locations" && "Gérer les Destinations"}
+              {activeTab === "TourismPosts" && "Infos Tourisme & Publications"}
               {activeTab === "Contributions" && "Modérer les Propositions Utilisateurs"}
               {activeTab === "Circuits" && "Gestion des Circuits & Médias"}
               {activeTab === "Subdomain" && "Configuration du Sous-Domaine"}
@@ -2185,6 +2227,19 @@ export default function AdminPanelView({
               onSaveCircuit={onSaveCircuit}
               onAddCircuit={onAddCircuit}
               onDeleteCircuit={onDeleteCircuit}
+            />
+          )}
+
+          {/* TAB 7: MODÉRATION TOURISME */}
+          {activeTab === "TourismPosts" && (
+            <TourismModerationView
+              posts={tourismPosts}
+              reports={reports}
+              onValidatePost={onValidateTourismPost}
+              onRejectPost={onRejectTourismPost}
+              onUpdatePost={onUpdateTourismPost}
+              onDeletePost={onDeleteTourismPost}
+              onResolveReport={onResolveReport}
             />
           )}
 

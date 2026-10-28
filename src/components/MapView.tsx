@@ -16,8 +16,6 @@ interface MapViewProps {
   locations: Location[];
   onSelectLocation: (id: string) => void;
   onNavigate: (tab: string) => void;
-  unreadNotificationsCount?: number;
-  onOpenNotifications?: () => void;
 }
 
 // Helper component to pan Google Maps smoothly when selected marker or user GPS changes
@@ -41,8 +39,6 @@ export default function MapView({
   locations,
   onSelectLocation,
   onNavigate,
-  unreadNotificationsCount = 0,
-  onOpenNotifications,
 }: MapViewProps) {
   const [activeMarkerId, setActiveId] = useState<string | null>("zongo");
   const [activeChip, setActiveChip] = useState("Tous");
@@ -829,23 +825,8 @@ export default function MapView({
           </div>
         )}
 
-        {/* Floating Controls (GPS Locate, Notifications, Plan/Satellite Toggle, zoom controls) */}
+        {/* Floating Controls (GPS Locate, Plan/Satellite Toggle, zoom controls) */}
         <div className="absolute bottom-24 right-4 z-30 flex flex-col gap-3">
-          {/* Notifications Bell Button */}
-          {onOpenNotifications && (
-            <button
-              onClick={onOpenNotifications}
-              className="relative w-12 h-12 rounded-full shadow-lg flex items-center justify-center border bg-surface-container-lowest text-primary border-outline-variant/30 transition-all active:scale-90 cursor-pointer"
-              title="Alertes & Notifications"
-            >
-              <span className="material-symbols-outlined font-bold">notifications</span>
-              {unreadNotificationsCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 text-white font-mono text-[10px] font-bold flex items-center justify-center border-2 border-surface animate-bounce">
-                  {unreadNotificationsCount}
-                </span>
-              )}
-            </button>
-          )}
 
           {/* Plan vs Satellite Toggle Button */}
           <button 

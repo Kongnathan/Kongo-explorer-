@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { Location, SavedLocation, PendingPermit, Circuit, KongoNotification } from "./types";
-import { DEFAULT_LOCATIONS, DEFAULT_PENDING_PERMITS, DEFAULT_NOTIFICATIONS } from "./data";
+import { Location, SavedLocation, PendingPermit, Circuit, TourismPost, TourismReport } from "./types";
+import { DEFAULT_LOCATIONS, DEFAULT_PENDING_PERMITS, DEFAULT_TOURISMPPOSTS } from "./data";
 import { DEFAULT_CIRCUITS } from "./circuitsData";
 import ExploreView from "./components/ExploreView";
 import ListView from "./components/ListView";
@@ -11,14 +11,17 @@ import MapView from "./components/MapView";
 import LocalTipsView from "./components/LocalTipsView";
 import SavedOfflineView from "./components/SavedOfflineView";
 import CircuitsView from "./components/CircuitsView";
+import TourismNewsView from "./components/TourismNewsView";
+import TourismPostDetailView from "./components/TourismPostDetailView";
 import AdminLoginView from "./components/AdminLoginView";
 import AdminPanelView from "./components/AdminPanelView";
 import QuickCaptureModal from "./components/QuickCaptureModal";
-import NotificationCenterModal from "./components/NotificationCenterModal";
 import IntroSplash from "./components/IntroSplash";
 import NotFoundView from "./components/NotFoundView";
 import RouteSEO from "./components/SEO";
-import { collection, onSnapshot, query, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import AuthModal from "./components/AuthModal";
+import { collection, onSnapshot, query, doc, setDoc, deleteDoc, updateDoc, where } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebaseConfig";
 import { 
   getLocationsFromDB, 
@@ -291,7 +294,29 @@ function DetailRouteWrapper({
   );
 }
 
-export default function App() {
+function TourismPostDetailRouteWrapper({
+  posts,
+  onNavigate,
+}: {
+  posts: TourismPost[];
+  onNavigate: (tab: string) => void;
+}) {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  return (
+    <TourismPostDetailView
+      postId={id || ""}
+      posts={posts}
+      onBack={() => navigate("/infos-tourisme")}
+      onSelectPost={(newId) => navigate(`/infos-tourisme/${newId}`)}
+      onNavigate={onNavigate}
+    />
+  );
+}
+
+export function AppContent() {
+  const { currentUser, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -303,6 +328,7 @@ export default function App() {
       case "list": navigate("/destinations"); break;
       case "map": navigate("/carte"); break;
       case "circuits": navigate("/circuits"); break;
+      case "news": navigate("/infos-tourisme"); break;
       case "saved": navigate("/carnet"); break;
       case "tips": navigate("/conseils"); break;
       case "admin-login": navigate("/admin/login"); break;
@@ -409,94 +435,101 @@ export default function App() {
     }
   };
   
-  // Notifications state & persistence
-  const [notifications, setNotifications] = useState<KongoNotification[]>(() => {
-    const local = localStorage.getItem("kongo_notifications");
+  // Tourism Posts (Infos Tourisme) state & persistence
+  const [tourismPosts, setTourismPosts] = useState<TourismPost[]>(() => {
+    const local = localStorage.getItem("kongo_tourism_posts");
     if (local) {
       try {
         const parsed = JSON.parse(local);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (err) {
-        console.error("Failed to parse local notifications", err);
+        console.error("Failed to parse local tourism posts", err);
       }
     }
-    return DEFAULT_NOTIFICATIONS;
+    return DEFAULT_TOURISMPPOSTS;
   });
-  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState<boolean>(false);
 
-  const unreadNotificationsCount = notifications.filter(n => !n.read).length;
+  const [reports, setReports] = useState<TourismReport[]>([]);
 
-  const handleMarkAllNotificationsRead = async () => {
-    setNotifications(prev => {
-      const next = prev.map(n => ({ ...n, read: true }));
-      localStorage.setItem("kongo_notifications", JSON.stringify(next));
-      return next;
-    });
-
-    if (isFirebaseConfigured) {
-      for (const notif of notifications) {
-        if (!notif.read) {
-          try {
-            await setDoc(doc(db, "notifications", notif.id), { ...notif, read: true });
-          } catch (err) {
-            console.error("Failed to mark notification read in Firestore:", err);
-          }
-        }
-      }
-    }
-  };
-
-  const handleToggleNotificationRead = async (id: string) => {
-    let updatedNotif: KongoNotification | undefined;
-    setNotifications(prev => {
-      const next = prev.map(n => {
-        if (n.id === id) {
-          updatedNotif = { ...n, read: !n.read };
-          return updatedNotif;
-        }
-        return n;
-      });
-      localStorage.setItem("kongo_notifications", JSON.stringify(next));
-      return next;
-    });
-
-    if (isFirebaseConfigured && updatedNotif) {
-      try {
-        await setDoc(doc(db, "notifications", id), updatedNotif);
-      } catch (err) {
-        console.error("Failed to update notification read state in Firestore:", err);
-      }
-    }
-  };
-
-  const handleDeleteNotification = async (id: string) => {
-    setNotifications(prev => {
-      const next = prev.filter(n => n.id !== id);
-      localStorage.setItem("kongo_notifications", JSON.stringify(next));
+  const handleAddTourismPost = async (post: TourismPost) => {
+    setTourismPosts(prev => {
+      const next = [post, ...prev.filter(p => p.id !== post.id)];
+      localStorage.setItem("kongo_tourism_posts", JSON.stringify(next));
       return next;
     });
 
     if (isFirebaseConfigured) {
       try {
-        await deleteDoc(doc(db, "notifications", id));
+        await setDoc(doc(db, "tourism_posts", post.id), post);
       } catch (err) {
-        console.error("Failed to delete notification from Firestore:", err);
+        console.error("Failed to save tourism post to Firestore:", err);
       }
     }
   };
 
-  const handleAddNotification = async (notif: KongoNotification) => {
-    setNotifications(prev => {
-      const next = [notif, ...prev];
-      localStorage.setItem("kongo_notifications", JSON.stringify(next));
+  const handleUpdateTourismPost = async (updatedPost: TourismPost) => {
+    setTourismPosts(prev => {
+      const next = prev.map(p => p.id === updatedPost.id ? updatedPost : p);
+      localStorage.setItem("kongo_tourism_posts", JSON.stringify(next));
       return next;
     });
 
     if (isFirebaseConfigured) {
       try {
-        await setDoc(doc(db, "notifications", notif.id), notif);
+        await setDoc(doc(db, "tourism_posts", updatedPost.id), updatedPost, { merge: true });
       } catch (err) {
-        console.error("Failed to save notification to Firestore:", err);
+        console.error("Failed to update tourism post in Firestore:", err);
+      }
+    }
+  };
+
+  const handleDeleteTourismPost = async (id: string) => {
+    setTourismPosts(prev => {
+      const next = prev.filter(p => p.id !== id);
+      localStorage.setItem("kongo_tourism_posts", JSON.stringify(next));
+      return next;
+    });
+
+    if (isFirebaseConfigured) {
+      try {
+        await deleteDoc(doc(db, "tourism_posts", id));
+      } catch (err) {
+        console.error("Failed to delete tourism post from Firestore:", err);
+      }
+    }
+  };
+
+  const handleValidateTourismPost = async (id: string) => {
+    const updated = { status: "validated" as const, updatedAt: new Date().toISOString() };
+    setTourismPosts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    if (isFirebaseConfigured) {
+      try {
+        await updateDoc(doc(db, "tourism_posts", id), updated);
+      } catch (err) {
+        console.error("Failed to validate tourism post in Firestore:", err);
+      }
+    }
+  };
+
+  const handleRejectTourismPost = async (id: string, reason: string) => {
+    const updated = { status: "rejected" as const, rejectionReason: reason, updatedAt: new Date().toISOString() };
+    setTourismPosts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    if (isFirebaseConfigured) {
+      try {
+        await updateDoc(doc(db, "tourism_posts", id), updated);
+      } catch (err) {
+        console.error("Failed to reject tourism post in Firestore:", err);
+      }
+    }
+  };
+
+  const handleResolveReport = async (reportId: string) => {
+    setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: "resolved" as const } : r));
+    if (isFirebaseConfigured) {
+      try {
+        await updateDoc(doc(db, "reports", reportId), { status: "resolved" });
+      } catch (err) {
+        console.error("Failed to resolve report in Firestore:", err);
       }
     }
   };
@@ -790,49 +823,113 @@ export default function App() {
       }
     });
 
-    const qNotifs = query(collection(db, "notifications"));
-    const unsubscribeNotifs = onSnapshot(qNotifs, async (snapshot) => {
-      const notifsList: KongoNotification[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        notifsList.push({
-          id: doc.id,
-          title: data.title || "",
-          message: data.message || "",
-          type: data.type || "INFO",
-          severity: data.severity || "INFO",
-          locationId: data.locationId || undefined,
-          locationTitle: data.locationTitle || undefined,
-          timestamp: data.timestamp || "Récemment",
-          read: !!data.read,
-          source: data.source || undefined,
-        });
-      });
-
-      if (notifsList.length > 0) {
-        setNotifications(notifsList);
-        localStorage.setItem("kongo_notifications", JSON.stringify(notifsList));
-      } else {
-        console.log("[Firebase] Firestore 'notifications' is empty. Seeding defaults...");
-        for (const notif of DEFAULT_NOTIFICATIONS) {
-          try {
-            await setDoc(doc(db, "notifications", notif.id), notif);
-          } catch (e) {
-            console.warn("Could not seed notification to Firestore:", e);
-          }
-        }
-      }
-    }, (error) => {
-      console.warn("[Firebase] Failed to listen to 'notifications' collection:", error);
-    });
-
     return () => {
       unsubscribeLocs();
       unsubscribeCircuits();
       unsubscribePending();
-      unsubscribeNotifs();
     };
   }, []);
+
+  // Dedicated effect for Tourism Posts and Reports reactive to auth & admin status
+  useEffect(() => {
+    if (!isFirebaseConfigured) return;
+
+    const unsubs: (() => void)[] = [];
+
+    if (isAdmin || isAdminAuthenticated) {
+      // Admin reads ALL posts (pending, validated, rejected)
+      const qPosts = query(collection(db, "tourism_posts"));
+      const unsubPosts = onSnapshot(qPosts, async (snapshot) => {
+        const postsList: TourismPost[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data() as TourismPost;
+          postsList.push({
+            ...data,
+            id: doc.id,
+          });
+        });
+        if (postsList.length > 0) {
+          setTourismPosts(postsList);
+          localStorage.setItem("kongo_tourism_posts", JSON.stringify(postsList));
+        }
+      }, (error) => {
+        console.warn("[Firebase] Failed to listen to all 'tourism_posts' as admin:", error);
+      });
+      unsubs.push(unsubPosts);
+
+      // Admin reads reports
+      const qReports = query(collection(db, "reports"));
+      const unsubReports = onSnapshot(qReports, (snapshot) => {
+        const reportsList: TourismReport[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data() as TourismReport;
+          reportsList.push({
+            ...data,
+            id: doc.id,
+          });
+        });
+        setReports(reportsList);
+      }, (error) => {
+        console.warn("[Firebase] Failed to listen to 'reports' as admin:", error);
+      });
+      unsubs.push(unsubReports);
+    } else {
+      // Regular user / Public visitor:
+      let publicPosts: TourismPost[] = [];
+      let userOwnPosts: TourismPost[] = [];
+
+      const syncPosts = () => {
+        const map = new Map<string, TourismPost>();
+        publicPosts.forEach((p) => map.set(p.id, p));
+        userOwnPosts.forEach((p) => map.set(p.id, p));
+        const merged = Array.from(map.values());
+        if (merged.length > 0) {
+          setTourismPosts(merged);
+          localStorage.setItem("kongo_tourism_posts", JSON.stringify(merged));
+        }
+      };
+
+      // 1. Query only validated posts (publicly permitted by firestore.rules)
+      const qValidated = query(collection(db, "tourism_posts"), where("status", "==", "validated"));
+      const unsubValidated = onSnapshot(qValidated, (snapshot) => {
+        publicPosts = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data() as TourismPost;
+          publicPosts.push({
+            ...data,
+            id: doc.id,
+          });
+        });
+        syncPosts();
+      }, (error) => {
+        console.warn("[Firebase] Failed to listen to validated 'tourism_posts':", error);
+      });
+      unsubs.push(unsubValidated);
+
+      // 2. If logged in, also query user's own publications (permitted by authorId == auth.uid)
+      if (currentUser?.uid) {
+        const qMyPosts = query(collection(db, "tourism_posts"), where("authorId", "==", currentUser.uid));
+        const unsubMyPosts = onSnapshot(qMyPosts, (snapshot) => {
+          userOwnPosts = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data() as TourismPost;
+            userOwnPosts.push({
+              ...data,
+              id: doc.id,
+            });
+          });
+          syncPosts();
+        }, (error) => {
+          console.warn("[Firebase] Failed to listen to user own 'tourism_posts':", error);
+        });
+        unsubs.push(unsubMyPosts);
+      }
+    }
+
+    return () => {
+      unsubs.forEach((u) => u());
+    };
+  }, [isAdmin, isAdminAuthenticated, currentUser?.uid]);
 
   // Save / Unsaves offline locations workflow
   const handleToggleSave = (locId: string) => {
@@ -999,11 +1096,17 @@ export default function App() {
   });
 
   // Navigation tab indicators
-  const isDetailPage = location.pathname.startsWith("/destinations/") && location.pathname !== "/destinations";
+  const isDetailPage =
+    (location.pathname.startsWith("/destinations/") && location.pathname !== "/destinations") ||
+    (location.pathname.startsWith("/infos-tourisme/") && location.pathname !== "/infos-tourisme");
   const isAdminPage = location.pathname.startsWith("/admin");
   const showBottomNav = !isDetailPage && !isAdminPage;
 
   const isExploreActive = location.pathname === "/" || location.pathname === "/explore";
+  const isNewsActive =
+    location.pathname.startsWith("/infos-tourisme") ||
+    location.pathname === "/actualites" ||
+    location.pathname === "/news";
   const isMapActive = location.pathname === "/carte" || location.pathname === "/map";
   const isCircuitsActive = location.pathname === "/circuits";
   const isSavedActive = location.pathname === "/carnet" || location.pathname === "/saved";
@@ -1012,7 +1115,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background text-on-background relative flex flex-col pb-20">
       {/* Dynamic SEO Head Manager: updates title, meta description, canonical link, og tags, and twitter cards on each route change */}
-      <RouteSEO locations={locations} />
+      <RouteSEO locations={locations} tourismPosts={tourismPosts} />
 
       {/* 3D Immersive Intro Splash Screen */}
       {showSplash && <IntroSplash onComplete={() => setShowSplash(false)} />}
@@ -1077,9 +1180,6 @@ export default function App() {
                     onOpenCapture={() => setIsCaptureOpen(true)}
                     savedLocationIds={savedLocationIds}
                     onToggleSave={handleToggleSave}
-                    notifications={notifications}
-                    unreadNotificationsCount={unreadNotificationsCount}
-                    onOpenNotifications={() => setIsNotificationModalOpen(true)}
                   />
                 }
               />
@@ -1104,8 +1204,6 @@ export default function App() {
                     locations={locations}
                     onSelectLocation={handleSelectLocation}
                     onNavigate={handleNavigate}
-                    unreadNotificationsCount={unreadNotificationsCount}
-                    onOpenNotifications={() => setIsNotificationModalOpen(true)}
                   />
                 }
               />
@@ -1121,6 +1219,31 @@ export default function App() {
                   />
                 }
               />
+
+              {/* Infos Tourisme Routes */}
+              <Route
+                path="/infos-tourisme"
+                element={
+                  <TourismNewsView
+                    posts={tourismPosts}
+                    onSelectPost={(id) => navigate(`/infos-tourisme/${id}`)}
+                    onNavigate={handleNavigate}
+                    onPostCreated={handleAddTourismPost}
+                  />
+                }
+              />
+              <Route path="/actualites" element={<Navigate to="/infos-tourisme" replace />} />
+              <Route path="/news" element={<Navigate to="/infos-tourisme" replace />} />
+              <Route
+                path="/infos-tourisme/:id"
+                element={
+                  <TourismPostDetailRouteWrapper
+                    posts={tourismPosts}
+                    onNavigate={handleNavigate}
+                  />
+                }
+              />
+
               <Route
                 path="/conseils"
                 element={<LocalTipsView />}
@@ -1148,7 +1271,7 @@ export default function App() {
                     savedLocationIds={savedLocationIds}
                     onToggleSave={handleToggleSave}
                     onUpdateLocation={handleUpdateLocation}
-                    isAdminAuthenticated={isAdminAuthenticated}
+                    isAdminAuthenticated={isAdminAuthenticated || isAdmin}
                   />
                 }
               />
@@ -1157,7 +1280,7 @@ export default function App() {
               <Route
                 path="/admin/login"
                 element={
-                  isAdminAuthenticated ? (
+                  (isAdminAuthenticated || isAdmin) ? (
                     <Navigate to="/admin" replace />
                   ) : (
                     <AdminLoginView
@@ -1174,7 +1297,7 @@ export default function App() {
               <Route
                 path="/admin"
                 element={
-                  !isAdminAuthenticated ? (
+                  (!isAdminAuthenticated && !isAdmin) ? (
                     <AdminLoginView
                       onLoginSuccess={() => {
                         setIsAdminAuthenticated(true);
@@ -1188,6 +1311,8 @@ export default function App() {
                       locations={locations}
                       circuits={circuits}
                       pendingPermits={pendingPermits}
+                      tourismPosts={tourismPosts}
+                      reports={reports}
                       onAddLocation={handleAddLocation}
                       onUpdateLocation={handleUpdateLocation}
                       onDeleteLocation={handleDeleteLocation}
@@ -1196,6 +1321,12 @@ export default function App() {
                       onSaveCircuit={handleSaveCircuit}
                       onAddCircuit={handleAddCircuit}
                       onDeleteCircuit={handleDeleteCircuit}
+                      onAddTourismPost={handleAddTourismPost}
+                      onUpdateTourismPost={handleUpdateTourismPost}
+                      onDeleteTourismPost={handleDeleteTourismPost}
+                      onValidateTourismPost={handleValidateTourismPost}
+                      onRejectTourismPost={handleRejectTourismPost}
+                      onResolveReport={handleResolveReport}
                       onLogout={() => {
                         setIsAdminAuthenticated(false);
                         sessionStorage.removeItem("kongo_admin_authenticated");
@@ -1231,6 +1362,22 @@ export default function App() {
               explore
             </span>
             <span className="text-[10px] font-sans mt-0.5 font-semibold">Explorer</span>
+          </Link>
+
+          <Link 
+            to="/infos-tourisme"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className={`flex flex-col items-center justify-center w-14 h-14 transition-all rounded-xl cursor-pointer no-underline ${
+              isNewsActive 
+                ? "text-primary font-bold scale-105" 
+                : "text-on-surface-variant hover:text-primary"
+            }`}
+            title="Infos Tourisme & Bonnes adresses"
+          >
+            <span className={`material-symbols-outlined text-[22px] ${isNewsActive ? "fill text-primary" : "text-outline"}`}>
+              feed
+            </span>
+            <span className="text-[10px] font-sans mt-0.5 font-semibold">Infos</span>
           </Link>
 
           <Link 
@@ -1306,18 +1453,17 @@ export default function App() {
         onItemAdded={handleItemCaptured}
       />
 
-      {/* Notification Center Modal */}
-      <NotificationCenterModal
-        isOpen={isNotificationModalOpen}
-        onClose={() => setIsNotificationModalOpen(false)}
-        notifications={notifications}
-        onMarkAllAsRead={handleMarkAllNotificationsRead}
-        onToggleRead={handleToggleNotificationRead}
-        onDeleteNotification={handleDeleteNotification}
-        onAddNotification={handleAddNotification}
-        onSelectLocation={handleSelectLocation}
-        locations={locations}
-      />
+      {/* Global Authentication Modal */}
+      <AuthModal />
     </div>
   );
 }
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+

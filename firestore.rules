@@ -2,6 +2,70 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin") ||
+        (request.auth.token.email != null && 
+         request.auth.token.email == "elpubliologuenathan@gmail.com")
+      );
+    }
+
+    // Collection des publications touristiques (tourism_posts)
+    match /tourism_posts/{postId} {
+      // Lecture publique uniquement si validée, ou si l'utilisateur est l'auteur, ou admin
+      allow read: if resource.data.status == "validated" || 
+                     resource.data.status == "VALIDATED" ||
+                     (isSignedIn() && resource.data.authorId == request.auth.uid) ||
+                     isAdmin();
+
+      // Création : utilisateur connecté, status forcé à "pending", authorId = son uid
+      allow create: if isSignedIn() &&
+                       request.resource.data.authorId == request.auth.uid &&
+                       (request.resource.data.status == "pending" || request.resource.data.status == "PENDING");
+
+      // Modification du statut et suppression : admin uniquement. L'auteur peut modifier son brouillon en attente
+      allow update: if isAdmin() || 
+                       (isSignedIn() && 
+                        resource.data.authorId == request.auth.uid && 
+                        request.resource.data.authorId == request.auth.uid &&
+                        resource.data.status == "pending" &&
+                        request.resource.data.status == "pending");
+
+      allow delete: if isAdmin();
+    }
+
+    // Support de rétrocompatibilité pour tourismPosts
+    match /tourismPosts/{postId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Collection des signalements (reports)
+    match /reports/{reportId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Profils utilisateurs (users)
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && (
+        (request.auth.uid == userId && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
+          request.resource.data.role == "user" ||
+          request.auth.token.email == "elpubliologuenathan@gmail.com"
+        )) || isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Collections Kongo Explorer de base
     match /locations/{locationId} {
       allow read, write: if true;
 

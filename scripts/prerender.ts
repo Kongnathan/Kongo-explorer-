@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { DEFAULT_LOCATIONS } from "../src/data.js";
+import { DEFAULT_LOCATIONS, DEFAULT_TOURISMPPOSTS } from "../src/data.js";
 import { DEFAULT_CIRCUITS } from "../src/circuitsData.js";
 
 const BASE_URL = "https://kongo-explorer.vercel.app";
@@ -212,9 +212,45 @@ function getPreRenderPages(): PreRenderPage[] {
         </header>
       `,
     },
+
+    // 7. Infos Tourisme
+    {
+      path: "/infos-tourisme",
+      title: "Infos Tourisme & Actualités – Kongo Explorer",
+      description:
+        "Actualités touristiques du Kongo Central : nouveaux lieux à visiter, événements culturels, hébergements vérifiés, restaurants et conseils transports.",
+      image: DEFAULT_IMAGE,
+      type: "website",
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Infos Tourisme Kongo Central",
+        "url": `${BASE_URL}/infos-tourisme`,
+        "description": "Portail d'informations touristiques officielles, publications et bons plans pour visiter le Kongo Central.",
+      },
+      bodyHtml: `
+        <header style="padding: 2rem; background: #064e3b; color: #fff;">
+          <h1>Infos Tourisme & Actualités du Kongo Central</h1>
+          <p>Dernières publications validées, événements culturels, hébergements, restaurants et conseils pratiques.</p>
+        </header>
+        <main style="padding: 2rem; max-width: 1200px; margin: auto;">
+          <ul>
+            ${DEFAULT_TOURISMPPOSTS.filter(p => p.status === "VALIDATED").map(post => `
+              <li style="margin-bottom: 1.5rem;">
+                <article>
+                  <h2><a href="/infos-tourisme/${post.id}">${escapeHtml(post.title)}</a></h2>
+                  <p><strong>Catégorie :</strong> ${escapeHtml(post.category)} | <strong>Lieu :</strong> ${escapeHtml(post.location)} | <strong>Date :</strong> ${escapeHtml(post.date)}</p>
+                  <p>${escapeHtml(post.summary || post.content)}</p>
+                </article>
+              </li>
+            `).join("")}
+          </ul>
+        </main>
+      `,
+    },
   ];
 
-  // 7. Toutes les 21 fiches de destinations individuelles
+  // 8. Toutes les fiches de destinations individuelles
   for (const loc of DEFAULT_LOCATIONS) {
     const locUrl = `${BASE_URL}/destinations/${loc.id}`;
     const resolvedImg = resolveImage(loc.image);
@@ -288,6 +324,77 @@ function getPreRenderPages(): PreRenderPage[] {
           ` : ""}
           <footer style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
             <p><a href="/destinations">← Retour à toutes les destinations du Kongo Central</a></p>
+          </footer>
+        </article>
+      `,
+    });
+  }
+
+  // 9. Fiches individuelles Infos Tourisme (publications validées)
+  for (const post of DEFAULT_TOURISMPPOSTS.filter(p => p.status === "VALIDATED")) {
+    const postUrl = `${BASE_URL}/infos-tourisme/${post.id}`;
+    const resolvedImg = resolveImage(post.photo);
+    const postTitle = `${post.title} – Infos Tourisme Kongo Explorer`;
+    const postDesc = post.summary || post.content.slice(0, 155);
+
+    pages.push({
+      path: `/infos-tourisme/${post.id}`,
+      title: postTitle,
+      description: postDesc,
+      image: resolvedImg,
+      type: "article",
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": post.title,
+        "description": postDesc,
+        "image": resolvedImg,
+        "datePublished": post.createdAt,
+        "author": {
+          "@type": "Person",
+          "name": post.author || "Kongo Explorer",
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Kongo Explorer",
+          "logo": {
+            "@type": "ImageObject",
+            "url": DEFAULT_IMAGE,
+          },
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": postUrl,
+        },
+      },
+      bodyHtml: `
+        <article style="padding: 2rem; max-width: 900px; margin: auto; font-family: sans-serif; line-height: 1.6;">
+          <nav style="margin-bottom: 1rem; font-size: 0.9rem;">
+            <a href="/">Accueil</a> &gt; <a href="/infos-tourisme">Infos Tourisme</a> &gt; <span>${escapeHtml(post.title)}</span>
+          </nav>
+          <header>
+            <span style="display: inline-block; padding: 0.25rem 0.75rem; background: #e0f2fe; color: #0369a1; border-radius: 9999px; font-size: 0.85rem; font-weight: bold; margin-bottom: 0.75rem;">
+              ${escapeHtml(post.category)}
+            </span>
+            <h1 style="color: #064e3b; font-size: 2.2rem; margin-bottom: 0.5rem;">${escapeHtml(post.title)}</h1>
+            <p style="font-size: 1rem; color: #4b5563;">
+              <strong>Lieu :</strong> ${escapeHtml(post.location)} | <strong>Date :</strong> ${escapeHtml(post.date)} | <strong>Par :</strong> ${escapeHtml(post.author)}
+            </p>
+          </header>
+          <img src="${escapeHtml(resolvedImg)}" alt="${escapeHtml(post.title)}" style="max-width: 100%; height: auto; border-radius: 12px; margin: 1.5rem 0;" />
+          <section>
+            <p style="font-size: 1.2rem; font-weight: 500; color: #1f2937; margin-bottom: 1.5rem;">${escapeHtml(post.summary)}</p>
+            <div style="font-size: 1.05rem; color: #374151; white-space: pre-line;">${escapeHtml(post.content)}</div>
+          </section>
+          ${post.contactPhone || post.priceRange ? `
+            <section style="margin-top: 1.5rem; padding: 1.25rem; background: #f3f4f6; border-radius: 10px;">
+              <h3>Informations pratiques</h3>
+              ${post.contactPhone ? `<p><strong>Contact :</strong> ${escapeHtml(post.contactPhone)}</p>` : ""}
+              ${post.priceRange ? `<p><strong>Tarif :</strong> ${escapeHtml(post.priceRange)}</p>` : ""}
+            </section>
+          ` : ""}
+          <footer style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+            <p><a href="/infos-tourisme">← Retour à toutes les actualités et infos tourisme</a></p>
           </footer>
         </article>
       `,

@@ -1,0 +1,24 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Photos des publications touristiques
+    match /tourism_posts/{userId}/{fileName} {
+      // Lecture publique des photos pour que tous les visiteurs puissent voir les images des publications
+      allow read: if true;
+
+      // Écriture réservée aux utilisateurs connectés, sous leur propre identifiant
+      // Images uniquement, taille max 2 Mo (2 * 1024 * 1024 = 2097152 octets)
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size <= 2 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Règle par défaut pour les autres assets authentifiés
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}

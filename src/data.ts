@@ -1,4 +1,4 @@
-import { Location, PendingPermit, KongoNotification } from "./types";
+import { Location, PendingPermit, TourismPost } from "./types";
 
 export const DEFAULT_LOCATIONS: Location[] = [
   {
@@ -538,66 +538,150 @@ export const DEFAULT_PENDING_PERMITS: PendingPermit[] = [
   }
 ];
 
-export const DEFAULT_NOTIFICATIONS: KongoNotification[] = [
+export const DEFAULT_TOURISMPPOSTS: TourismPost[] = [
   {
-    id: "notif-1",
-    title: "⚠️ Alerte Météo & Danger RN1 (Mbanza-Ngungu)",
-    message: "Fortes pluies torrentielles signalées sur le tronçon escarpé de Mbanza-Ngungu. Chaussée glissante et risque d'éboulement mineur. Conduite prudente recommandée, véhicules 4x4 conseillés.",
-    type: "SECURITY_ALERT",
-    severity: "CRITICAL",
-    locationId: "grottes_mbanza",
-    locationTitle: "Grottes de Mbanza-Ngungu",
-    timestamp: "Aujourd'hui, 08:30",
-    read: false,
-    source: "Protection Civile Kongo Central & Info Route RN1",
+    id: "sentier-zongo-2026",
+    title: "Inauguration du nouveau sentier écologique et belvédère des Chutes de Zongo",
+    category: "Lieu à visiter",
+    location: "Zongo",
+    date: "24 Octobre 2026",
+    author: "Conservation ICCN & Seli Safari",
+    photo: "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=1200&auto=format&fit=crop&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=1200&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=1200&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1200&auto=format&fit=crop&q=80"
+    ],
+    summary: "Un nouveau parcours sécurisé permet d'admirer la cataracte principale sous un angle inédit au cœur de la forêt équatoriale.",
+    content: "Le site des Chutes de Zongo vient d'inaugurer son nouveau sentier aménagé en bois local et son belvédère surélevé. Accessible à toute la famille, ce parcours offre un panorama spectaculaire sur les 67 mètres de chute d'eau et la brume perpétuelle. Des guides locaux formés à la biodiversité accompagnent désormais les visiteurs chaque matin.",
+    status: "VALIDATED",
+    contactPhone: "+243 81 000 1122",
+    createdAt: "2026-10-24T09:00:00Z"
   },
   {
-    id: "notif-2",
-    title: "🏛️ Réouverture de la passerelle suspendue de Zongo",
-    message: "La passerelle panoramique des Chutes de Zongo a été entièrement rénovée et sécurisée par l'équipe d'éco-gardes du Seli Safari Resort. L'accès est désormais ouvert à tous les visiteurs.",
-    type: "SITE_UPDATE",
-    severity: "INFO",
-    locationId: "zongo",
-    locationTitle: "Chutes de Zongo",
-    timestamp: "Hier, 14:15",
-    read: false,
-    source: "Direction du Seli Safari Resort & ICCN",
+    id: "festival-fleuve-matadi",
+    title: "Festival International des Arts et Cultures du Fleuve à Matadi",
+    category: "Événement",
+    location: "Matadi",
+    date: "15 Novembre 2026",
+    author: "Comité Culturel du Kongo Central",
+    photo: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&auto=format&fit=crop&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&auto=format&fit=crop&q=80"
+    ],
+    summary: "Trois jours de concerts au bord du Fleuve Congo, expositions de sculptures traditionnelles et danses folkloriques Kongo.",
+    content: "Du 15 au 17 novembre 2026, la ville portuaire de Matadi vibrera au rythme du Festival des Arts du Fleuve. Au programme : concerts en plein air sur l'esplanade du Belvédère, foire gastronomique mettant à l'honneur les poissons d'eau douce, et ateliers d'initiation aux instruments traditionnels comme le lokole et le marimba.",
+    status: "VALIDATED",
+    priceRange: "Accès libre / Pass VIP 20$",
+    createdAt: "2026-10-20T14:30:00Z"
   },
   {
-    id: "notif-3",
-    title: "🌊 Consigne de Sécurité : Parc des Mangroves & Moanda",
-    message: "Phénomène de forte marée haute attendu sur la côte atlantique de Moanda ce week-end. Les sorties en pirogue dans les chenaux du Parc doivent s'effectuer obligatoirement avec gilet de sauvetage homologué.",
-    type: "SAFETY_TIPS",
-    severity: "WARNING",
-    locationId: "parc_mangroves",
-    locationTitle: "Parc Marin des Mangroves",
-    timestamp: "2 août 2026",
-    read: true,
-    source: "Éco-gardes ICCN & Marine Riveraine Moanda",
+    id: "eco-lodge-mangroves-muanda",
+    title: "Ouverture de l'Éco-Lodge Océan & Mangroves à Muanda",
+    category: "Hébergement",
+    location: "Muanda",
+    date: "18 Octobre 2026",
+    author: "Association Écotourisme Littoral",
+    photo: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&auto=format&fit=crop&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1200&auto=format&fit=crop&q=80"
+    ],
+    summary: "Bungalows écoresponsables sur pilotis avec vue imprenable sur l'embouchure du fleuve Congo et l'Océan Atlantique.",
+    content: "Niché entre lagune et océan, ce nouvel établissement touristique propose 12 bungalows écologiques alimentés à l'énergie solaire. Des excursions matinales en pirogue avec les pêcheurs traditionnels et des séances d'observation des lamantins marins sont proposées aux résidents.",
+    status: "VALIDATED",
+    contactPhone: "+243 82 555 4321",
+    priceRange: "À partir de 65$ / nuit",
+    createdAt: "2026-10-18T11:00:00Z"
   },
   {
-    id: "notif-4",
-    title: "💡 Extension des Illuminations du Pont Maréchal à Matadi",
-    message: "Le Pont Maréchal Mobutu restera illuminé jusqu'à 23h00 tous les vendredis et samedis soir pour permettre de superbes prises de vue nocturnes depuis les belvédères de Matadi.",
-    type: "SITE_UPDATE",
-    severity: "INFO",
-    locationId: "pont_marechal",
-    locationTitle: "Pont Maréchal Mobutu (Matadi)",
-    timestamp: "1 août 2026",
-    read: true,
-    source: "OEBK & Office du Tourisme Kongo Central",
+    id: "maboke-royal-boma",
+    title: "Le Maboké Royal : Restaurant gastronomique fluvial de Boma",
+    category: "Restaurant",
+    location: "Boma",
+    date: "10 Octobre 2026",
+    author: "Guide Gourmand Kongo",
+    photo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&auto=format&fit=crop&q=80"
+    ],
+    summary: "Une halte culinaire face au fleuve pour savourer le poisson capitaine cuit en feuilles de bananier.",
+    content: "Installé sur l'ancien quai historique de Boma, ce restaurant convivial sublime la cuisine traditionnelle du Bas-Fleuve. Poissons frais pêchés le matin même, bananes plantains dorées, pili-pili maison et jus de fruits tropicaux pressés minute régalent les voyageurs de passage.",
+    status: "VALIDATED",
+    contactPhone: "+243 89 777 8899",
+    priceRange: "Plats de 12$ à 25$",
+    createdAt: "2026-10-10T12:00:00Z"
   },
   {
-    id: "notif-5",
-    title: "🌿 Saison de Visite Optimale - Jardin Botanique de Kisantu",
-    message: "Période de floraison exceptionnelle des orchidées rares et nénuphars géants au Jardin Botanique de Kisantu. Des visites guidées thématiques sont organisées à 10h et 14h.",
-    type: "INFO",
-    severity: "INFO",
-    locationId: "kisantu",
-    locationTitle: "Jardin Botanique de Kisantu",
-    timestamp: "30 juillet 2026",
-    read: true,
-    source: "Jardin Botanique de Kisantu (JBK)",
+    id: "pont-marechal-conseils-traversee",
+    title: "Traversée du Pont Maréchal à Matadi : Tarifs, badges et conseils pratiques",
+    category: "Conseil pratique",
+    location: "Matadi",
+    date: "05 Octobre 2026",
+    author: "Office des Routes & OEBK",
+    photo: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1200&auto=format&fit=crop&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1200&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=1200&auto=format&fit=crop&q=80"
+    ],
+    summary: "Toutes les consignes pour franchir le fleuve Congo en voiture sans attente au péage de Matadi.",
+    content: "Le péage du Pont Maréchal Mobutu a modernisé ses voies de paiement. Pour éviter les ralentissements aux heures de pointe (8h-10h et 17h-19h), les automobilistes peuvent désormais acquitter leur passage par Mobile Money ou carte bancaire locale. Prévoyez de ralentir à 40 km/h sur l'ouvrage pour apprécier le panorama vertigineux.",
+    status: "VALIDATED",
+    createdAt: "2026-10-05T08:00:00Z"
   },
+  {
+    id: "navettes-rn1-kinshasa-matadi",
+    title: "Nouvelles navettes express climatisées Kinshasa - Matadi - Boma",
+    category: "Transport",
+    location: "Kongo Central",
+    date: "28 Septembre 2026",
+    author: "TransKongo Express",
+    photo: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=1200&auto=format&fit=crop&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=1200&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=1200&auto=format&fit=crop&q=80"
+    ],
+    summary: "Départs quotidiens renforcés avec climatisation, wifi et pauses repas organisées à Inkisi.",
+    content: "La liaison routière entre Kinshasa et les principales villes du Kongo Central bénéficie désormais d'une flotte de bus modernes tout confort. Trois départs matinaux quotidiens sont assurés depuis la capitale vers Matadi (trajet moyen de 5 heures) avec correspondance directe pour Boma et Muanda.",
+    status: "VALIDATED",
+    contactPhone: "+243 85 444 3322",
+    priceRange: "Ticket simple 35 000 FC (~13$)",
+    createdAt: "2026-09-28T07:30:00Z"
+  },
+  {
+    id: "baobab-stanley-musee",
+    title: "Restauration du Baobab historique de Stanley et ouverture du musée mémoriel",
+    category: "Lieu à visiter",
+    location: "Boma",
+    date: "20 Septembre 2026",
+    author: "Institut des Musées Nationaux",
+    photo: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=1200&auto=format&fit=crop&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=1200&auto=format&fit=crop&q=80"
+    ],
+    summary: "L'arbre tricentenaire de Boma dévoile son espace muséal retraçant les récits de l'épopée du fleuve Congo.",
+    content: "Le Baobab creux de Stanley à Boma a été entièrement assaini et doté de panneaux didactiques bilingues français-kikongo. Un petit centre d'interprétation historique attenant permet de découvrir des cartes manuscrites, des photographies d'époque et des objets d'art colonial et traditionnel.",
+    status: "VALIDATED",
+    createdAt: "2026-09-20T10:00:00Z"
+  },
+  {
+    id: "ateliers-botaniques-kisantu",
+    title: "Ateliers nature et découverte des plantes médicinales au Jardin Botanique de Kisantu",
+    category: "Événement",
+    location: "Kisantu",
+    date: "12 Septembre 2026",
+    author: "Jardin Botanique de Kisantu (JBK)",
+    photo: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1200&auto=format&fit=crop&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1200&auto=format&fit=crop&q=80"
+    ],
+    summary: "Des sessions hebdomadaires animées par des botanistes pour apprendre les vertus des essences végétales Kongo.",
+    content: "Chaque samedi matin, le Jardin Botanique de Kisantu organise des promenades guidées interactives dans son arboretum centenaire. Les visiteurs découvrent les usages ancestraux des arbres à palabres, des lianes curatives et des plantes aromatiques de la province.",
+    status: "VALIDATED",
+    createdAt: "2026-09-12T09:30:00Z"
+  }
 ];
+
 
