@@ -4,6 +4,7 @@ import { Location, TourismPost } from "../types";
 import { DEFAULT_LOCATIONS, DEFAULT_TOURISMPPOSTS } from "../data";
 
 export interface RouteMetadata {
+  noindex?: boolean;
   title: string;
   description: string;
   canonicalUrl: string;
@@ -64,6 +65,7 @@ export function updateDocumentHead(meta: RouteMetadata): void {
   };
 
   // Primary meta tags
+  setMeta("name", "robots", meta.noindex ? "noindex, nofollow" : "index, follow");
   setMeta("name", "title", meta.title);
   setMeta("name", "description", meta.description);
 
@@ -326,6 +328,7 @@ export function computeRouteMetadata(
         canonicalUrl: `${BASE_URL}/admin`,
         image: DEFAULT_IMAGE,
         type: "website",
+        noindex: true,
       };
 
     default:

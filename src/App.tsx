@@ -316,7 +316,7 @@ function TourismPostDetailRouteWrapper({
 }
 
 export function AppContent() {
-  const { currentUser, isAdmin } = useAuth();
+  const { currentUser, isAdmin, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -539,9 +539,6 @@ export function AppContent() {
   
   // UI states
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem("kongo_admin_authenticated") === "true";
-  });
   const [showSplash, setShowSplash] = useState<boolean>(true);
 
   // PWA & Connectivity states
@@ -836,7 +833,7 @@ export function AppContent() {
 
     const unsubs: (() => void)[] = [];
 
-    if (isAdmin || isAdminAuthenticated) {
+    if (isAdmin) {
       // Admin reads ALL posts (pending, validated, rejected)
       const qPosts = query(collection(db, "tourism_posts"));
       const unsubPosts = onSnapshot(qPosts, async (snapshot) => {
@@ -929,7 +926,7 @@ export function AppContent() {
     return () => {
       unsubs.forEach((u) => u());
     };
-  }, [isAdmin, isAdminAuthenticated, currentUser?.uid]);
+  }, [isAdmin, currentUser?.uid]);
 
   // Save / Unsaves offline locations workflow
   const handleToggleSave = (locId: string) => {
@@ -1271,7 +1268,7 @@ export function AppContent() {
                     savedLocationIds={savedLocationIds}
                     onToggleSave={handleToggleSave}
                     onUpdateLocation={handleUpdateLocation}
-                    isAdminAuthenticated={isAdminAuthenticated || isAdmin}
+                    isAdminAuthenticated={isAdmin}
                   />
                 }
               />
@@ -1280,13 +1277,11 @@ export function AppContent() {
               <Route
                 path="/admin/login"
                 element={
-                  (isAdminAuthenticated || isAdmin) ? (
+                  isAdmin ? (
                     <Navigate to="/admin" replace />
                   ) : (
                     <AdminLoginView
                       onLoginSuccess={() => {
-                        setIsAdminAuthenticated(true);
-                        sessionStorage.setItem("kongo_admin_authenticated", "true");
                         navigate("/admin");
                       }}
                       onCancel={() => navigate("/")}
@@ -1297,11 +1292,9 @@ export function AppContent() {
               <Route
                 path="/admin"
                 element={
-                  (!isAdminAuthenticated && !isAdmin) ? (
+                  !isAdmin ? (
                     <AdminLoginView
                       onLoginSuccess={() => {
-                        setIsAdminAuthenticated(true);
-                        sessionStorage.setItem("kongo_admin_authenticated", "true");
                         navigate("/admin");
                       }}
                       onCancel={() => navigate("/")}
@@ -1328,8 +1321,7 @@ export function AppContent() {
                       onRejectTourismPost={handleRejectTourismPost}
                       onResolveReport={handleResolveReport}
                       onLogout={() => {
-                        setIsAdminAuthenticated(false);
-                        sessionStorage.removeItem("kongo_admin_authenticated");
+                        logout();
                         navigate("/");
                       }}
                     />
