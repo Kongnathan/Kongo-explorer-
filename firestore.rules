@@ -48,46 +48,91 @@ service cloud.firestore {
 
     // Collection des signalements (reports)
     match /reports/{reportId} {
-      allow create: if true;
+      // Tout visiteur peut signaler, mais uniquement avec les champs attendus,
+      // un statut "pending" et des textes de taille raisonnable
+      allow create: if request.resource.data.status == "pending" &&
+                       request.resource.data.keys().hasOnly([
+                         'postId', 'postTitle', 'postCategory', 'postLocation',
+                         'reason', 'details', 'reportedBy', 'reportedByEmail',
+                         'reportedAt', 'status'
+                       ]) &&
+                       (!('details' in request.resource.data) ||
+                        (request.resource.data.details is string && request.resource.data.details.size() <= 1000)) &&
+                       request.resource.data.reason is string &&
+                       request.resource.data.reason.size() <= 200;
       allow read, update, delete: if isAdmin();
     }
 
     // Profils utilisateurs (users)
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn() && (
-        (request.auth.uid == userId && (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
-          request.resource.data.role == "user" ||
-          request.auth.token.email == "elpubliologuenathan@gmail.com"
-        )) || isAdmin()
-      );
+      // Chacun lit son propre profil ; l'admin lit tous les profils
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+
+      // Création : son propre profil, avec le rôle "user" (sauf le compte admin principal)
+      allow create: if isSignedIn() && request.auth.uid == userId && (
+        request.resource.data.role == "user" ||
+        request.auth.token.email == "elpubliologuenathan@gmail.com"
+      ) || isAdmin();
+
+      // Mise à jour : son propre profil sans toucher au rôle, ou admin
+      allow update: if isSignedIn() && request.auth.uid == userId &&
+                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+                    || isAdmin();
+
       allow delete: if isAdmin();
     }
 
-    // Collections Kongo Explorer de base
+    // Collections Kongo Explorer de base : lecture publique, écriture admin uniquement
     match /locations/{locationId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, delete: if isAdmin();
+
+      // Les visiteurs ne peuvent que mettre à jour la note moyenne d'une destination
+      allow update: if isAdmin() || (
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['rating', 'ratingCount', 'ratingSum', 'updatedAt']) &&
+        request.resource.data.rating is number &&
+        request.resource.data.rating >= 0 && request.resource.data.rating <= 5
+      );
 
       match /ratings/{ratingId} {
-        allow read, write: if true;
+        allow read: if true;
+        // Un avis : note de 1 à 5 et commentaire limité à 1000 caractères
+        allow create: if request.resource.data.rating is int &&
+                         request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
+                         request.resource.data.comment is string &&
+                         request.resource.data.comment.size() <= 1000;
+        allow update, delete: if isAdmin();
       }
     }
 
     match /circuits/{circuitId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
+    // Notes rapides des visiteurs (Quick Capture) : validation stricte anti-spam
+    // Clés limitées, statut initial PENDING ou VERIFICATION, tailles de champs maîtrisées
     match /pendingPermits/{permitId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if (
+        request.resource.data.keys().hasAll(['id', 'title', 'subtitle', 'status', 'icon']) &&
+        request.resource.data.keys().hasOnly(['id', 'title', 'subtitle', 'status', 'icon']) &&
+        request.resource.data.status in ['PENDING', 'VERIFICATION'] &&
+        request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 150 &&
+        request.resource.data.subtitle is string && request.resource.data.subtitle.size() <= 500 &&
+        request.resource.data.icon is string && request.resource.data.icon.size() <= 50 &&
+        request.resource.data.id is string && request.resource.data.id.size() <= 100
+      ) || isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /settings/{settingId} {
-      allow read, write: if true;
+      allow read, write: if isAdmin();
     }
 
     match /subdomains/{subdomain} {
-      allow read, write: if true;
+      allow read, write: if isAdmin();
     }
   }
 }

@@ -256,14 +256,14 @@ function DetailRouteWrapper({
   savedLocationIds,
   onToggleSave,
   onUpdateLocation,
-  isAdminAuthenticated,
+  isAdmin,
 }: {
   locations: Location[];
   onNavigate: (tab: string) => void;
   savedLocationIds: string[];
   onToggleSave: (id: string) => void;
   onUpdateLocation: (loc: Location) => void;
-  isAdminAuthenticated: boolean;
+  isAdmin: boolean;
 }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -289,7 +289,7 @@ function DetailRouteWrapper({
       savedLocationIds={savedLocationIds}
       onToggleSave={onToggleSave}
       onUpdateLocation={onUpdateLocation}
-      isAdminAuthenticated={isAdminAuthenticated}
+      isAdmin={isAdmin}
     />
   );
 }
@@ -316,7 +316,7 @@ function TourismPostDetailRouteWrapper({
 }
 
 export function AppContent() {
-  const { currentUser, isAdmin } = useAuth();
+  const { currentUser, isAdmin, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -539,9 +539,6 @@ export function AppContent() {
   
   // UI states
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem("kongo_admin_authenticated") === "true";
-  });
   const [showSplash, setShowSplash] = useState<boolean>(true);
 
   // PWA & Connectivity states
@@ -719,9 +716,9 @@ export function AppContent() {
         // Persist to localStorage and IndexedDB cache so photos load instantly without showing defaults first
         localStorage.setItem("kongo_custom_locations", JSON.stringify(mergedList));
         await saveLocationsToDB(mergedList);
-      } else {
-        // Automatically seed empty Firestore with defaults or local custom locations
-        console.log("[Firebase] Firestore 'locations' collection is empty. Seeding defaults or local custom locations...");
+      } else if (isAdmin) {
+        // Automatically seed empty Firestore with defaults or local custom locations (Admin only)
+        console.log("[Firebase] Firestore 'locations' collection is empty. Seeding defaults (admin)...");
         const localLocsStr = localStorage.getItem("kongo_custom_locations");
         let initialToSeed = DEFAULT_LOCATIONS;
         if (localLocsStr) {
@@ -738,6 +735,8 @@ export function AppContent() {
             handleFirestoreError(e, OperationType.WRITE, `locations/${loc.id}`);
           }
         }
+      } else {
+        console.log("[Firebase] Firestore 'locations' collection is empty. Using local defaults for visitor.");
       }
     }, (error) => {
       console.warn("[Firebase] Failed to listen to 'locations' collection:", error);
@@ -762,8 +761,8 @@ export function AppContent() {
       if (circList.length > 0) {
         setCircuits(circList);
         localStorage.setItem("kongo_circuits", JSON.stringify(circList));
-      } else {
-        console.log("[Firebase] Firestore 'circuits' collection is empty. Seeding default circuits...");
+      } else if (isAdmin) {
+        console.log("[Firebase] Firestore 'circuits' collection is empty. Seeding default circuits (admin)...");
         const localCircsStr = localStorage.getItem("kongo_circuits");
         let initialCircsToSeed = DEFAULT_CIRCUITS;
         if (localCircsStr) {
@@ -780,6 +779,8 @@ export function AppContent() {
             console.warn("Could not seed circuit to Firestore:", e);
           }
         }
+      } else {
+        console.log("[Firebase] Firestore 'circuits' collection is empty. Using local defaults for visitor.");
       }
     }, (error) => {
       console.warn("[Firebase] Failed to listen to 'circuits' collection:", error);
@@ -803,8 +804,8 @@ export function AppContent() {
 
       if (pendsList.length > 0) {
         setPendingPermits(pendsList);
-      } else {
-        console.log("[Firebase] Firestore 'pendingPermits' is empty. Seeding defaults...");
+      } else if (isAdmin) {
+        console.log("[Firebase] Firestore 'pendingPermits' is empty. Seeding defaults (admin)...");
         for (const p of DEFAULT_PENDING_PERMITS) {
           try {
             const serialized = serializePendingPermitForFirestore(p);
@@ -813,6 +814,8 @@ export function AppContent() {
             console.warn("Could not seed pending permit to Firestore:", e);
           }
         }
+      } else {
+        console.log("[Firebase] Firestore 'pendingPermits' is empty. Using local defaults for visitor.");
       }
     }, (error) => {
       console.warn("[Firebase] Failed to listen to 'pendingPermits' collection:", error);
@@ -828,7 +831,7 @@ export function AppContent() {
       unsubscribeCircuits();
       unsubscribePending();
     };
-  }, []);
+  }, [isAdmin]);
 
   // Dedicated effect for Tourism Posts and Reports reactive to auth & admin status
   useEffect(() => {
@@ -836,7 +839,7 @@ export function AppContent() {
 
     const unsubs: (() => void)[] = [];
 
-    if (isAdmin || isAdminAuthenticated) {
+    if (isAdmin) {
       // Admin reads ALL posts (pending, validated, rejected)
       const qPosts = query(collection(db, "tourism_posts"));
       const unsubPosts = onSnapshot(qPosts, async (snapshot) => {
@@ -929,7 +932,7 @@ export function AppContent() {
     return () => {
       unsubs.forEach((u) => u());
     };
-  }, [isAdmin, isAdminAuthenticated, currentUser?.uid]);
+  }, [isAdmin, currentUser?.uid]);
 
   // Save / Unsaves offline locations workflow
   const handleToggleSave = (locId: string) => {
@@ -1271,7 +1274,7 @@ export function AppContent() {
                     savedLocationIds={savedLocationIds}
                     onToggleSave={handleToggleSave}
                     onUpdateLocation={handleUpdateLocation}
-                    isAdminAuthenticated={isAdminAuthenticated || isAdmin}
+                    isAdmin={isAdmin}
                   />
                 }
               />
@@ -1280,13 +1283,11 @@ export function AppContent() {
               <Route
                 path="/admin/login"
                 element={
-                  (isAdminAuthenticated || isAdmin) ? (
+                  isAdmin ? (
                     <Navigate to="/admin" replace />
                   ) : (
                     <AdminLoginView
                       onLoginSuccess={() => {
-                        setIsAdminAuthenticated(true);
-                        sessionStorage.setItem("kongo_admin_authenticated", "true");
                         navigate("/admin");
                       }}
                       onCancel={() => navigate("/")}
@@ -1297,11 +1298,9 @@ export function AppContent() {
               <Route
                 path="/admin"
                 element={
-                  (!isAdminAuthenticated && !isAdmin) ? (
+                  !isAdmin ? (
                     <AdminLoginView
                       onLoginSuccess={() => {
-                        setIsAdminAuthenticated(true);
-                        sessionStorage.setItem("kongo_admin_authenticated", "true");
                         navigate("/admin");
                       }}
                       onCancel={() => navigate("/")}
@@ -1328,8 +1327,7 @@ export function AppContent() {
                       onRejectTourismPost={handleRejectTourismPost}
                       onResolveReport={handleResolveReport}
                       onLogout={() => {
-                        setIsAdminAuthenticated(false);
-                        sessionStorage.removeItem("kongo_admin_authenticated");
+                        logout();
                         navigate("/");
                       }}
                     />

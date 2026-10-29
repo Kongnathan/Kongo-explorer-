@@ -15,7 +15,7 @@ interface DetailViewProps {
   savedLocationIds: string[];
   onToggleSave: (id: string) => void;
   onUpdateLocation?: (loc: Location) => void;
-  isAdminAuthenticated?: boolean;
+  isAdmin?: boolean;
   onSubmitReport?: (report: CommunityReport) => void;
 }
 
@@ -50,7 +50,7 @@ export default function DetailView({
   savedLocationIds,
   onToggleSave,
   onUpdateLocation,
-  isAdminAuthenticated = false,
+  isAdmin = false,
   onSubmitReport
 }: DetailViewProps) {
   const loc = locations.find(l => l.id === locationId) || locations[0];
@@ -248,7 +248,7 @@ export default function DetailView({
 
   const handleDeletePhoto = (indexToDelete: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isAdminAuthenticated) return;
+    if (!isAdmin) return;
     if (galleryImages.length <= 1) {
       alert("La galerie doit conserver au moins une photo principale.");
       return;
@@ -444,7 +444,7 @@ export default function DetailView({
                     </span>
 
                     {/* Admin Delete Photo Button */}
-                    {isAdminAuthenticated && galleryImages.length > 1 && (
+                    {isAdmin && galleryImages.length > 1 && (
                       <button
                         onClick={(e) => handleDeletePhoto(index, e)}
                         className="absolute top-1 right-1 w-6 h-6 rounded-full bg-error text-white opacity-100 sm:opacity-0 sm:group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center shadow-md hover:scale-110 active:scale-95 cursor-pointer z-20"

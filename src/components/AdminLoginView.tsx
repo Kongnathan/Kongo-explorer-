@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 interface AdminLoginViewProps {
   onLoginSuccess: () => void;
@@ -6,35 +7,30 @@ interface AdminLoginViewProps {
 }
 
 export default function AdminLoginView({ onLoginSuccess, onCancel }: AdminLoginViewProps) {
-  const [handshakeStep, setHandshakeStep] = useState(0);
-  const [feedbackText, setFeedbackText] = useState("");
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const { currentUser, isAdmin, loading, loginWithGoogle, logout } = useAuth();
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [errorText, setErrorText] = useState("");
 
-  const handleSecretHandshake = () => {
-    setHandshakeStep(prev => {
-      const next = prev + 1;
-      if (next === 1) {
-        setFeedbackText("handshake initialisé...");
-      } else if (next === 2) {
-        setFeedbackText("vérification de la souveraineté...");
-      } else if (next >= 3) {
-        setFeedbackText("accès accordé ! Redirection...");
-        setIsRedirecting(true);
-        setTimeout(() => {
-          onLoginSuccess();
-        }, 1200);
+  // L'accès n'est accordé que si le compte connecté est réellement administrateur
+  useEffect(() => {
+    if (isAdmin) onLoginSuccess();
+  }, [isAdmin]);
+
+  const handleGoogleSignIn = async () => {
+    setErrorText("");
+    setIsSigningIn(true);
+    try {
+      await loginWithGoogle();
+    } catch (err: any) {
+      if (err?.code !== "auth/popup-closed-by-user" && err?.code !== "auth/cancelled-popup-request") {
+        setErrorText("Connexion Google impossible. Réessayez.");
       }
-      return next;
-    });
+    } finally {
+      setIsSigningIn(false);
+    }
   };
 
-  const handleGoogleSignIn = () => {
-    setIsRedirecting(true);
-    setFeedbackText("Authentification Google réussie...");
-    setTimeout(() => {
-      onLoginSuccess();
-    }, 1000);
-  };
+  const isDenied = !loading && !!currentUser && !isAdmin;
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-5 bg-background relative overflow-hidden bg-pattern font-sans">
@@ -60,26 +56,32 @@ export default function AdminLoginView({ onLoginSuccess, onCancel }: AdminLoginV
         <div className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-[28px] p-6 login-card-glow transition-all duration-300 hover:scale-[1.01]">
           <div className="flex flex-col gap-6">
             
-            {/* Pre-filled User Section */}
+            {/* Statut de connexion */}
             <div className="bg-surface-container-low p-4 rounded-xl flex items-center gap-4 border border-outline-variant/20">
-              <div className="relative flex-none">
-                <div className="w-12 h-12 rounded-full bg-earth-clay flex items-center justify-center overflow-hidden">
-                  <span className="material-symbols-outlined text-tertiary fill text-2xl">person</span>
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-surface-container-low shadow-sm">
-                  <span className="material-symbols-outlined text-[10px] text-on-primary fill">verified</span>
-                </div>
+              <div className="w-12 h-12 rounded-full bg-earth-clay flex items-center justify-center flex-none">
+                <span className="material-symbols-outlined text-tertiary fill text-2xl">person</span>
               </div>
-              <div className="flex flex-col">
-                <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Admin Autorisé</span>
-                <span className="font-sans text-body-lg text-on-surface font-bold">elpubliologuenathan</span>
+              <div className="flex flex-col min-w-0">
+                <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Accès réservé</span>
+                <span className="font-sans text-body-md text-on-surface font-bold truncate">
+                  {isDenied ? currentUser?.email : "Connexion administrateur requise"}
+                </span>
               </div>
             </div>
+
+            {isDenied && (
+              <p className="font-sans text-body-sm text-red-700" role="alert">
+                Ce compte n'a pas les droits d'administration.
+              </p>
+            )}
+            {errorText && (
+              <p className="font-sans text-body-sm text-red-700" role="alert">{errorText}</p>
+            )}
 
             {/* Action Button */}
             <button 
               onClick={handleGoogleSignIn}
-              disabled={isRedirecting}
+              disabled={isSigningIn || loading}
               className="group flex items-center justify-center gap-3 w-full h-[56px] bg-white border border-outline-variant hover:bg-surface-container-high transition-all active:scale-95 rounded-full px-6 cursor-pointer font-sans text-body-md font-bold text-on-surface"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -88,15 +90,24 @@ export default function AdminLoginView({ onLoginSuccess, onCancel }: AdminLoginV
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
               </svg>
-              <span>S'authentifier avec Google</span>
+              <span>{isSigningIn ? "Connexion…" : "S'authentifier avec Google"}</span>
             </button>
 
             {/* Information/Help */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 opacity-60">
-                <span className="material-symbols-outlined text-[18px]">lock</span>
-                <p className="font-mono text-label-sm font-semibold">Session chiffrée de bout en bout</p>
-              </div>
+              {isDenied ? (
+                <button
+                  onClick={() => logout()}
+                  className="text-primary hover:text-secondary font-mono text-label-sm font-bold underline"
+                >
+                  Changer de compte
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 opacity-60">
+                  <span className="material-symbols-outlined text-[18px]">lock</span>
+                  <p className="font-mono text-label-sm font-semibold">Réservé aux administrateurs</p>
+                </div>
+              )}
               <button 
                 onClick={onCancel}
                 className="text-primary hover:text-secondary font-mono text-label-sm font-bold underline"
@@ -107,22 +118,6 @@ export default function AdminLoginView({ onLoginSuccess, onCancel }: AdminLoginV
           </div>
         </div>
 
-        {/* Discreet Navigation Trigger */}
-        <footer className="mt-12 text-center w-full">
-          <button 
-            id="hidden-trigger"
-            onClick={handleSecretHandshake}
-            className="font-mono text-label-sm text-on-surface-variant/40 hover:text-primary/60 transition-colors cursor-pointer select-none border-none bg-transparent"
-          >
-            apk by nathan king
-          </button>
-          
-          <div className={`h-4 mt-2 transition-opacity duration-300 ${feedbackText ? "opacity-100 animate-pulse" : "opacity-0"}`}>
-            <span className="font-mono text-[10px] text-primary uppercase font-bold tracking-wider">
-              {feedbackText}
-            </span>
-          </div>
-        </footer>
       </main>
     </div>
   );
