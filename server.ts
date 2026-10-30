@@ -412,7 +412,7 @@ Respond STRICTLY with a valid JSON object matching this structure:
 }`;
 
     const response = await client.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json"
@@ -613,14 +613,36 @@ FORMAT DE RÉPONSE OBLIGATOIRE (JSON STRICT) :
       userPromptWithHistory = message;
     }
 
-    const response = await client.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: userPromptWithHistory,
-      config: {
-        systemInstruction: systemPrompt,
-        responseMimeType: "application/json",
-      }
-    });
+    // Call Gemini with safe timeout and automatic failover
+    let response: any;
+    try {
+      // First attempt: gemini-3.8-flash with 3.5s timeout
+      response = await Promise.race([
+        client.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: userPromptWithHistory,
+          config: {
+            systemInstruction: systemPrompt,
+            responseMimeType: "application/json",
+          }
+        }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout 3.8")), 3500))
+      ]);
+    } catch (err38) {
+      console.warn("Attempting gemini-3.5-flash fallback:", (err38 as any)?.message);
+      // Second attempt: gemini-3.5-flash with 6s timeout
+      response = await Promise.race([
+        client.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: userPromptWithHistory,
+          config: {
+            systemInstruction: systemPrompt,
+            responseMimeType: "application/json",
+          }
+        }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout 3.5")), 6000))
+      ]);
+    }
 
     const resultText = response.text || "{}";
     let parsed: any = {};
@@ -650,7 +672,7 @@ FORMAT DE RÉPONSE OBLIGATOIRE (JSON STRICT) :
 
     return res.json({
       success: true,
-      mode: "gemini-3.8-flash",
+      mode: "gemini-ai",
       reply: parsed.reply || "Bonjour ! Comment puis-je vous aider à explorer le Kongo Central ?",
       suggestedAction
     });

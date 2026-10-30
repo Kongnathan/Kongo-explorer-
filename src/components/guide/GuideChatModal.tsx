@@ -95,11 +95,51 @@ export default function GuideChatModal({
       setMessages((prev) => [...prev, guideMsg]);
     } catch (err) {
       console.error("Guide chat error:", err);
+      // Smart contextual fallback if network or fetch is interrupted
+      const q = queryText.toLowerCase();
+      let fallbackText = "Je suis là pour vous aider ! Vous pouvez explorer la carte, découvrir nos circuits thématiques ou consulter les bons plans dans Infos Tourisme.";
+      let fallbackAction: ChatMessage["suggestedAction"] = {
+        label: "Lancer la visite guidée",
+        route: "/",
+        tourStepId: "start-tour",
+      };
+
+      if (q.includes("publi") || q.includes("proposer") || q.includes("info") || q.includes("article") || q.includes("post")) {
+        fallbackText = "Pour publier une info touristique, rendez-vous dans la rubrique 'Infos Tourisme' et cliquez sur '+ Publier une info'. Toute publication est systématiquement vérifiée par un administrateur avant d'apparaître en ligne. Souhaitez-vous que je vous montre la rubrique ?";
+        fallbackAction = {
+          label: "Voir Infos Tourisme",
+          route: "/infos-tourisme",
+          tourStepId: "step-infos",
+        };
+      } else if (q.includes("carte") || q.includes("map") || q.includes("itineraire") || q.includes("position") || q.includes("lieu")) {
+        fallbackText = "La carte interactive du Kongo Central vous permet de situer chaque merveille (Zongo, Boma, Matadi, Muanda, Kisantu...) et de calculer vos trajets. Voulez-vous ouvrir la carte ?";
+        fallbackAction = {
+          label: "Ouvrir la carte",
+          route: "/carte",
+          tourStepId: "step-carte",
+        };
+      } else if (q.includes("circuit") || q.includes("trajet") || q.includes("route")) {
+        fallbackText = "Nos circuits touristiques regroupent les plus beaux parcours pas à pas avec les durées et le type de véhicule conseillé (voiture ou 4x4). Voulez-vous voir les circuits ?";
+        fallbackAction = {
+          label: "Découvrir les circuits",
+          route: "/circuits",
+          tourStepId: "step-circuits",
+        };
+      } else if (q.includes("carnet") || q.includes("hors ligne") || q.includes("offline") || q.includes("sauvegard")) {
+        fallbackText = "Vous pouvez enregistrer vos fiches favorites dans votre carnet pour les consulter même sans aucune connexion Internet. Voulez-vous voir votre carnet ?";
+        fallbackAction = {
+          label: "Voir mon carnet",
+          route: "/carnet",
+          tourStepId: "step-carnet",
+        };
+      }
+
       const fallbackMsg: ChatMessage = {
         id: `guide-err-${Date.now()}`,
         sender: "guide",
-        text: "Pardonnez-moi, une petite coupure de réseau m'a ralenti. Vous pouvez consulter les rubriques Carte, Circuits et Infos Tourisme dans le menu du bas.",
+        text: fallbackText,
         timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        suggestedAction: fallbackAction,
       };
       setMessages((prev) => [...prev, fallbackMsg]);
     } finally {
