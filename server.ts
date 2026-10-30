@@ -515,9 +515,24 @@ app.post("/api/guide-chat", async (req, res) => {
   // Keyword-based fallback matching if Gemini is unavailable
   const buildFallbackResponse = (queryText: string) => {
     const q = queryText.toLowerCase();
+
+    // Check for obvious off-topic queries
+    const offTopicKeywords = ["code", "javascript", "python", "html", "math", "calcul", "devoir", "politique", "macron", "biden", "football europe", "recette pizza"];
+    const isOffTopic = offTopicKeywords.some(k => q.includes(k));
+    if (isOffTopic) {
+      return {
+        reply: "Désolé, je suis uniquement le Guide de Kongo Explorer pour vous faire découvrir le Kongo Central. Souhaitez-vous voir nos destinations ou la carte ?",
+        suggestedAction: {
+          label: "Ouvrir la carte",
+          route: "/carte",
+          tourStepId: "step-carte"
+        }
+      };
+    }
+
     if (q.includes("publi") || q.includes("proposer") || q.includes("info") || q.includes("article") || q.includes("photo")) {
       return {
-        reply: "Pour publier une info touristique, rendez-vous dans la rubrique 'Infos Tourisme' et cliquez sur '+ Proposer une publication'. Vous pourrez ajouter un titre, un lieu et jusqu'à 5 photos. Toute publication est d'abord vérifiée par un administrateur avant d'être visible de tous. Souhaitez-vous que je vous montre la rubrique ?",
+        reply: "Pour publier, connectez-vous puis cliquez sur '+ Publier une info' dans la rubrique Infos Tourisme. Votre publication sera validée par un modérateur avant d'apparaître. Voulez-vous y aller ?",
         suggestedAction: {
           label: "Voir Infos Tourisme",
           route: "/infos-tourisme",
@@ -527,7 +542,7 @@ app.post("/api/guide-chat", async (req, res) => {
     }
     if (q.includes("carte") || q.includes("map") || q.includes("position") || q.includes("itineraire") || q.includes("localiser")) {
       return {
-        reply: "La carte interactive vous permet de visualiser l'ensemble des sites majeurs du Kongo Central (Zongo, Matadi, Boma, Muanda, Kisantu...) et de calculer votre itinéraire. Voulez-vous que je vous ouvre la carte ?",
+        reply: "La carte interactive situe tous les sites majeurs (Zongo, Matadi, Boma, Muanda...) et calcule vos itinéraires. Voulez-vous l'ouvrir ?",
         suggestedAction: {
           label: "Ouvrir la carte",
           route: "/carte",
@@ -537,7 +552,7 @@ app.post("/api/guide-chat", async (req, res) => {
     }
     if (q.includes("circuit") || q.includes("trajet") || q.includes("route")) {
       return {
-        reply: "La rubrique 'Circuits' vous propose des parcours thématiques clés en main avec les temps de trajet et le type de véhicule conseillé (voiture ou 4x4). Voulez-vous découvrir les circuits recommandés ?",
+        reply: "La rubrique Circuits vous propose des itinéraires clés en main avec durées et accès recommandés (voiture ou 4x4). Voulez-vous les découvrir ?",
         suggestedAction: {
           label: "Découvrir les circuits",
           route: "/circuits",
@@ -547,7 +562,7 @@ app.post("/api/guide-chat", async (req, res) => {
     }
     if (q.includes("hors ligne") || q.includes("carnet") || q.includes("enregistr") || q.includes("connexion") || q.includes("offline")) {
       return {
-        reply: "Vous pouvez sauvegarder n'importe quelle destination dans votre carnet pour y accéder même sans connexion Internet. Voulez-vous que je vous montre votre carnet de voyage ?",
+        reply: "Cliquez sur l'icône signet sur n'importe quelle fiche pour la lire hors ligne dans votre carnet. Voulez-vous ouvrir votre carnet ?",
         suggestedAction: {
           label: "Consulter mon carnet",
           route: "/carnet",
@@ -557,7 +572,7 @@ app.post("/api/guide-chat", async (req, res) => {
     }
     if (q.includes("valid") || q.includes("modéra") || q.includes("admin") || q.includes("refus")) {
       return {
-        reply: "Toutes les contributions de la communauté sont relues et validées par nos administrateurs afin de garantir des informations fiables et bienveillantes. Vous pouvez suivre l'état de vos soumissions dans votre espace personnel. Voulez-vous visiter la rubrique Infos ?",
+        reply: "Chaque publication est relue par nos administrateurs pour garantir des informations fiables. Vous pouvez suivre vos fiches dans votre profil. Voulez-vous voir les infos ?",
         suggestedAction: {
           label: "Voir Infos Tourisme",
           route: "/infos-tourisme",
@@ -566,7 +581,7 @@ app.post("/api/guide-chat", async (req, res) => {
       };
     }
     return {
-      reply: "Bonjour ! Je suis Guide Kongo, votre compagnon pour explorer le Kongo Central. Vous pouvez rechercher des destinations, consulter la carte, suivre des circuits ou partager vos bons plans dans Infos Tourisme. Voulez-vous que je vous guide à travers les options du site ?",
+      reply: "Bonjour ! Je suis Guide Kongo. Je peux vous orienter vers la carte, les circuits ou les bons plans du Kongo Central. Que souhaitez-vous voir ?",
       suggestedAction: {
         label: "Lancer la visite guidée",
         route: "/",
@@ -585,21 +600,21 @@ app.post("/api/guide-chat", async (req, res) => {
   }
 
   try {
-    const systemPrompt = `Tu es Guide Kongo, l'assistant de bienvenue du site Kongo Explorer.
-Tu aides les nouveaux visiteurs à comprendre le site et ses options.
-Tu réponds en français par défaut, ou dans la langue de l'utilisateur, avec un ton chaleureux, simple et concis (3 à 5 phrases max).
-Tu t'appuies uniquement sur la description des fonctionnalités fournie ci-dessous.
-Si tu ne sais pas, dis-le honnêtement et propose de contacter l'équipe.
-Tu ne demandes jamais de mot de passe ni de données sensibles.
-Tu proposes à la fin de ta réponse une action concrète (ex. “Voulez-vous que je vous montre la carte ?”).
+    const systemPrompt = `Tu es Guide Kongo, l'assistant d'accueil et de voyage du site Kongo Explorer (Kongo Central, RDC).
+
+RÈGLES IMPÉRATIVES DE RÉPONSE :
+1. SIMPLICITÉ ET CONCISION : Réponds de manière très SIMPLE, CHALEUREUSE et COURTE (1 à 3 phrases courtes maximum). Pas de jargon, pas de longues listes à puces ni de pavés de texte.
+2. REFUS STRICT DES QUESTIONS HORS-SUJET : Tu es UNIQUEMENT le guide touristique de Kongo Explorer. Si la question ne concerne pas le Kongo Central, le tourisme local ou les fonctionnalités du site (par exemple : mathématiques, code informatique, devoirs, politique générale, cuisine sans rapport, actualités étrangères), TU DOIS REFUSER D'Y RÉPONDRE. Réponds simplement et poliment en 1 phrase :
+"Désolé, je suis uniquement le Guide de Kongo Explorer pour vous faire découvrir le Kongo Central et vous orienter sur le site. Voulez-vous voir nos destinations ou la carte ?" (actionTarget: "carte", actionLabel: "Ouvrir la carte").
+3. PROPOSITION D'ACTION : Termine toujours ta réponse par une proposition d'action directe et concrète vers une option du site.
 
 ${GUIDE_KNOWLEDGE_CONTEXT}
 
 FORMAT DE RÉPONSE OBLIGATOIRE (JSON STRICT) :
 {
-  "reply": "Ton message chaleureux, simple et concis (3 à 5 phrases max) terminant par une proposition d'action concrète.",
+  "reply": "Ton message très simple et concis (1 à 3 phrases courtes max).",
   "actionTarget": "carte" | "infos-tourisme" | "circuits" | "carnet" | "conseils" | "recherche" | "connexion" | null,
-  "actionLabel": "Texte court du bouton d'action (ex: 'Me montrer la carte', 'Ouvrir Infos Tourisme', etc.) ou null"
+  "actionLabel": "Texte court du bouton d'action ou null"
 }`;
 
     // Format chat contents

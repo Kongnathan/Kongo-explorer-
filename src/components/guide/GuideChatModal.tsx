@@ -97,36 +97,48 @@ export default function GuideChatModal({
       console.error("Guide chat error:", err);
       // Smart contextual fallback if network or fetch is interrupted
       const q = queryText.toLowerCase();
-      let fallbackText = "Je suis là pour vous aider ! Vous pouvez explorer la carte, découvrir nos circuits thématiques ou consulter les bons plans dans Infos Tourisme.";
+
+      // Refusal for off-topic questions
+      const offTopicKeywords = ["code", "javascript", "python", "html", "math", "calcul", "devoir", "politique", "macron", "biden", "football europe", "recette pizza"];
+      const isOffTopic = offTopicKeywords.some(k => q.includes(k));
+
+      let fallbackText = "Je suis Guide Kongo ! Que souhaitez-vous découvrir : la carte, les circuits ou les bons plans du Kongo Central ?";
       let fallbackAction: ChatMessage["suggestedAction"] = {
         label: "Lancer la visite guidée",
         route: "/",
         tourStepId: "start-tour",
       };
 
-      if (q.includes("publi") || q.includes("proposer") || q.includes("info") || q.includes("article") || q.includes("post")) {
-        fallbackText = "Pour publier une info touristique, rendez-vous dans la rubrique 'Infos Tourisme' et cliquez sur '+ Publier une info'. Toute publication est systématiquement vérifiée par un administrateur avant d'apparaître en ligne. Souhaitez-vous que je vous montre la rubrique ?";
+      if (isOffTopic) {
+        fallbackText = "Désolé, je suis uniquement le Guide de Kongo Explorer pour vous faire découvrir le Kongo Central. Souhaitez-vous voir nos destinations ou la carte ?";
+        fallbackAction = {
+          label: "Ouvrir la carte",
+          route: "/carte",
+          tourStepId: "step-carte",
+        };
+      } else if (q.includes("publi") || q.includes("proposer") || q.includes("info") || q.includes("article") || q.includes("post")) {
+        fallbackText = "Connectez-vous puis cliquez sur '+ Publier une info' dans la rubrique Infos Tourisme. Votre annonce sera validée par un modérateur avant parution.";
         fallbackAction = {
           label: "Voir Infos Tourisme",
           route: "/infos-tourisme",
           tourStepId: "step-infos",
         };
       } else if (q.includes("carte") || q.includes("map") || q.includes("itineraire") || q.includes("position") || q.includes("lieu")) {
-        fallbackText = "La carte interactive du Kongo Central vous permet de situer chaque merveille (Zongo, Boma, Matadi, Muanda, Kisantu...) et de calculer vos trajets. Voulez-vous ouvrir la carte ?";
+        fallbackText = "La carte interactive situe tous les sites majeurs (Zongo, Matadi, Boma, Muanda...) et calcule vos trajets. Voulez-vous l'ouvrir ?";
         fallbackAction = {
           label: "Ouvrir la carte",
           route: "/carte",
           tourStepId: "step-carte",
         };
       } else if (q.includes("circuit") || q.includes("trajet") || q.includes("route")) {
-        fallbackText = "Nos circuits touristiques regroupent les plus beaux parcours pas à pas avec les durées et le type de véhicule conseillé (voiture ou 4x4). Voulez-vous voir les circuits ?";
+        fallbackText = "La rubrique Circuits vous propose des itinéraires clés en main avec durées et véhicules conseillés (voiture ou 4x4). Voulez-vous voir les circuits ?";
         fallbackAction = {
           label: "Découvrir les circuits",
           route: "/circuits",
           tourStepId: "step-circuits",
         };
       } else if (q.includes("carnet") || q.includes("hors ligne") || q.includes("offline") || q.includes("sauvegard")) {
-        fallbackText = "Vous pouvez enregistrer vos fiches favorites dans votre carnet pour les consulter même sans aucune connexion Internet. Voulez-vous voir votre carnet ?";
+        fallbackText = "Cliquez sur l'icône signet de n'importe quelle fiche pour la lire hors ligne dans votre carnet. Voulez-vous voir votre carnet ?";
         fallbackAction = {
           label: "Voir mon carnet",
           route: "/carnet",
@@ -164,61 +176,70 @@ export default function GuideChatModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Discussion avec Guide Kongo"
-    >
+    <div className="fixed inset-0 z-50 pointer-events-none">
+      {/* Background click-away dismiss (transparent on desktop so page stays visible) */}
+      <div 
+        className="fixed inset-0 bg-black/20 sm:bg-black/5 backdrop-blur-[1px] pointer-events-auto"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Floating Chat Widget anchored at bottom-right corner */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        transition={{ duration: 0.22, ease: "easeOut" }}
-        className="relative w-full max-w-xl h-[85vh] max-h-[680px] bg-surface-container-lowest border border-outline-variant/30 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-on-surface"
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Discussion avec Guide Kongo"
+        className="fixed bottom-24 right-3 sm:right-6 left-3 sm:left-auto w-auto sm:w-[410px] h-[520px] max-h-[calc(100vh-130px)] bg-surface-container-lowest border border-outline-variant/30 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-on-surface pointer-events-auto z-50 backdrop-blur-md"
       >
         {/* Header */}
-        <header className="p-4 bg-surface-container-low/95 border-b border-outline-variant/20 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="relative w-11 h-11 rounded-2xl bg-emerald-700/15 border border-emerald-600/30 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[26px] text-emerald-700 dark:text-emerald-400">
-                smart_toy
-              </span>
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-surface-container-lowest" />
+        <header className="p-3.5 bg-surface-container-low/95 border-b border-outline-variant/20 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="relative w-10 h-10 rounded-2xl bg-emerald-700/15 border-2 border-emerald-500/40 overflow-hidden shadow-sm shrink-0 p-0.5">
+              <img 
+                src="/guide-avatar.jpg" 
+                alt="Mascotte Guide Kongo" 
+                className="w-full h-full object-cover rounded-xl" 
+              />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-surface-container-lowest" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <h3 className="font-sans text-body-md font-bold text-on-surface leading-tight">
                   Guide Kongo
                 </h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-700/10 text-emerald-800 dark:text-emerald-300">
-                  Assistant IA
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-700/10 text-emerald-800 dark:text-emerald-300">
+                  En ligne
                 </span>
               </div>
-              <p className="text-[11px] text-on-surface-variant">
-                Votre guide d'accueil et d'exploration
+              <p className="text-[10px] text-on-surface-variant leading-tight">
+                Guide touristique du Kongo Central
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => {
                 onClose();
                 onStartTour();
               }}
-              className="px-2.5 py-1.5 rounded-xl border border-outline-variant/40 hover:bg-surface-container-high text-xs font-semibold text-on-surface-variant flex items-center gap-1 transition-colors cursor-pointer"
-              title="Relancer le tutoriel pas à pas"
+              className="px-2 py-1 rounded-xl border border-outline-variant/40 hover:bg-surface-container-high text-[11px] font-semibold text-on-surface-variant flex items-center gap-1 transition-colors cursor-pointer"
+              title="Relancer la visite guidée pas à pas"
             >
-              <span className="material-symbols-outlined text-[16px] text-emerald-600">tour</span>
-              <span className="hidden sm:inline">Visite guidée</span>
+              <span className="material-symbols-outlined text-[15px] text-emerald-600">tour</span>
+              <span className="hidden sm:inline">Visite</span>
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
+              className="p-1.5 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
               aria-label="Fermer le chat"
+              title="Fermer"
             >
-              <span className="material-symbols-outlined text-[20px]">close</span>
+              <span className="material-symbols-outlined text-[20px]">expand_more</span>
             </button>
           </div>
         </header>

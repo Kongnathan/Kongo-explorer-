@@ -196,13 +196,18 @@ export default function OnboardingTour({
         >
           {/* Header with Step indicator & Skip */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-emerald-700/15 text-emerald-800 dark:text-emerald-300 flex items-center justify-center font-bold text-xs">
-                {currentStepIndex + 1}
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl overflow-hidden border border-emerald-500/40 shadow-xs shrink-0 p-0.5 bg-emerald-700/10">
+                <img src="/guide-avatar.jpg" alt="Guide Kongo" className="w-full h-full object-cover rounded-lg" />
               </div>
-              <span className="text-xs font-semibold text-on-surface-variant font-mono">
-                Étape {currentStepIndex + 1} sur {totalSteps}
-              </span>
+              <div>
+                <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 block leading-tight">
+                  Guide Kongo
+                </span>
+                <span className="text-[10px] text-on-surface-variant font-mono">
+                  Étape {currentStepIndex + 1} sur {totalSteps}
+                </span>
+              </div>
             </div>
 
             <button

@@ -34,11 +34,13 @@ export default function WelcomeModal({
           <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
           {/* Guide Kongo Friendly Avatar */}
-          <div className="relative mx-auto mb-4 w-20 h-20 rounded-2xl bg-emerald-700/15 border-2 border-emerald-600/30 flex items-center justify-center shadow-lg p-2">
-            <span className="material-symbols-outlined text-[42px] text-emerald-700 dark:text-emerald-400">
-              smart_toy
-            </span>
-            <div className="absolute -bottom-1 -right-1 bg-emerald-600 text-white rounded-full p-1 shadow-sm flex items-center justify-center">
+          <div className="relative mx-auto mb-4 w-24 h-24 rounded-3xl bg-emerald-700/15 border-2 border-emerald-500/40 shadow-xl overflow-hidden p-1">
+            <img 
+              src="/guide-avatar.jpg" 
+              alt="Mascotte Guide Kongo" 
+              className="w-full h-full object-cover rounded-2xl shadow-inner" 
+            />
+            <div className="absolute bottom-1 right-1 bg-emerald-600 text-white rounded-full p-1 shadow-md flex items-center justify-center border-2 border-surface-container-lowest">
               <span className="material-symbols-outlined text-[13px]">explore</span>
             </div>
           </div>

@@ -62,13 +62,15 @@ export default function GuideFloatingButton({
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpenMenu((prev) => !prev)}
-        className="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-800 to-emerald-600 text-white shadow-xl hover:shadow-emerald-700/40 hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/20"
+        className="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-800 to-emerald-600 text-white shadow-xl hover:shadow-emerald-700/40 hover:scale-105 active:scale-95 transition-all cursor-pointer border-2 border-emerald-400/60 overflow-hidden p-0.5"
         title="Guide Kongo – Besoin d'aide ou visite guidée ?"
         aria-label="Ouvrir le Guide Kongo"
       >
-        <span className="material-symbols-outlined text-[28px] transition-transform duration-200 group-hover:rotate-6">
-          smart_toy
-        </span>
+        <img 
+          src="/guide-avatar.jpg" 
+          alt="Guide Kongo" 
+          className="w-full h-full object-cover rounded-xl transition-transform duration-200 group-hover:scale-110" 
+        />
 
         {/* Status dot */}
         <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
