@@ -10,6 +10,7 @@ interface ExploreViewProps {
   onOpenCapture: () => void;
   savedLocationIds: string[];
   onToggleSave: (id: string) => void;
+  onStartTour?: () => void;
 }
 
 export default function ExploreView({
@@ -20,6 +21,7 @@ export default function ExploreView({
   onOpenCapture,
   savedLocationIds,
   onToggleSave,
+  onStartTour,
 }: ExploreViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Incontournables");
@@ -68,6 +70,17 @@ export default function ExploreView({
           </a>
           
           <div className="flex items-center gap-2">
+            {onStartTour && (
+              <button
+                onClick={onStartTour}
+                className="px-3 py-1.5 bg-emerald-700/10 text-emerald-800 dark:text-emerald-300 dark:bg-emerald-950/40 border border-emerald-600/20 rounded-full font-sans text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                title="Revoir la visite guidée interactive"
+              >
+                <span className="material-symbols-outlined text-[15px]">tour</span>
+                <span className="hidden sm:inline">Visite guidée</span>
+              </button>
+            )}
+
             <a 
               href="/infos-tourisme"
               onClick={(e) => { e.preventDefault(); onNavigate("news"); }}
@@ -112,7 +125,7 @@ export default function ExploreView({
         </section>
 
         {/* Search Input Bar with Voice Note option */}
-        <section className="relative">
+        <section className="relative" data-guide="search-section">
           <div className="flex items-center bg-surface-container-highest rounded-2xl px-4 py-3.5 shadow-inner group transition-all focus-within:ring-2 focus-within:ring-primary border border-outline-variant/20">
             <span className="material-symbols-outlined text-on-surface-variant mr-3">search</span>
             <input 
@@ -126,6 +139,7 @@ export default function ExploreView({
               onClick={onOpenCapture}
               className="bg-primary/15 text-primary p-2.5 rounded-full hover:scale-105 active:scale-95 duration-100 flex items-center justify-center cursor-pointer"
               title="Note de voyage vocale"
+              data-guide="voice-btn"
             >
               <span className="material-symbols-outlined text-[20px] fill">mic</span>
             </button>

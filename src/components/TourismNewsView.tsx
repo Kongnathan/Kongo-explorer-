@@ -11,6 +11,7 @@ interface TourismNewsViewProps {
   onSelectPost: (id: string) => void;
   onNavigate: (tab: string) => void;
   onPostCreated?: (post: TourismPost) => void;
+  onStartTour?: () => void;
 }
 
 const CATEGORIES: ("Toutes" | TourismCategory)[] = [
@@ -39,6 +40,7 @@ export default function TourismNewsView({
   onSelectPost,
   onNavigate,
   onPostCreated,
+  onStartTour,
 }: TourismNewsViewProps) {
   const { currentUser, userProfile, isAdmin, openAuthModal, logout } = useAuth();
 
@@ -213,21 +215,32 @@ export default function TourismNewsView({
                   className="w-8 h-8 rounded-full hover:bg-surface-variant flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
                   title="Se déconnecter"
                 >
-                  <span className="material-symbols-outlined text-[18px]">logout</span>
+                    <span className="material-symbols-outlined text-[18px]">logout</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => openAuthModal("login")}
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold bg-surface-container hover:bg-surface-variant text-on-surface transition-all flex items-center gap-1 cursor-pointer"
+                  data-guide="auth-btn"
+                >
+                  <span className="material-symbols-outlined text-[16px]">login</span>
+                  <span className="hidden sm:inline">Connexion</span>
                 </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => openAuthModal("login")}
-                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-surface-container hover:bg-surface-variant text-on-surface transition-all flex items-center gap-1 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[16px]">login</span>
-                <span className="hidden sm:inline">Connexion</span>
-              </button>
-            )}
+              )}
+
+              {onStartTour && (
+                <button
+                  onClick={onStartTour}
+                  className="p-1.5 rounded-full hover:bg-surface-container text-on-surface-variant hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                  title="Visite guidée"
+                >
+                  <span className="material-symbols-outlined text-[20px]">tour</span>
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       {/* Hero Banner */}
       <div className="bg-gradient-to-br from-emerald-900 via-primary to-emerald-950 text-white px-5 py-8 md:py-12 relative overflow-hidden shadow-md">

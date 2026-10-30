@@ -460,6 +460,211 @@ Respond STRICTLY with a valid JSON object matching this structure:
   }
 });
 
+// 4. Guide Kongo Intelligent Chat (Gemini 3.8 Flash)
+const GUIDE_KNOWLEDGE_CONTEXT = `
+Fonctionnalités officielles de Kongo Explorer :
+1. Accueil & Recherche (route: '/') :
+   - Présentation des sites majeurs du Kongo Central.
+   - Barre de recherche en temps réel par mot-clé, ville ou lieu.
+   - Filtres thématiques : Incontournables, Nature, Histoire, Urbain.
+   - Bouton de capture vocale pour dicter une note de terrain.
+   - Action associée : 'recherche' ou 'accueil'.
+
+2. Carte interactive (route: '/carte') :
+   - Carte complète du Kongo Central avec localisation précise des sites (Zongo, Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu).
+   - Calcul d'itinéraires et géolocalisation de l'utilisateur.
+   - Action associée : 'carte'.
+
+3. Circuits & Itinéraires thématiques (route: '/circuits') :
+   - Itinéraires guidés pas à pas (Route du Fleuve, Écotourisme, Circuit historique Kongo).
+   - Indication de durée, type de route (voiture, 4x4, marche) et conseils spécifiques à chaque halte.
+   - Action associée : 'circuits'.
+
+4. Rubrique 'Infos Tourisme' (route: '/infos-tourisme') :
+   - Fil d'actualités, hébergements, restos, événements et bons plans.
+   - Consultation publique libre et gratuite sans compte.
+   - Pour publier : il faut être connecté (email/mot de passe ou Google).
+   - Formulaire de publication : titre, catégorie, lieu, description, 1 à 5 photos.
+   - RÈGLE ESSENTIELLE DE SÉCURITÉ ET MODÉRATION : Toute publication est soumise à validation préalable par un administrateur avant d'apparaître publiquement sur le site (statut 'pending' puis 'validated' ou 'rejected' avec motif).
+   - Limite de 5 publications par jour et par utilisateur.
+   - Bouton 'Signaler' pour chaque publication permettant de signaler un contenu non conforme.
+   - Action associée : 'infos-tourisme'.
+
+5. Carnet de voyage hors-ligne (route: '/carnet') :
+   - Permet d'enregistrer des fiches de destination pour les consulter en pleine brousse ou sans connexion Internet (sauvegarde locale).
+   - Action associée : 'carnet'.
+
+6. Conseils pratiques & Météo (route: '/conseils') :
+   - Préparation du voyage, meilleure période (saison sèche de juin à septembre), consignes de respect de la nature et des coutumes locales, sécurité.
+   - Action associée : 'conseils'.
+
+7. Compte & Connexion :
+   - Authentification Firebase sécurisée (Email/Mot de passe et Google).
+   - Permet de gérer ses publications touristiques et de suivre leur validation.
+   - Action associée : 'connexion'.
+`;
+
+app.post("/api/guide-chat", async (req, res) => {
+  const { message, history } = req.body;
+  if (!message || typeof message !== "string") {
+    return res.status(400).json({ error: "Le message est requis." });
+  }
+
+  const client = getGeminiClient();
+
+  // Keyword-based fallback matching if Gemini is unavailable
+  const buildFallbackResponse = (queryText: string) => {
+    const q = queryText.toLowerCase();
+    if (q.includes("publi") || q.includes("proposer") || q.includes("info") || q.includes("article") || q.includes("photo")) {
+      return {
+        reply: "Pour publier une info touristique, rendez-vous dans la rubrique 'Infos Tourisme' et cliquez sur '+ Proposer une publication'. Vous pourrez ajouter un titre, un lieu et jusqu'à 5 photos. Toute publication est d'abord vérifiée par un administrateur avant d'être visible de tous. Souhaitez-vous que je vous montre la rubrique ?",
+        suggestedAction: {
+          label: "Voir Infos Tourisme",
+          route: "/infos-tourisme",
+          tourStepId: "step-infos"
+        }
+      };
+    }
+    if (q.includes("carte") || q.includes("map") || q.includes("position") || q.includes("itineraire") || q.includes("localiser")) {
+      return {
+        reply: "La carte interactive vous permet de visualiser l'ensemble des sites majeurs du Kongo Central (Zongo, Matadi, Boma, Muanda, Kisantu...) et de calculer votre itinéraire. Voulez-vous que je vous ouvre la carte ?",
+        suggestedAction: {
+          label: "Ouvrir la carte",
+          route: "/carte",
+          tourStepId: "step-carte"
+        }
+      };
+    }
+    if (q.includes("circuit") || q.includes("trajet") || q.includes("route")) {
+      return {
+        reply: "La rubrique 'Circuits' vous propose des parcours thématiques clés en main avec les temps de trajet et le type de véhicule conseillé (voiture ou 4x4). Voulez-vous découvrir les circuits recommandés ?",
+        suggestedAction: {
+          label: "Découvrir les circuits",
+          route: "/circuits",
+          tourStepId: "step-circuits"
+        }
+      };
+    }
+    if (q.includes("hors ligne") || q.includes("carnet") || q.includes("enregistr") || q.includes("connexion") || q.includes("offline")) {
+      return {
+        reply: "Vous pouvez sauvegarder n'importe quelle destination dans votre carnet pour y accéder même sans connexion Internet. Voulez-vous que je vous montre votre carnet de voyage ?",
+        suggestedAction: {
+          label: "Consulter mon carnet",
+          route: "/carnet",
+          tourStepId: "step-carnet"
+        }
+      };
+    }
+    if (q.includes("valid") || q.includes("modéra") || q.includes("admin") || q.includes("refus")) {
+      return {
+        reply: "Toutes les contributions de la communauté sont relues et validées par nos administrateurs afin de garantir des informations fiables et bienveillantes. Vous pouvez suivre l'état de vos soumissions dans votre espace personnel. Voulez-vous visiter la rubrique Infos ?",
+        suggestedAction: {
+          label: "Voir Infos Tourisme",
+          route: "/infos-tourisme",
+          tourStepId: "step-infos"
+        }
+      };
+    }
+    return {
+      reply: "Bonjour ! Je suis Guide Kongo, votre compagnon pour explorer le Kongo Central. Vous pouvez rechercher des destinations, consulter la carte, suivre des circuits ou partager vos bons plans dans Infos Tourisme. Voulez-vous que je vous guide à travers les options du site ?",
+      suggestedAction: {
+        label: "Lancer la visite guidée",
+        route: "/",
+        tourStepId: "start-tour"
+      }
+    };
+  };
+
+  if (!client) {
+    const fallback = buildFallbackResponse(message);
+    return res.json({
+      success: true,
+      mode: "knowledge-base",
+      ...fallback
+    });
+  }
+
+  try {
+    const systemPrompt = `Tu es Guide Kongo, l'assistant de bienvenue du site Kongo Explorer.
+Tu aides les nouveaux visiteurs à comprendre le site et ses options.
+Tu réponds en français par défaut, ou dans la langue de l'utilisateur, avec un ton chaleureux, simple et concis (3 à 5 phrases max).
+Tu t'appuies uniquement sur la description des fonctionnalités fournie ci-dessous.
+Si tu ne sais pas, dis-le honnêtement et propose de contacter l'équipe.
+Tu ne demandes jamais de mot de passe ni de données sensibles.
+Tu proposes à la fin de ta réponse une action concrète (ex. “Voulez-vous que je vous montre la carte ?”).
+
+${GUIDE_KNOWLEDGE_CONTEXT}
+
+FORMAT DE RÉPONSE OBLIGATOIRE (JSON STRICT) :
+{
+  "reply": "Ton message chaleureux, simple et concis (3 à 5 phrases max) terminant par une proposition d'action concrète.",
+  "actionTarget": "carte" | "infos-tourisme" | "circuits" | "carnet" | "conseils" | "recherche" | "connexion" | null,
+  "actionLabel": "Texte court du bouton d'action (ex: 'Me montrer la carte', 'Ouvrir Infos Tourisme', etc.) ou null"
+}`;
+
+    // Format chat contents
+    let userPromptWithHistory = "";
+    if (Array.isArray(history) && history.length > 0) {
+      const recent = history.slice(-4);
+      userPromptWithHistory = `Historique de la conversation :\n` + 
+        recent.map(h => `${h.sender === "user" ? "Visiteur" : "Guide Kongo"}: ${h.text}`).join("\n") +
+        `\n\nNouveau message du visiteur: ${message}`;
+    } else {
+      userPromptWithHistory = message;
+    }
+
+    const response = await client.models.generateContent({
+      model: "gemini-3.8-flash",
+      contents: userPromptWithHistory,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+      }
+    });
+
+    const resultText = response.text || "{}";
+    let parsed: any = {};
+    try {
+      parsed = JSON.parse(resultText.trim());
+    } catch (e) {
+      parsed = { reply: resultText.trim(), actionTarget: null, actionLabel: null };
+    }
+
+    // Map actionTarget to actual route and tour step
+    let suggestedAction = null;
+    if (parsed.actionTarget === "carte") {
+      suggestedAction = { label: parsed.actionLabel || "Me montrer la carte", route: "/carte", tourStepId: "step-carte" };
+    } else if (parsed.actionTarget === "infos-tourisme") {
+      suggestedAction = { label: parsed.actionLabel || "Me montrer Infos Tourisme", route: "/infos-tourisme", tourStepId: "step-infos" };
+    } else if (parsed.actionTarget === "circuits") {
+      suggestedAction = { label: parsed.actionLabel || "Me montrer les circuits", route: "/circuits", tourStepId: "step-circuits" };
+    } else if (parsed.actionTarget === "carnet") {
+      suggestedAction = { label: parsed.actionLabel || "Me montrer le carnet", route: "/carnet", tourStepId: "step-carnet" };
+    } else if (parsed.actionTarget === "conseils") {
+      suggestedAction = { label: parsed.actionLabel || "Voir les conseils", route: "/conseils", tourStepId: "step-conseils" };
+    } else if (parsed.actionTarget === "recherche") {
+      suggestedAction = { label: parsed.actionLabel || "Me montrer la recherche", route: "/", tourStepId: "step-search" };
+    } else if (parsed.actionTarget === "connexion") {
+      suggestedAction = { label: parsed.actionLabel || "Se connecter", route: "/infos-tourisme", tourStepId: "step-auth" };
+    }
+
+    return res.json({
+      success: true,
+      mode: "gemini-3.8-flash",
+      reply: parsed.reply || "Bonjour ! Comment puis-je vous aider à explorer le Kongo Central ?",
+      suggestedAction
+    });
+  } catch (error: any) {
+    console.error("Gemini Guide chat error:", error);
+    const fallback = buildFallbackResponse(message);
+    return res.json({
+      success: true,
+      mode: "fallback-on-error",
+      ...fallback
+    });
+  }
+});
+
 // Start Vite dev server in development or serve static files in production
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {

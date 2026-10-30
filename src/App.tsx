@@ -21,6 +21,11 @@ import NotFoundView from "./components/NotFoundView";
 import RouteSEO from "./components/SEO";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import AuthModal from "./components/AuthModal";
+import WelcomeModal from "./components/guide/WelcomeModal";
+import OnboardingTour from "./components/guide/OnboardingTour";
+import GuideChatModal from "./components/guide/GuideChatModal";
+import GuideFloatingButton from "./components/guide/GuideFloatingButton";
+import { TOUR_STEPS } from "./components/guide/guideSteps";
 import { collection, onSnapshot, query, doc, setDoc, deleteDoc, updateDoc, where } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebaseConfig";
 import { 
@@ -540,6 +545,106 @@ export function AppContent() {
   // UI states
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
   const [showSplash, setShowSplash] = useState<boolean>(true);
+
+  // Guide Kongo Onboarding States
+  const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  const [currentTourStep, setCurrentTourStep] = useState<number>(0);
+  const [isGuideChatOpen, setIsGuideChatOpen] = useState(false);
+
+  // Check first-time visitor for onboarding welcome modal
+  useEffect(() => {
+    const onboardingDone = localStorage.getItem("kongo_onboarding_done");
+    if (!onboardingDone) {
+      const timer = setTimeout(() => {
+        setIsWelcomeModalOpen(true);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleStartTour = (fromStep?: number) => {
+    setIsWelcomeModalOpen(false);
+    let step = 0;
+    if (typeof fromStep === "number") {
+      step = fromStep;
+    } else {
+      const savedStep = localStorage.getItem("kongo_tour_step");
+      if (savedStep) {
+        const parsed = parseInt(savedStep, 10);
+        if (!isNaN(parsed) && parsed >= 0 && parsed < TOUR_STEPS.length) {
+          step = parsed;
+        }
+      }
+    }
+    setCurrentTourStep(step);
+    localStorage.setItem("kongo_tour_step", String(step));
+    const targetRoute = TOUR_STEPS[step]?.route;
+    if (targetRoute && targetRoute !== location.pathname) {
+      navigate(targetRoute);
+    }
+    setIsTourOpen(true);
+  };
+
+  const handleNextTourStep = () => {
+    const next = currentTourStep + 1;
+    if (next < TOUR_STEPS.length) {
+      setCurrentTourStep(next);
+      localStorage.setItem("kongo_tour_step", String(next));
+      const targetRoute = TOUR_STEPS[next]?.route;
+      if (targetRoute && targetRoute !== location.pathname) {
+        navigate(targetRoute);
+      }
+      if (currentUser?.uid && isFirebaseConfigured) {
+        setDoc(doc(db, "users", currentUser.uid), { tourStep: next }, { merge: true }).catch(() => {});
+      }
+    }
+  };
+
+  const handlePrevTourStep = () => {
+    const prev = Math.max(0, currentTourStep - 1);
+    setCurrentTourStep(prev);
+    localStorage.setItem("kongo_tour_step", String(prev));
+    const targetRoute = TOUR_STEPS[prev]?.route;
+    if (targetRoute && targetRoute !== location.pathname) {
+      navigate(targetRoute);
+    }
+  };
+
+  const handleSkipTour = () => {
+    setIsTourOpen(false);
+    setIsWelcomeModalOpen(false);
+    localStorage.setItem("kongo_onboarding_done", "true");
+    if (currentUser?.uid && isFirebaseConfigured) {
+      setDoc(doc(db, "users", currentUser.uid), { onboardingCompleted: true }, { merge: true }).catch(() => {});
+    }
+  };
+
+  const handleCompleteTour = () => {
+    setIsTourOpen(false);
+    setIsWelcomeModalOpen(false);
+    localStorage.setItem("kongo_onboarding_done", "true");
+    localStorage.removeItem("kongo_tour_step");
+    if (currentUser?.uid && isFirebaseConfigured) {
+      setDoc(doc(db, "users", currentUser.uid), { onboardingCompleted: true }, { merge: true }).catch(() => {});
+    }
+  };
+
+  const handleDismissWelcome = () => {
+    setIsWelcomeModalOpen(false);
+    localStorage.setItem("kongo_onboarding_done", "dismissed");
+  };
+
+  const handleNavigateFromChat = (route: string, tourStepIndex?: number) => {
+    if (route !== location.pathname) {
+      navigate(route);
+    }
+    if (typeof tourStepIndex === "number") {
+      setTimeout(() => {
+        handleStartTour(tourStepIndex);
+      }, 350);
+    }
+  };
 
   // PWA & Connectivity states
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -1183,6 +1288,7 @@ export function AppContent() {
                     onOpenCapture={() => setIsCaptureOpen(true)}
                     savedLocationIds={savedLocationIds}
                     onToggleSave={handleToggleSave}
+                    onStartTour={() => handleStartTour(0)}
                   />
                 }
               />
@@ -1232,6 +1338,7 @@ export function AppContent() {
                     onSelectPost={(id) => navigate(`/infos-tourisme/${id}`)}
                     onNavigate={handleNavigate}
                     onPostCreated={handleAddTourismPost}
+                    onStartTour={() => handleStartTour(4)}
                   />
                 }
               />
@@ -1355,6 +1462,7 @@ export function AppContent() {
                 : "text-on-surface-variant hover:text-primary"
             }`}
             title="Explorer les merveilles du Kongo"
+            data-guide="nav-explore"
           >
             <span className={`material-symbols-outlined text-[22px] ${isExploreActive ? "fill text-primary" : "text-outline"}`}>
               explore
@@ -1371,6 +1479,7 @@ export function AppContent() {
                 : "text-on-surface-variant hover:text-primary"
             }`}
             title="Infos Tourisme & Bonnes adresses"
+            data-guide="nav-infos"
           >
             <span className={`material-symbols-outlined text-[22px] ${isNewsActive ? "fill text-primary" : "text-outline"}`}>
               feed
@@ -1387,6 +1496,7 @@ export function AppContent() {
                 : "text-on-surface-variant hover:text-primary"
             }`}
             title="Carte interactive du Kongo Central"
+            data-guide="nav-carte"
           >
             <span className={`material-symbols-outlined text-[22px] ${isMapActive ? "fill text-primary" : "text-outline"}`}>
               near_me
@@ -1403,6 +1513,7 @@ export function AppContent() {
                 : "text-on-surface-variant hover:text-primary"
             }`}
             title="Circuits & Itinéraires thématiques"
+            data-guide="nav-circuits"
           >
             <span className={`material-symbols-outlined text-[22px] ${isCircuitsActive ? "fill text-primary" : "text-outline"}`}>
               route
@@ -1419,6 +1530,7 @@ export function AppContent() {
                 : "text-on-surface-variant hover:text-primary"
             }`}
             title="Carnet de voyage hors-ligne"
+            data-guide="nav-carnet"
           >
             <span className={`material-symbols-outlined text-[22px] ${isSavedActive ? "fill text-primary" : "text-outline"}`}>
               bookmark
@@ -1435,6 +1547,7 @@ export function AppContent() {
                 : "text-on-surface-variant hover:text-primary"
             }`}
             title="Conseils pratiques, météo et culture"
+            data-guide="nav-conseils"
           >
             <span className={`material-symbols-outlined text-[22px] ${isTipsActive ? "fill text-primary" : "text-outline"}`}>
               info
@@ -1443,6 +1556,40 @@ export function AppContent() {
           </Link>
         </nav>
       )}
+
+      {/* Guide Kongo Floating Action Button (Always available in bottom-right) */}
+      {!isAdminPage && (
+        <GuideFloatingButton
+          onOpenChat={() => setIsGuideChatOpen(true)}
+          onStartTour={() => handleStartTour(0)}
+        />
+      )}
+
+      {/* Welcome Prompt Modal on First Visit */}
+      <WelcomeModal
+        isOpen={isWelcomeModalOpen}
+        onStartTour={() => handleStartTour(0)}
+        onDismiss={handleDismissWelcome}
+      />
+
+      {/* Interactive Step-by-Step Onboarding Tour */}
+      <OnboardingTour
+        isOpen={isTourOpen}
+        currentStepIndex={currentTourStep}
+        onNext={handleNextTourStep}
+        onPrev={handlePrevTourStep}
+        onSkip={handleSkipTour}
+        onComplete={handleCompleteTour}
+        onOpenChat={() => setIsGuideChatOpen(true)}
+      />
+
+      {/* Guide Kongo Intelligent Chat Assistant Modal */}
+      <GuideChatModal
+        isOpen={isGuideChatOpen}
+        onClose={() => setIsGuideChatOpen(false)}
+        onStartTour={() => handleStartTour(0)}
+        onNavigateTo={handleNavigateFromChat}
+      />
 
       {/* Capture Modal overlay */}
       <QuickCaptureModal

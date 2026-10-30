@@ -164,6 +164,8 @@ export interface UserProfile {
   photoURL?: string;
   role: "admin" | "user";
   createdAt: string;
+  onboardingCompleted?: boolean;
+  tourStep?: number;
 }
 
 
