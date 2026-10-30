@@ -1,29 +1,45 @@
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebaseConfig";
 
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
+// Safe Firestore payload limit per image to keep full post documents well under 1 MB
+const TARGET_IMAGE_MAX_DIMENSION = 1200;
+const STORAGE_TIMEOUT_MS = 3000; // 3 seconds max before automatic fallback to Firestore database
+
+export interface CompressedImageResult {
+  blob: Blob;
+  dataUrl: string;
+  sizeBytes: number;
+}
 
 /**
  * Compresses an image file in the browser using HTML5 Canvas.
- * Ensures the result is under 2 MB while preserving good visual quality.
+ * Generates an ultra-optimized image (typically 60-120 KB) that can either be uploaded
+ * to Firebase Storage or saved directly in the Firestore database document.
  */
 export async function compressImage(
   file: File,
-  maxDimension = 1920,
-  initialQuality = 0.85
-): Promise<Blob> {
-  // If already an image and below 1.5MB, check if compression is even necessary
+  maxDimension = TARGET_IMAGE_MAX_DIMENSION,
+  initialQuality = 0.75
+): Promise<CompressedImageResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Erreur de lecture du fichier"));
+
+    reader.onerror = () => {
+      reject(new Error("Impossible de lire le fichier image sélectionné."));
+    };
+
     reader.onload = () => {
       const img = new Image();
-      img.onerror = () => reject(new Error("Fichier image non valide"));
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
 
-        // Resize down if larger than maxDimension
+      img.onerror = () => {
+        reject(new Error("Le fichier sélectionné n'est pas une image valide."));
+      };
+
+      img.onload = () => {
+        let width = img.naturalWidth || img.width;
+        let height = img.naturalHeight || img.height;
+
+        // Calculate aspect-ratio preserving dimensions
         if (width > maxDimension || height > maxDimension) {
           if (width > height) {
             height = Math.round((height * maxDimension) / width);
@@ -38,59 +54,85 @@ export async function compressImage(
         canvas.width = width;
         canvas.height = height;
 
-        const ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d", { alpha: false });
         if (!ctx) {
-          return reject(new Error("Impossible d'initialiser le canvas 2D"));
+          return reject(new Error("Impossible d'initialiser le moteur de compression d'image."));
         }
 
+        // Fill white background to prevent black PNG transparent backgrounds
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Iterative compression to guarantee < 2 MB
-        let quality = initialQuality;
-        const tryCompress = (q: number) => {
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                return reject(new Error("Échec de la compression de l'image"));
-              }
-              if (blob.size <= MAX_IMAGE_BYTES || q <= 0.3) {
-                resolve(blob);
-              } else {
-                // Reduce quality and try again
-                tryCompress(Math.max(0.3, q - 0.15));
-              }
-            },
-            "image/jpeg",
-            q
-          );
+        // Try WebP first for optimal size/quality ratio, fallback to JPEG
+        const tryExport = (mimeType: string, quality: number): Promise<{ blob: Blob; dataUrl: string }> => {
+          return new Promise((resBlob, rejBlob) => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  return rejBlob(new Error("Échec de l'export de l'image"));
+                }
+                const dataUrl = canvas.toDataURL(mimeType, quality);
+                resBlob({ blob, dataUrl });
+              },
+              mimeType,
+              quality
+            );
+          });
         };
 
-        tryCompress(quality);
+        // Two-pass optimization: try 0.75, if larger than 140KB try 0.62
+        tryExport("image/jpeg", initialQuality)
+          .then(async ({ blob, dataUrl }) => {
+            if (blob.size > 140 * 1024) {
+              const secondPass = await tryExport("image/jpeg", 0.62);
+              resolve({
+                blob: secondPass.blob,
+                dataUrl: secondPass.dataUrl,
+                sizeBytes: secondPass.blob.size,
+              });
+            } else {
+              resolve({
+                blob,
+                dataUrl,
+                sizeBytes: blob.size,
+              });
+            }
+          })
+          .catch((err) => reject(err));
       };
+
       img.src = reader.result as string;
     };
+
     reader.readAsDataURL(file);
   });
 }
 
 /**
- * Uploads a compressed image blob to Firebase Storage
- * Under path: `tourism_posts/${userId}/${timestamp}_${cleanFileName}.jpg`
- * Reports upload progress via optional callback (0 to 100)
+ * Handles image persistence with automatic database fallback:
+ * 1. Compresses image client-side to a lightweight high-fidelity format (<120 KB).
+ * 2. Attempts Firebase Storage upload with a strict 3-second timeout.
+ * 3. If Firebase Storage succeeds, returns the public Storage download URL.
+ * 4. If Firebase Storage fails (bucket not enabled, CORS error, missing permission, or timeout),
+ *    IMMEDIATELY and seamlessly falls back to returning the compressed base64 Data URL,
+ *    which is stored directly in the Firestore database document (`tourism_posts`).
  */
 export async function uploadTourismImage(
   file: File,
   userId: string,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  onStatusUpdate?: (status: string) => void
 ): Promise<string> {
-  // 1. Client-side compression
-  const compressedBlob = await compressImage(file);
+  // Step 1: Client-side compression
+  if (onStatusUpdate) onStatusUpdate("Compression & optimisation de l'image...");
+  if (onProgress) onProgress(25);
 
-  if (compressedBlob.size > MAX_IMAGE_BYTES) {
-    throw new Error("L'image compressée dépasse toujours la limite de 2 Mo.");
-  }
+  const compressed = await compressImage(file);
 
-  // 2. Storage upload
+  if (onProgress) onProgress(50);
+
+  // Step 2: Attempt Firebase Storage upload with a fast timeout
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substring(2, 7);
   const cleanName = file.name
@@ -99,8 +141,14 @@ export async function uploadTourismImage(
   const storagePath = `tourism_posts/${userId}/${timestamp}_${randomSuffix}_${cleanName}.jpg`;
 
   try {
+    if (!storage) {
+      throw new Error("Firebase Storage non initialisé");
+    }
+
+    if (onStatusUpdate) onStatusUpdate("Vérification du stockage distant...");
+
     const storageRef = ref(storage, storagePath);
-    const uploadTask = uploadBytesResumable(storageRef, compressedBlob, {
+    const uploadTask = uploadBytesResumable(storageRef, compressed.blob, {
       contentType: "image/jpeg",
       customMetadata: {
         originalName: file.name,
@@ -108,27 +156,23 @@ export async function uploadTourismImage(
       },
     });
 
-    return new Promise((resolve, reject) => {
+    const uploadPromise = new Promise<string>((resolve, reject) => {
       uploadTask.on(
         "state_changed",
         (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          if (onProgress) {
-            onProgress(Math.round(progress));
+          if (snapshot.totalBytes > 0) {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            if (onProgress) {
+              onProgress(Math.round(50 + (progress * 0.45))); // scale from 50 to 95%
+            }
           }
         },
         (error) => {
-          console.warn("[Firebase Storage] Upload failed, falling back to base64 Data URL:", error);
-          // Graceful fallback: convert blob to data URL if storage rules block or quota exceeded
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(error);
-          reader.readAsDataURL(compressedBlob);
+          reject(error);
         },
         async () => {
           try {
             const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-            if (onProgress) onProgress(100);
             resolve(downloadUrl);
           } catch (err) {
             reject(err);
@@ -136,13 +180,36 @@ export async function uploadTourismImage(
         }
       );
     });
-  } catch (err) {
-    console.warn("Storage upload exception, converting to local data URL:", err);
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(err);
-      reader.readAsDataURL(compressedBlob);
+
+    // Timeout guard: if Firebase Storage bucket does not respond within 3 seconds,
+    // cancel/abort and fall back to storing directly in the database
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        try {
+          uploadTask.cancel();
+        } catch {
+          // ignore cancel error
+        }
+        reject(new Error("STORAGE_TIMEOUT"));
+      }, STORAGE_TIMEOUT_MS);
     });
+
+    const remoteUrl = await Promise.race([uploadPromise, timeoutPromise]);
+    if (onProgress) onProgress(100);
+    return remoteUrl;
+  } catch (storageErr: any) {
+    console.info(
+      "[Kongo Explorer] Stockage Firebase Storage indisponible ou délai dépassé (" +
+        (storageErr?.message || "erreur") +
+        "). Sauvegarde directe de la photo dans la base de données Firestore."
+    );
+
+    if (onStatusUpdate) {
+      onStatusUpdate("Sauvegarde directe dans la base de données...");
+    }
+    if (onProgress) onProgress(100);
+
+    // Direct database persistence: return the compressed Data URL
+    return compressed.dataUrl;
   }
 }

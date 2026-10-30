@@ -92,7 +92,7 @@ export default function TourismPostsManager({
     const galleryUrls = formGalleryText
       .split("\n")
       .map((s) => s.trim())
-      .filter((s) => s.startsWith("http"));
+      .filter((s) => s.startsWith("http") || s.startsWith("data:"));
 
     if (!galleryUrls.includes(fallbackPhoto)) {
       galleryUrls.unshift(fallbackPhoto);

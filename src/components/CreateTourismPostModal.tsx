@@ -53,6 +53,7 @@ export default function CreateTourismPostModal({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadStatusText, setUploadStatusText] = useState<string>("Compression & Téléversement...");
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -132,22 +133,33 @@ export default function CreateTourismPostModal({
 
     setSubmitting(true);
     setUploadProgress(10);
+    setUploadStatusText("Préparation de l'optimisation...");
 
     try {
-      // 1. Upload photos sequentially with client-side compression
+      // 1. Process and upload photos sequentially with client-side compression
       const uploadedUrls: string[] = [];
       const total = selectedFiles.length;
 
       for (let i = 0; i < total; i++) {
         const file = selectedFiles[i];
-        const url = await uploadTourismImage(file, currentUser.uid, (p) => {
-          const overall = Math.round(((i + p / 100) / total) * 80) + 10;
-          setUploadProgress(overall);
-        });
+        setUploadStatusText(`Compression de la photo ${i + 1}/${total}...`);
+
+        const url = await uploadTourismImage(
+          file,
+          currentUser.uid,
+          (p) => {
+            const overall = Math.round(((i + p / 100) / total) * 75) + 10;
+            setUploadProgress(overall);
+          },
+          (status) => {
+            setUploadStatusText(`${status} (${i + 1}/${total})`);
+          }
+        );
         uploadedUrls.push(url);
       }
 
-      setUploadProgress(95);
+      setUploadProgress(90);
+      setUploadStatusText("Enregistrement dans la base de données Firestore...");
 
       // 2. Prepare post document conforming to requirements:
       // status strictly forced to "pending", authorId = user.uid
@@ -195,6 +207,7 @@ export default function CreateTourismPostModal({
       }
 
       setUploadProgress(100);
+      setUploadStatusText("Publication enregistrée avec succès !");
       setSuccessMsg("Votre publication est en attente de validation.");
 
       setTimeout(() => {
@@ -466,8 +479,8 @@ export default function CreateTourismPostModal({
             {uploadProgress !== null && (
               <div className="space-y-1 pt-2">
                 <div className="flex items-center justify-between text-[11px] text-on-surface-variant font-medium">
-                  <span>Compression & Téléversement...</span>
-                  <span>{uploadProgress}%</span>
+                  <span className="truncate pr-2">{uploadStatusText}</span>
+                  <span className="font-mono font-bold text-primary">{uploadProgress}%</span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
                   <div

@@ -27,6 +27,9 @@ export function resolveImageUrl(image?: string): string {
     return DEFAULT_IMAGE;
   }
   const trimmed = image.trim();
+  if (trimmed.startsWith("data:")) {
+    return DEFAULT_IMAGE;
+  }
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
     return trimmed;
   }
