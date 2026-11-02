@@ -204,7 +204,7 @@ export default function RatingSection({
             </h3>
           </div>
           <p className="text-on-surface-variant text-xs">
-            Évaluez {locationTitle} et consultez la note moyenne synchronisée en temps réel sur Firestore.
+            Donnez votre avis sur {locationTitle} et voyez la note moyenne des autres voyageurs.
           </p>
         </div>
 

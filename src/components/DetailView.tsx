@@ -18,6 +18,7 @@ interface DetailViewProps {
   isAdmin?: boolean;
   onSubmitReport?: (report: CommunityReport) => void;
   guideWhatsAppSettings?: GuideWhatsAppSettings;
+  onOpenGuide?: () => void;
 }
 
 const DEFAULT_CATEGORY_PHOTOS: Record<string, string[]> = {
@@ -53,7 +54,8 @@ export default function DetailView({
   onUpdateLocation,
   isAdmin = false,
   onSubmitReport,
-  guideWhatsAppSettings
+  guideWhatsAppSettings,
+  onOpenGuide
 }: DetailViewProps) {
   const loc = locations.find(l => l.id === locationId) || locations[0];
   const [timerOffset, setTimerOffset] = useState(100);
@@ -327,7 +329,7 @@ export default function DetailView({
           
           <button 
             onClick={() => onToggleSave(loc.id)}
-            aria-label={isSaved ? "Retirer du carnet" : "Sauvegarder pour le hors-ligne"} 
+            aria-label={isSaved ? "Retirer du carnet" : "Enregistrer pour lire sans internet"} 
             className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-variant/50 transition-colors active:scale-95 duration-100 cursor-pointer text-primary"
           >
             <span className="material-symbols-outlined fill-current">
@@ -496,7 +498,7 @@ export default function DetailView({
             <button
               onClick={() => setIsRouteModalOpen(true)}
               className="flex-1 min-w-[150px] bg-primary hover:bg-primary-container text-white py-3 px-4 rounded-xl font-sans text-xs font-bold shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
-              title="Calculer l'itinéraire Google Maps en direct"
+              title="Voir le chemin pour aller à cet endroit depuis votre position"
             >
               <span className="material-symbols-outlined text-[20px]">directions</span>
               <span>Itinéraire</span>
@@ -506,10 +508,10 @@ export default function DetailView({
             <button
               onClick={() => openExternalGpsRoute(loc.lat, loc.lng, loc.title)}
               className="py-3 px-3 rounded-xl bg-surface-container hover:bg-surface-variant text-on-surface font-sans text-xs font-bold border border-outline-variant/30 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              title="Ouvrir dans Google Maps externe"
+              title="Ouvrir cet endroit dans l'application Google Maps"
             >
               <span className="material-symbols-outlined text-[18px]">open_in_new</span>
-              <span className="hidden sm:inline">Maps Ext</span>
+              <span className="hidden sm:inline">Ouvrir Google Maps</span>
             </button>
 
             {/* Contacter Guide / WhatsApp (Affiché uniquement si activé et numéro configuré, sans numéro en dur) */}
@@ -519,10 +521,10 @@ export default function DetailView({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 min-w-[130px] bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-3.5 rounded-xl font-sans text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
-                title={`Contacter par WhatsApp : ${rawTargetNumber}`}
+                title={`Écrire au guide sur WhatsApp : ${rawTargetNumber}`}
               >
                 <span className="material-symbols-outlined text-[18px]">call</span>
-                <span>Guide / WhatsApp</span>
+                <span>Écrire au guide</span>
               </a>
             )}
 
@@ -538,18 +540,36 @@ export default function DetailView({
               <span className={`material-symbols-outlined text-[18px] ${isSaved ? "fill text-amber-600" : ""}`}>
                 {isSaved ? "bookmark_added" : "bookmark_add"}
               </span>
-              <span className="hidden sm:inline">{isSaved ? "Dans le Carnet" : "Enregistrer"}</span>
+              <span className="hidden sm:inline">{isSaved ? "Dans mon carnet" : "Enregistrer"}</span>
             </button>
 
             {/* Community Report Button */}
             <button
               onClick={() => setIsReportModalOpen(true)}
               className="py-3 px-3 rounded-xl font-sans text-xs font-bold bg-surface-container hover:bg-surface-variant border border-outline-variant/30 text-outline hover:text-on-surface transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              title="Signaler une modification sur la route ou le tarif"
+              title="Dites-nous si une information est fausse ou a changé (route, prix, etc.)"
             >
               <span className="material-symbols-outlined text-[18px] text-amber-600">report_problem</span>
-              <span className="hidden md:inline">Signaler MAJ</span>
+              <span className="hidden md:inline">Signaler une erreur</span>
             </button>
+          </div>
+
+          {/* Short explanations of each button, in plain words */}
+          <div className="mt-3 px-2 text-center space-y-2">
+            <p className="text-xs text-on-surface-variant leading-relaxed max-w-md mx-auto">
+              <strong>Itinéraire</strong> : voir le chemin pour y aller. <strong>Enregistrer</strong> : garder cette fiche dans votre carnet pour la lire même sans internet.
+              {showWhatsAppButton && <> <strong>Écrire au guide</strong> : discuter avec le guide sur WhatsApp.</>}
+              {" "}<strong>Signaler une erreur</strong> : nous dire si une information est fausse.
+            </p>
+            {onOpenGuide && (
+              <button
+                onClick={onOpenGuide}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all cursor-pointer active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[16px]">support_agent</span>
+                Besoin d'aide ?
+              </button>
+            )}
           </div>
         </section>
 
@@ -579,10 +599,10 @@ export default function DetailView({
                 </div>
                 <p className="text-on-surface-variant text-xs mt-0.5">
                   {isPlayingAudio 
-                    ? "Écoute de la narration en cours..." 
+                    ? "Lecture en cours..."
                     : isPausedAudio 
                     ? "Récit audio en pause" 
-                    : "Écoutez la présentation et l'histoire du site en audio"}
+                    : "Écoutez la présentation et l'histoire de ce lieu à voix haute"}
                 </p>
               </div>
             </div>
@@ -662,7 +682,7 @@ export default function DetailView({
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-primary fill text-2xl">hiking</span>
-                <h3 className="font-sans text-body-lg font-bold text-primary">Effort de Randonnée</h3>
+                <h3 className="font-sans text-body-lg font-bold text-primary">Effort à prévoir</h3>
               </div>
               
               {/* Time-Timer Progress circle */}
@@ -723,14 +743,14 @@ export default function DetailView({
                 onClick={() => setWeatherOpen(!weatherOpen)}
                 className="text-primary font-mono text-xs font-bold underline cursor-pointer hover:text-secondary"
               >
-                {weatherOpen ? "Masquer météo" : "Détails climat"}
+                {weatherOpen ? "Masquer la météo" : "Voir la météo"}
               </button>
             </div>
 
             {weatherOpen && (
               <div className="mt-3 p-3 bg-surface-container-highest rounded-xl text-xs space-y-1 border border-outline-variant/20 animate-fade-in font-mono">
                 <p>🌤️ Température moyenne : 27°C</p>
-                <p>💧 Humidité relative : 80% (Climat Équatorial)</p>
+                <p>💧 Humidité de l'air : 80 % (climat chaud et humide)</p>
                 <p>🌬️ Vent dominant : 12 km/h</p>
               </div>
             )}
@@ -868,12 +888,12 @@ export default function DetailView({
               </div>
               <div className="text-left">
                 <h4 className="font-sans text-body-lg font-bold text-on-surface">
-                  {isSaved ? "Fiche stockée hors-ligne" : "Conserver pour votre voyage"}
+                  {isSaved ? "Fiche enregistrée sur votre téléphone" : "Garder cette fiche pour votre voyage"}
                 </h4>
                 <p className="text-on-surface-variant text-xs leading-normal">
-                  {isSaved 
-                    ? "Cette fiche est enregistrée et sera disponible sans connexion internet." 
-                    : "Ajoutez cette fiche à votre carnet pour la consulter hors-ligne lors de votre trajet."}
+                  {isSaved
+                    ? "Vous pouvez la relire à tout moment, même sans internet."
+                    : "Ajoutez cette fiche à votre carnet pour la relire pendant votre trajet, même sans internet."}
                 </p>
               </div>
             </div>

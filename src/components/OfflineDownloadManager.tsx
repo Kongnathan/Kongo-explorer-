@@ -52,16 +52,16 @@ export default function OfflineDownloadManager({
 
       if (result.success) {
         setSuccessMessage(
-          `Succès ! ${result.locationsCount} destinations et ${result.imagesCount} photos sont désormais stockées en local dans IndexedDB (${(result.totalBytes / (1024 * 1024)).toFixed(1)} Mo).`
+          `C'est fait ! ${result.locationsCount} destinations et ${result.imagesCount} photos sont enregistrées sur votre téléphone (${(result.totalBytes / (1024 * 1024)).toFixed(1)} Mo). Vous pouvez maintenant les consulter sans internet.`
         );
         await loadStatus();
         if (onSyncComplete) onSyncComplete();
       } else {
-        setErrorMessage(result.error || "Une erreur est survenue lors du téléchargement.");
+        setErrorMessage(result.error || "Un problème est survenu pendant l'enregistrement. Veuillez réessayer.");
       }
     } catch (err) {
       console.error("Offline download failed:", err);
-      setErrorMessage("Échec du téléchargement. Vérifiez votre connexion internet.");
+      setErrorMessage("L'enregistrement n'a pas marché. Vérifiez que vous avez internet, puis réessayez.");
     } finally {
       setIsDownloading(false);
     }
@@ -71,11 +71,11 @@ export default function OfflineDownloadManager({
     try {
       await clearOfflineCache();
       setShowClearConfirm(false);
-      setSuccessMessage("Le stockage hors-ligne a été vidé.");
+      setSuccessMessage("Les données enregistrées sur votre téléphone ont été supprimées.");
       await loadStatus();
       if (onSyncComplete) onSyncComplete();
     } catch (e) {
-      setErrorMessage("Impossible de vider le cache.");
+      setErrorMessage("Impossible de supprimer les données pour le moment. Veuillez réessayer.");
     }
   };
 
@@ -87,31 +87,31 @@ export default function OfflineDownloadManager({
       data-guide="offline-download-section"
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-start gap-3">
+      <div className="flex flex-col items-center text-center gap-3">
+        <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-[22px]">
               {status?.isFullyCached ? "offline_pin" : "cloud_download"}
             </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="max-w-md mx-auto">
+            <div className="flex items-center justify-center gap-2 flex-wrap">
               <h3 className="font-sans text-sm font-bold text-on-surface">
-                Mode Hors-ligne & Données Complètes
+                Utiliser le site sans internet
               </h3>
               {status?.isFullyCached ? (
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 uppercase flex items-center gap-1 border border-emerald-500/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  Prêt Hors-ligne
+                  Prêt sans internet
                 </span>
               ) : (
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 uppercase border border-amber-500/30">
-                  Non téléchargé
+                  Pas encore enregistré
                 </span>
               )}
             </div>
-            <p className="text-xs text-on-surface-variant mt-0.5 leading-relaxed">
-              Pré-chargez dynamiquement toutes les fiches, textes descriptifs, coordonnées GPS et photos en mémoire locale (<strong>IndexedDB</strong>) pour explorer sans aucun réseau.
+            <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
+              Enregistrez toutes les destinations et leurs photos sur votre téléphone pour les consulter plus tard, même sans internet. Faites-le quand vous avez du réseau, avant de partir en voyage. Cela prend un peu de place sur votre téléphone.
             </p>
           </div>
         </div>
@@ -121,18 +121,18 @@ export default function OfflineDownloadManager({
           <button
             onClick={handleStartDownload}
             disabled={locations.length === 0}
-            className={`px-4 py-2.5 rounded-xl font-sans text-xs font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer self-start sm:self-center shrink-0 ${
+            className={`px-4 py-2.5 rounded-xl font-sans text-xs font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0 ${
               status?.isFullyCached
                 ? "bg-surface-container border border-outline-variant/40 text-on-surface hover:bg-surface-container-high"
                 : "bg-primary text-white hover:bg-primary-container"
             }`}
-            title="Télécharger toutes les données et photos pour un usage 100% hors-ligne"
+            title="Enregistrer toutes les destinations et photos sur votre téléphone pour les voir sans internet"
           >
             <span className="material-symbols-outlined text-[18px]">
               {status?.isFullyCached ? "sync" : "download"}
             </span>
             <span>
-              {status?.isFullyCached ? "Actualiser le hors-ligne" : "Tout télécharger pour hors-ligne"}
+              {status?.isFullyCached ? "Mettre à jour mes données" : "Enregistrer sur mon téléphone"}
             </span>
           </button>
         )}
@@ -161,10 +161,10 @@ export default function OfflineDownloadManager({
 
           <div className="flex items-center justify-between text-[11px] text-on-surface-variant font-mono">
             <span>
-              Photos : {progress.completedImages} / {progress.totalImages}
+              Photos enregistrées : {progress.completedImages} sur {progress.totalImages}
             </span>
             <span>
-              Taille : {(progress.totalBytes / (1024 * 1024)).toFixed(1)} Mo
+              Espace utilisé : {(progress.totalBytes / (1024 * 1024)).toFixed(1)} Mo
             </span>
           </div>
         </div>
@@ -200,20 +200,20 @@ export default function OfflineDownloadManager({
 
       {/* Status Details / Storage stats */}
       {status && (
-        <div className="pt-2 border-t border-outline-variant/15 flex flex-wrap items-center justify-between gap-3 text-xs text-on-surface-variant">
-          <div className="flex items-center gap-4 flex-wrap">
+        <div className="pt-2 border-t border-outline-variant/15 flex flex-col items-center text-center gap-3 text-xs text-on-surface-variant">
+          <div className="flex items-center justify-center gap-4 flex-wrap">
             <span className="flex items-center gap-1.5 font-medium">
               <span className="material-symbols-outlined text-[16px] text-outline">database</span>
-              <span><strong>{status.locationsCount}</strong> destinations dans IndexedDB</span>
+              <span><strong>{status.locationsCount}</strong> destinations enregistrées</span>
             </span>
             <span className="flex items-center gap-1.5 font-medium">
               <span className="material-symbols-outlined text-[16px] text-outline">image</span>
-              <span><strong>{status.imagesCount}</strong> photos en cache</span>
+              <span><strong>{status.imagesCount}</strong> photos enregistrées</span>
             </span>
             {status.estimatedMb > 0 && (
               <span className="flex items-center gap-1.5 font-medium">
                 <span className="material-symbols-outlined text-[16px] text-outline">hard_drive</span>
-                <span><strong>~{status.estimatedMb} Mo</strong> d'espace utilisé</span>
+                <span><strong>~{status.estimatedMb} Mo</strong> de place utilisée</span>
               </span>
             )}
           </div>
@@ -226,7 +226,7 @@ export default function OfflineDownloadManager({
                   onClick={() => setShowClearConfirm(true)}
                   className="text-outline hover:text-rose-600 transition-colors text-[11px] underline cursor-pointer"
                 >
-                  Vider le cache hors-ligne
+                  Supprimer les données enregistrées
                 </button>
               ) : (
                 <div className="inline-flex items-center gap-2 bg-rose-500/10 px-2.5 py-1 rounded-xl border border-rose-500/20">

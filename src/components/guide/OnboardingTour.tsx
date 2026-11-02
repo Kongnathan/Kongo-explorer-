@@ -229,8 +229,8 @@ export default function OnboardingTour({
           </div>
 
           {/* Title & Description */}
-          <div className="space-y-1.5">
-            <h3 className="font-sans text-body-lg md:text-headline-sm font-bold text-primary flex items-center gap-2">
+          <div className="space-y-1.5 text-center max-w-md mx-auto">
+            <h3 className="font-sans text-body-lg md:text-headline-sm font-bold text-primary flex items-center justify-center gap-2">
               {step.title}
             </h3>
             <p className="text-body-sm md:text-body-md text-on-surface-variant leading-relaxed">
@@ -240,10 +240,10 @@ export default function OnboardingTour({
 
           {/* Final step bonus: Quick link to chat */}
           {isLastStep && (
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 rounded-2xl flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs text-emerald-900 dark:text-emerald-200">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 rounded-2xl flex flex-col items-center text-center gap-2">
+              <div className="flex items-center justify-center gap-2 text-xs text-emerald-900 dark:text-emerald-200">
                 <span className="material-symbols-outlined text-[18px] text-emerald-600">forum</span>
-                <span>Posez vos questions à tout moment dans le chat du Guide.</span>
+                <span>Une question ? Écrivez au Guide à tout moment.</span>
               </div>
               <button
                 onClick={() => {

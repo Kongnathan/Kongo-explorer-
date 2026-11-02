@@ -31,7 +31,7 @@ export default function GuideChatModal({
     {
       id: "initial-welcome",
       sender: "guide",
-      text: "Bonjour et bienvenue sur Kongo Explorer ! Je suis Guide Kongo, votre assistant personnel. Je suis là pour vous aider à comprendre chaque option du site et vous guider dans votre découverte. Que souhaitez-vous savoir ?",
+      text: "Bonjour et bienvenue sur Kongo Explorer ! Je suis le Guide Kongo. Je peux vous expliquer à quoi sert chaque bouton du site et vous aider à trouver ce que vous cherchez. Que voulez-vous savoir ?",
       timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -102,7 +102,7 @@ export default function GuideChatModal({
       const offTopicKeywords = ["code", "javascript", "python", "html", "math", "calcul", "devoir", "politique", "macron", "biden", "football europe", "recette pizza"];
       const isOffTopic = offTopicKeywords.some(k => q.includes(k));
 
-      let fallbackText = "Je suis Guide Kongo ! Que souhaitez-vous découvrir : la carte, les circuits ou les bons plans du Kongo Central ?";
+      let fallbackText = "Je suis le Guide Kongo ! Que voulez-vous découvrir : la carte, les circuits ou les bons plans du Kongo Central ?";
       let fallbackAction: ChatMessage["suggestedAction"] = {
         label: "Lancer la visite guidée",
         route: "/",
@@ -117,28 +117,28 @@ export default function GuideChatModal({
           tourStepId: "step-carte",
         };
       } else if (q.includes("publi") || q.includes("proposer") || q.includes("info") || q.includes("article") || q.includes("post")) {
-        fallbackText = "Connectez-vous puis cliquez sur '+ Publier une info' dans la rubrique Infos Tourisme. Votre annonce sera validée par un modérateur avant parution.";
+        fallbackText = "Connectez-vous, puis appuyez sur « Publier une info » dans la rubrique Infos Tourisme. Votre publication sera relue par l'équipe avant d'apparaître sur le site.";
         fallbackAction = {
           label: "Voir Infos Tourisme",
           route: "/infos-tourisme",
           tourStepId: "step-infos",
         };
       } else if (q.includes("carte") || q.includes("map") || q.includes("itineraire") || q.includes("position") || q.includes("lieu")) {
-        fallbackText = "La carte interactive situe tous les sites majeurs (Zongo, Matadi, Boma, Muanda...) et calcule vos trajets. Voulez-vous l'ouvrir ?";
+        fallbackText = "La carte vous montre où se trouvent les lieux à visiter (Zongo, Matadi, Boma, Muanda...) et le chemin pour y aller. Voulez-vous l'ouvrir ?";
         fallbackAction = {
           label: "Ouvrir la carte",
           route: "/carte",
           tourStepId: "step-carte",
         };
       } else if (q.includes("circuit") || q.includes("trajet") || q.includes("route")) {
-        fallbackText = "La rubrique Circuits vous propose des itinéraires clés en main avec durées et véhicules conseillés (voiture ou 4x4). Voulez-vous voir les circuits ?";
+        fallbackText = "Les circuits sont des promenades toutes prêtes, avec la durée et le type de véhicule conseillé (voiture ou 4x4). Voulez-vous les voir ?";
         fallbackAction = {
           label: "Découvrir les circuits",
           route: "/circuits",
           tourStepId: "step-circuits",
         };
       } else if (q.includes("carnet") || q.includes("hors ligne") || q.includes("offline") || q.includes("sauvegard")) {
-        fallbackText = "Cliquez sur l'icône signet de n'importe quelle fiche pour la lire hors ligne dans votre carnet. Voulez-vous voir votre carnet ?";
+        fallbackText = "Appuyez sur « Enregistrer » sur une fiche pour la garder dans votre carnet. Vous pourrez la relire plus tard, même sans internet. Voulez-vous voir votre carnet ?";
         fallbackAction = {
           label: "Voir mon carnet",
           route: "/carnet",
@@ -325,7 +325,7 @@ export default function GuideChatModal({
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Posez une question sur Kongo Explorer..."
+              placeholder="Écrivez votre question ici..."
               disabled={isLoading}
               className="w-full bg-transparent border-none focus:outline-none text-body-sm text-on-surface placeholder:text-on-surface-variant/50"
             />

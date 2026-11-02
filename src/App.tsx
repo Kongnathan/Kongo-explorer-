@@ -276,6 +276,7 @@ function DetailRouteWrapper({
   onUpdateLocation,
   isAdmin,
   guideWhatsAppSettings,
+  onOpenGuide,
 }: {
   locations: Location[];
   onNavigate: (tab: string) => void;
@@ -284,6 +285,7 @@ function DetailRouteWrapper({
   onUpdateLocation: (loc: Location) => void;
   isAdmin: boolean;
   guideWhatsAppSettings?: GuideWhatsAppSettings;
+  onOpenGuide?: () => void;
 }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -311,6 +313,7 @@ function DetailRouteWrapper({
       onUpdateLocation={onUpdateLocation}
       isAdmin={isAdmin}
       guideWhatsAppSettings={guideWhatsAppSettings}
+      onOpenGuide={onOpenGuide}
     />
   );
 }
@@ -1534,6 +1537,7 @@ export function AppContent() {
                     onUpdateLocation={handleUpdateLocation}
                     isAdmin={isAdmin}
                     guideWhatsAppSettings={guideWhatsAppSettings}
+                    onOpenGuide={() => setIsGuideChatOpen(true)}
                   />
                 }
               />

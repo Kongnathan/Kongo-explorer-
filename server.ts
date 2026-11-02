@@ -462,45 +462,51 @@ Respond STRICTLY with a valid JSON object matching this structure:
 
 // 4. Guide Kongo Intelligent Chat (Gemini 3.8 Flash)
 const GUIDE_KNOWLEDGE_CONTEXT = `
-Fonctionnalités officielles de Kongo Explorer :
-1. Accueil & Recherche (route: '/') :
-   - Présentation des sites majeurs du Kongo Central.
-   - Barre de recherche en temps réel par mot-clé, ville ou lieu.
-   - Filtres thématiques : Incontournables, Nature, Histoire, Urbain.
-   - Bouton de capture vocale pour dicter une note de terrain.
-   - Action associée : 'recherche' ou 'accueil'.
+Ce que le visiteur peut faire sur Kongo Explorer (explique toujours avec des mots simples, sans terme technique) :
+1. Accueil et recherche (route: '/') :
+   - Voir les plus beaux lieux du Kongo Central.
+   - Chercher un lieu par son nom ou sa ville, ou choisir un thème : Incontournables, Nature, Histoire, Ville.
+   - Un micro permet de dicter sa recherche ou une note à voix haute.
+   - Action associée : 'recherche'.
 
-2. Carte interactive (route: '/carte') :
-   - Carte complète du Kongo Central avec localisation précise des sites (Zongo, Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu).
-   - Calcul d'itinéraires et géolocalisation de l'utilisateur.
+2. La carte (route: '/carte') :
+   - Montre où sont les lieux à visiter (Zongo, Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu) et le chemin pour y aller.
    - Action associée : 'carte'.
 
-3. Circuits & Itinéraires thématiques (route: '/circuits') :
-   - Itinéraires guidés pas à pas (Route du Fleuve, Écotourisme, Circuit historique Kongo).
-   - Indication de durée, type de route (voiture, 4x4, marche) et conseils spécifiques à chaque halte.
+3. Les circuits (route: '/circuits') :
+   - Promenades toutes prêtes (Route du Fleuve, Écotourisme, circuit historique Kongo), avec la durée et le type de route (voiture, 4x4, à pied).
    - Action associée : 'circuits'.
 
-4. Rubrique 'Infos Tourisme' (route: '/infos-tourisme') :
-   - Fil d'actualités, hébergements, restos, événements et bons plans.
-   - Consultation publique libre et gratuite sans compte.
-   - Pour publier : il faut être connecté (email/mot de passe ou Google).
-   - Formulaire de publication : titre, catégorie, lieu, description, 1 à 5 photos.
-   - RÈGLE ESSENTIELLE DE SÉCURITÉ ET MODÉRATION : Toute publication est soumise à validation préalable par un administrateur avant d'apparaître publiquement sur le site (statut 'pending' puis 'validated' ou 'rejected' avec motif).
-   - Limite de 5 publications par jour et par utilisateur.
-   - Bouton 'Signaler' pour chaque publication permettant de signaler un contenu non conforme.
+4. Les infos tourisme (route: '/infos-tourisme') :
+   - Bons plans, hôtels, restaurants et événements partagés par d'autres personnes. Lecture libre et gratuite, sans compte.
+   - Pour publier : se connecter (e-mail ou Google), appuyer sur « Publier une info », remplir le titre, la catégorie, le lieu, le texte et ajouter 1 à 5 photos.
+   - RÈGLE IMPORTANTE : chaque publication est d'abord relue et acceptée par l'équipe avant d'apparaître sur le site. Elle peut aussi être refusée, avec une explication.
+   - Maximum 5 publications par jour et par personne.
+   - Le bouton drapeau permet de signaler une publication qui pose problème.
    - Action associée : 'infos-tourisme'.
 
-5. Carnet de voyage hors-ligne (route: '/carnet') :
-   - Permet d'enregistrer des fiches de destination pour les consulter en pleine brousse ou sans connexion Internet (sauvegarde locale).
+5. Mon carnet de voyage (route: '/carnet') :
+   - Quand on appuie sur « Enregistrer » sur une fiche, elle est gardée dans le téléphone et on peut la relire sans internet.
+   - Le bouton « Enregistrer sur mon téléphone » garde TOUTES les destinations et leurs photos d'un coup. À faire quand on a du réseau, avant de partir. Cela prend un peu de place sur le téléphone, et on peut tout supprimer avec « Supprimer les données enregistrées ».
    - Action associée : 'carnet'.
 
-6. Conseils pratiques & Météo (route: '/conseils') :
-   - Préparation du voyage, meilleure période (saison sèche de juin à septembre), consignes de respect de la nature et des coutumes locales, sécurité.
+6. Conseils pratiques (route: '/conseils') :
+   - Meilleure période (saison sèche, de juin à septembre), règles de politesse locales, ce qu'il faut emporter, sécurité.
+   - Le Mode nuit rend l'écran plus sombre.
    - Action associée : 'conseils'.
 
-7. Compte & Connexion :
-   - Authentification Firebase sécurisée (Email/Mot de passe et Google).
-   - Permet de gérer ses publications touristiques et de suivre leur validation.
+7. Les boutons d'une fiche de destination :
+   - Itinéraire : montre le chemin pour y aller depuis l'endroit où l'on se trouve.
+   - Ouvrir Google Maps : ouvre le lieu dans l'application Google Maps.
+   - Écrire au guide : ouvre WhatsApp pour discuter avec un guide. Ce bouton n'est pas présent sur toutes les fiches.
+   - Enregistrer : garde la fiche dans le carnet, pour la relire sans internet.
+   - Signaler une erreur : prévient l'équipe si une information est fausse ou a changé.
+   - Écouter le récit : lit l'histoire du lieu à voix haute.
+   - Besoin d'aide ? : ouvre ce guide.
+   - Action associée : 'recherche' (pour choisir un lieu).
+
+8. Compte et connexion :
+   - Se connecter avec son e-mail ou avec Google, pour publier des infos et voir si elles ont été acceptées.
    - Action associée : 'connexion'.
 `;
 
@@ -532,7 +538,7 @@ app.post("/api/guide-chat", async (req, res) => {
 
     if (q.includes("publi") || q.includes("proposer") || q.includes("info") || q.includes("article") || q.includes("photo")) {
       return {
-        reply: "Pour publier, connectez-vous puis cliquez sur '+ Publier une info' dans la rubrique Infos Tourisme. Votre publication sera validée par un modérateur avant d'apparaître. Voulez-vous y aller ?",
+        reply: "Pour publier, connectez-vous, puis appuyez sur « Publier une info » dans la rubrique Infos Tourisme. Votre publication sera relue par l'équipe avant d'apparaître sur le site. Voulez-vous y aller ?",
         suggestedAction: {
           label: "Voir Infos Tourisme",
           route: "/infos-tourisme",
@@ -542,7 +548,7 @@ app.post("/api/guide-chat", async (req, res) => {
     }
     if (q.includes("carte") || q.includes("map") || q.includes("position") || q.includes("itineraire") || q.includes("localiser")) {
       return {
-        reply: "La carte interactive situe tous les sites majeurs (Zongo, Matadi, Boma, Muanda...) et calcule vos itinéraires. Voulez-vous l'ouvrir ?",
+        reply: "La carte vous montre où se trouvent les lieux à visiter (Zongo, Matadi, Boma, Muanda...) et le chemin pour y aller. Voulez-vous l'ouvrir ?",
         suggestedAction: {
           label: "Ouvrir la carte",
           route: "/carte",
@@ -552,7 +558,7 @@ app.post("/api/guide-chat", async (req, res) => {
     }
     if (q.includes("circuit") || q.includes("trajet") || q.includes("route")) {
       return {
-        reply: "La rubrique Circuits vous propose des itinéraires clés en main avec durées et accès recommandés (voiture ou 4x4). Voulez-vous les découvrir ?",
+        reply: "Les circuits sont des promenades toutes prêtes, avec la durée et le type de véhicule conseillé (voiture ou 4x4). Voulez-vous les découvrir ?",
         suggestedAction: {
           label: "Découvrir les circuits",
           route: "/circuits",
@@ -562,7 +568,7 @@ app.post("/api/guide-chat", async (req, res) => {
     }
     if (q.includes("hors ligne") || q.includes("carnet") || q.includes("enregistr") || q.includes("connexion") || q.includes("offline")) {
       return {
-        reply: "Cliquez sur l'icône signet sur n'importe quelle fiche pour la lire hors ligne dans votre carnet. Voulez-vous ouvrir votre carnet ?",
+        reply: "Appuyez sur « Enregistrer » sur une fiche pour la garder dans votre carnet. Vous pourrez la relire plus tard, même sans internet. Voulez-vous ouvrir votre carnet ?",
         suggestedAction: {
           label: "Consulter mon carnet",
           route: "/carnet",
@@ -572,7 +578,7 @@ app.post("/api/guide-chat", async (req, res) => {
     }
     if (q.includes("valid") || q.includes("modéra") || q.includes("admin") || q.includes("refus")) {
       return {
-        reply: "Chaque publication est relue par nos administrateurs pour garantir des informations fiables. Vous pouvez suivre vos fiches dans votre profil. Voulez-vous voir les infos ?",
+        reply: "Chaque publication est relue par l'équipe avant d'apparaître, pour que les informations soient fiables. Vous pouvez suivre vos publications dans « Mes publications ». Voulez-vous voir les infos ?",
         suggestedAction: {
           label: "Voir Infos Tourisme",
           route: "/infos-tourisme",
@@ -581,7 +587,7 @@ app.post("/api/guide-chat", async (req, res) => {
       };
     }
     return {
-      reply: "Bonjour ! Je suis Guide Kongo. Je peux vous orienter vers la carte, les circuits ou les bons plans du Kongo Central. Que souhaitez-vous voir ?",
+      reply: "Bonjour ! Je suis le Guide Kongo. Je peux vous montrer la carte, les circuits ou les bons plans du Kongo Central, et vous expliquer chaque bouton du site. Que voulez-vous voir ?",
       suggestedAction: {
         label: "Lancer la visite guidée",
         route: "/",
@@ -603,7 +609,7 @@ app.post("/api/guide-chat", async (req, res) => {
     const systemPrompt = `Tu es Guide Kongo, l'assistant d'accueil et de voyage du site Kongo Explorer (Kongo Central, RDC).
 
 RÈGLES IMPÉRATIVES DE RÉPONSE :
-1. SIMPLICITÉ ET CONCISION : Réponds de manière très SIMPLE, CHALEUREUSE et COURTE (1 à 3 phrases courtes maximum). Pas de jargon, pas de longues listes à puces ni de pavés de texte.
+1. SIMPLICITÉ ET CONCISION : Réponds de manière très SIMPLE, CHALEUREUSE et COURTE (1 à 3 phrases courtes maximum), comme si tu parlais à quelqu'un qui n'a pas l'habitude du numérique. Utilise des mots de tous les jours. N'emploie JAMAIS de mots techniques (cache, IndexedDB, PWA, GPS, synchronisation, interface...). Pas de longues listes à puces ni de pavés de texte. Quand on te demande à quoi sert un bouton, dis ce qu'il fait, où le trouver et comment l'utiliser.
 2. REFUS STRICT DES QUESTIONS HORS-SUJET : Tu es UNIQUEMENT le guide touristique de Kongo Explorer. Si la question ne concerne pas le Kongo Central, le tourisme local ou les fonctionnalités du site (par exemple : mathématiques, code informatique, devoirs, politique générale, cuisine sans rapport, actualités étrangères), TU DOIS REFUSER D'Y RÉPONDRE. Réponds simplement et poliment en 1 phrase :
 "Désolé, je suis uniquement le Guide de Kongo Explorer pour vous faire découvrir le Kongo Central et vous orienter sur le site. Voulez-vous voir nos destinations ou la carte ?" (actionTarget: "carte", actionLabel: "Ouvrir la carte").
 3. PROPOSITION D'ACTION : Termine toujours ta réponse par une proposition d'action directe et concrète vers une option du site.

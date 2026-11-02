@@ -53,10 +53,10 @@ export default function WelcomeModal({
             Bienvenue sur Kongo Explorer !
           </h2>
 
-          <p className="text-body-md text-on-surface-variant leading-relaxed mb-6">
-            Découvrez facilement les merveilles naturelles, historiques et les bons plans du Kongo Central. 
+          <p className="text-body-md text-on-surface-variant leading-relaxed mb-6 max-w-sm mx-auto text-center">
+            Découvrez facilement les beaux endroits, l'histoire et les bons plans du Kongo Central.
             <br />
-            <strong className="text-on-surface font-semibold">Voulez-vous une visite guidée interactive ?</strong>
+            <strong className="text-on-surface font-semibold">Voulez-vous une petite visite pour apprendre à utiliser le site ?</strong>
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

@@ -50,23 +50,23 @@ export default function SavedOfflineView({
           </a>
           <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-            MODE HORS-LIGNE ACTIF
+            SANS INTERNET
           </span>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-5 pt-6 space-y-6">
         {/* Explanation Card with Single H1 */}
-        <section className="bg-surface-container border border-outline-variant/30 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+        <section className="bg-surface-container border border-outline-variant/30 rounded-3xl p-6 shadow-sm flex flex-col gap-4 items-center">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
             <span className="material-symbols-outlined text-[36px]">download_done</span>
           </div>
-          <div className="space-y-1 text-center md:text-left">
+          <div className="space-y-1 text-center max-w-xl mx-auto">
             <h1 className="font-sans text-headline-lg-mobile md:text-headline-md font-bold text-primary">
-              Carnet de voyage hors-ligne
+              Mon carnet de voyage
             </h1>
             <p className="text-on-surface-variant text-sm leading-relaxed">
-              Les fiches détaillées, conseils pratiques et coordonnées GPS des sites ci-dessous sont stockés dans le stockage local de votre téléphone (PWA). Vous pouvez y accéder librement même sans aucune connexion internet au fond des parcs ou gorges.
+              Les destinations que vous avez gardées sont enregistrées sur votre téléphone. Vous pouvez les relire à tout moment, même quand il n'y a pas de réseau, par exemple dans un parc ou au bord d'une cascade.
             </p>
           </div>
         </section>
@@ -81,9 +81,9 @@ export default function SavedOfflineView({
               <span className="material-symbols-outlined text-[32px]">favorite_border</span>
             </div>
             <div>
-              <h2 className="font-sans text-body-lg font-bold text-on-surface">Votre carnet de voyage est vide</h2>
-              <p className="text-on-surface-variant text-sm mt-1 max-w-md mx-auto">
-                Parcourez les merveilles naturelles et culturelles du Congo et cliquez sur "Sauvegarder" pour les stocker sur votre téléphone avant de partir en expédition.
+              <h2 className="font-sans text-body-lg font-bold text-on-surface">Votre carnet est vide pour le moment</h2>
+              <p className="text-on-surface-variant text-sm mt-1 max-w-md mx-auto leading-relaxed">
+                Ouvrez une destination et appuyez sur « Enregistrer » pour l'ajouter ici. Vous pourrez la relire plus tard, même sans internet.
               </p>
             </div>
             <a 
@@ -136,7 +136,7 @@ export default function SavedOfflineView({
                       </p>
                       <p className="text-emerald-700 font-mono text-[10px] font-bold mt-1.5 flex items-center gap-1">
                         <span className="material-symbols-outlined text-[12px]">check_circle</span>
-                        Prêt pour le hors-ligne
+                        Disponible sans internet
                       </p>
                     </div>
                   </div>
@@ -166,11 +166,11 @@ export default function SavedOfflineView({
               <button
                 type="button"
                 onClick={() => {
-                  alert("Simulateur PWA :\nVos fiches de voyage et cartes géographiques locales sont synchronisées localement sur l'appareil et ne subiront aucune perte en cas de coupure réseau.");
+                  alert("Tout va bien : vos destinations sont bien enregistrées sur votre téléphone. Vous pourrez les consulter même si le réseau est coupé.");
                 }}
                 className="text-primary hover:text-primary-container font-mono text-xs font-bold underline cursor-pointer"
               >
-                Vérifier l'intégrité de la base locale
+                Vérifier que mes données sont bien enregistrées
               </button>
             </div>
           </div>

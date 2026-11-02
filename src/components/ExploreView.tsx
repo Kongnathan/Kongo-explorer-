@@ -220,8 +220,8 @@ export default function ExploreView({
                         onToggleSave(loc.id);
                       }}
                       className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-md flex items-center justify-center text-primary active:scale-90 transition-all cursor-pointer"
-                      title={isSaved ? "Retirer du carnet" : "Sauvegarder pour le hors-ligne"}
-                      aria-label={isSaved ? "Retirer du carnet" : "Sauvegarder pour le hors-ligne"}
+                      title={isSaved ? "Retirer du carnet" : "Enregistrer pour lire sans internet"}
+                      aria-label={isSaved ? "Retirer du carnet" : "Enregistrer pour lire sans internet"}
                     >
                       <span className="material-symbols-outlined text-[20px]">
                         {isSaved ? "bookmark" : "bookmark_border"}

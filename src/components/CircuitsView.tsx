@@ -254,7 +254,7 @@ export default function CircuitsView({
                       Prêt à partir sur le circuit ?
                     </h4>
                     <p className="text-white/80 text-xs font-sans">
-                      Téléchargez les fiches du circuit pour votre trajet hors-ligne.
+                      Enregistrez les fiches du circuit sur votre téléphone pour les lire même sans internet.
                     </p>
                   </div>
                 </div>
