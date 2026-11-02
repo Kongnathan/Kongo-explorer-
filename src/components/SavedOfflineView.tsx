@@ -1,5 +1,6 @@
 import React from "react";
 import { Location, SavedLocation } from "../types";
+import OfflineDownloadManager from "./OfflineDownloadManager";
 
 interface SavedOfflineViewProps {
   savedLocations: SavedLocation[];
@@ -69,6 +70,9 @@ export default function SavedOfflineView({
             </p>
           </div>
         </section>
+
+        {/* Dynamic Full Offline Preloading (IndexedDB) */}
+        <OfflineDownloadManager locations={locations} />
 
         {/* Saved List */}
         {savedItemsWithDetails.length === 0 ? (

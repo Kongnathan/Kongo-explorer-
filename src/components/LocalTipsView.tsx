@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from "../hooks/useTheme";
+import { Location } from "../types";
+import { DEFAULT_LOCATIONS } from "../data";
+import OfflineDownloadManager from "./OfflineDownloadManager";
 
 interface Phrase {
   french: string;
@@ -101,7 +105,13 @@ function getWeatherInfo(code: number): { label: string; icon: string; bg: string
   };
 }
 
-export default function LocalTipsView() {
+interface LocalTipsViewProps {
+  locations?: Location[];
+}
+
+export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
+  const activeLocations = (locations && locations.length > 0) ? locations : DEFAULT_LOCATIONS;
+  const { isDark, toggleTheme, setTheme } = useTheme();
   const [activeCategory, setActiveCategory] = useState<"meteo" | "devise" | "culture" | "eco" | "prep" | "lang">("meteo");
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loadingWeather, setLoadingWeather] = useState<boolean>(false);
@@ -279,9 +289,27 @@ export default function LocalTipsView() {
             </div>
             <span className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</span>
           </a>
-          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-mono font-bold uppercase">
-            Guide & Météo
-          </span>
+          <div className="flex items-center gap-2">
+            {/* Quick Night Mode Toggle Button in Header */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-surface-container border border-outline-variant/30 text-on-surface hover:bg-surface-container-high transition-all cursor-pointer shadow-xs active:scale-95"
+              title={isDark ? "Passer en Mode Jour (Clair)" : "Passer en Mode Nuit (Sombre)"}
+              aria-label="Basculer le mode nuit"
+              data-guide="btn-theme-header"
+            >
+              <span className={`material-symbols-outlined text-[16px] ${isDark ? "text-amber-400" : "text-primary"}`}>
+                {isDark ? "light_mode" : "dark_mode"}
+              </span>
+              <span className="hidden sm:inline font-mono text-[11px] font-bold">
+                {isDark ? "Mode Jour" : "Mode Nuit"}
+              </span>
+            </button>
+
+            <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-mono font-bold uppercase">
+              Guide & Météo
+            </span>
+          </div>
         </div>
       </header>
 
@@ -302,6 +330,75 @@ export default function LocalTipsView() {
             Consultez les conditions météorologiques en direct grâce à la géolocalisation pour planifier vos visites aux cascades, plages et forêts tropicales.
           </p>
         </section>
+
+        {/* PARAMÈTRES D'AFFICHAGE & MODE NUIT (BASCULE MANUELLE QUI OUTREPASSE LES RÉGLAGES SYSTÈME) */}
+        <section 
+          className="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-5 shadow-sm space-y-3"
+          data-guide="theme-settings-section"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border transition-colors ${
+                isDark 
+                  ? "bg-amber-400/10 border-amber-400/30 text-amber-400" 
+                  : "bg-primary/10 border-primary/20 text-primary"
+              }`}>
+                <span className="material-symbols-outlined text-[22px]">
+                  {isDark ? "dark_mode" : "light_mode"}
+                </span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-sans text-sm font-bold text-on-surface">
+                    Paramètres d'Affichage & Mode Nuit
+                  </h2>
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase ${
+                    isDark 
+                      ? "bg-amber-400/20 text-amber-300" 
+                      : "bg-emerald-600/15 text-emerald-800 dark:text-emerald-300"
+                  }`}>
+                    {isDark ? "Mode Nuit Actif" : "Mode Jour Actif"}
+                  </span>
+                </div>
+                <p className="text-xs text-on-surface-variant mt-0.5 leading-relaxed">
+                  Basculez manuellement le thème de Kongo Explorer. Ce choix est conservé et <strong>outrepasse les réglages système</strong> de votre appareil.
+                </p>
+              </div>
+            </div>
+
+            {/* Toggle Segmented Pill */}
+            <div className="flex items-center bg-surface-container p-1 rounded-2xl border border-outline-variant/20 self-start sm:self-center shrink-0">
+              <button
+                onClick={() => setTheme("light")}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  !isDark 
+                    ? "bg-surface-container-lowest text-primary shadow-sm scale-[1.02]" 
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+                title="Activer le Mode Jour (Clair)"
+              >
+                <span className="material-symbols-outlined text-[16px] text-amber-500">wb_sunny</span>
+                <span>Mode Jour</span>
+              </button>
+
+              <button
+                onClick={() => setTheme("dark")}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  isDark 
+                    ? "bg-primary text-white shadow-sm scale-[1.02]" 
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+                title="Activer le Mode Nuit (Sombre)"
+              >
+                <span className="material-symbols-outlined text-[16px] text-amber-300">dark_mode</span>
+                <span>Mode Nuit</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* OPTION TOUT TÉLÉCHARGER POUR HORS-LIGNE (INDEXEDDB - DONNÉES & IMAGES) */}
+        <OfflineDownloadManager locations={activeLocations} />
 
         {/* Categories Tab Selector */}
         <div className="flex space-x-1 bg-surface-container p-1.5 rounded-2xl overflow-x-auto hide-scrollbar shadow-inner">

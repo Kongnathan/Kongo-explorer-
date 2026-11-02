@@ -26,6 +26,7 @@ import OnboardingTour from "./components/guide/OnboardingTour";
 import GuideChatModal from "./components/guide/GuideChatModal";
 import GuideFloatingButton from "./components/guide/GuideFloatingButton";
 import { TOUR_STEPS } from "./components/guide/guideSteps";
+import { initTheme } from "./lib/theme";
 import { collection, onSnapshot, query, doc, setDoc, deleteDoc, updateDoc, where } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebaseConfig";
 import { 
@@ -551,6 +552,11 @@ export function AppContent() {
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [currentTourStep, setCurrentTourStep] = useState<number>(0);
   const [isGuideChatOpen, setIsGuideChatOpen] = useState(false);
+
+  // Initialize manual / system theme on startup
+  useEffect(() => {
+    initTheme();
+  }, []);
 
   // Check first-time visitor for onboarding welcome modal
   useEffect(() => {
@@ -1356,9 +1362,11 @@ export function AppContent() {
 
               <Route
                 path="/conseils"
-                element={<LocalTipsView />}
+                element={<LocalTipsView locations={locations} />}
               />
               <Route path="/tips" element={<Navigate to="/conseils" replace />} />
+              <Route path="/parametres" element={<Navigate to="/conseils" replace />} />
+              <Route path="/settings" element={<Navigate to="/conseils" replace />} />
               <Route
                 path="/carnet"
                 element={

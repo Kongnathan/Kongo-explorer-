@@ -784,7 +784,7 @@ export default function MapView({
 
         {/* INTERACTIVE MAP USER GPS FLOATING OVERLAY CARD */}
         {(mapMode === "google" || mapMode === "osm") && activeMarkerId === "user_gps" && userPos && (
-          <div className="absolute bottom-6 left-6 z-20 max-w-sm w-[calc(100%-48px)] bg-surface-container-lowest/95 backdrop-blur-md p-5 rounded-3xl shadow-2xl border border-outline-variant/20 animate-slide-up">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 max-w-sm w-[calc(100%-32px)] bg-surface-container-lowest/95 backdrop-blur-md p-5 rounded-3xl shadow-2xl border border-outline-variant/20 animate-slide-up">
             <div className="flex justify-between items-start mb-2">
               <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase">
                 {userPos.isMocked ? "Simulé" : "Position Live GPS"}
@@ -817,7 +817,7 @@ export default function MapView({
                   setUserPos(null);
                   setActiveId(null);
                 }}
-                className="text-red-500 font-bold hover:underline"
+                className="text-red-500 font-bold hover:underline cursor-pointer"
               >
                 Désactiver
               </button>
@@ -825,8 +825,8 @@ export default function MapView({
           </div>
         )}
 
-        {/* Floating Controls (GPS Locate, Plan/Satellite Toggle, zoom controls) */}
-        <div className="absolute bottom-24 right-4 z-30 flex flex-col gap-3">
+        {/* Floating Controls (GPS Locate, Plan/Satellite Toggle, zoom controls) positioned on the left to separate from Guide Kongo AI */}
+        <div className="absolute bottom-24 left-4 z-30 flex flex-col gap-3">
 
           {/* Plan vs Satellite Toggle Button */}
           <button 

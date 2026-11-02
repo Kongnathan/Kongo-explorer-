@@ -103,13 +103,35 @@ export const GUIDE_FEATURES: GuideFeature[] = [
     whereToFind: "Bouton micro dans la barre de recherche sur la page d'accueil.",
     route: "/",
     targetSelector: "[data-guide='voice-btn']",
+  },
+  {
+    id: "mode-nuit",
+    name: "Mode Nuit & Thème Sombre",
+    category: "utilitaire",
+    summary: "Basculez manuellement l'application entre mode clair et mode sombre, en outrepassant les réglages système.",
+    description: "Le bouton 'Mode Nuit' permet de reposer vos yeux dans l'obscurité et d'économiser votre batterie en voyage. Il applique un contraste doux aux tons Kongo. Ce réglage manuel est mémorisé et outrepasse les réglages de votre téléphone.",
+    howToUse: "Rendez-vous dans la rubrique 'Conseils' et activez le bouton 'Mode Nuit' dans l'en-tête ou le bloc 'Paramètres d'Affichage'.",
+    whereToFind: "En haut de la rubrique 'Conseils' (icône Lune/Soleil et sélecteur dédié).",
+    route: "/conseils",
+    targetSelector: "[data-guide='theme-settings-section']",
+  },
+  {
+    id: "telecharger-hors-ligne-complet",
+    name: "Tout télécharger pour hors-ligne (IndexedDB)",
+    category: "utilitaire",
+    summary: "Pré-charge dynamiquement toutes les fiches et photos des destinations en mémoire locale IndexedDB.",
+    description: "L'option 'Tout télécharger pour hors-ligne' télécharge d'un clic l'ensemble des données textuelles, conseils, coordonnées GPS et photos haute résolution dans IndexedDB. Cela garantit une exploration 100% autonome au cœur des réserves et parcs sans réseau mobile.",
+    howToUse: "Allez dans l'onglet 'Conseils' ou 'Carnet', puis cliquez sur le bouton 'Tout télécharger pour hors-ligne'. Une barre de progression s'affiche pendant la mise en cache.",
+    whereToFind: "Rubrique 'Conseils' (Paramètres) ou rubrique 'Carnet' (Mode hors-ligne).",
+    route: "/conseils",
+    targetSelector: "[data-guide='offline-download-section']",
   }
 ];
 
 export const GUIDE_SUGGESTED_QUESTIONS = [
+  "Comment tout télécharger pour hors-ligne ?",
   "Comment publier une info touristique ?",
+  "Comment activer le mode nuit ?",
   "Comment utiliser la carte interactive ?",
-  "Comment enregistrer un lieu pour le voir hors ligne ?",
-  "Qui valide les publications touristiques ?",
-  "Quels sont les plus beaux circuits à faire ?",
+  "Comment enregistrer un lieu dans mon carnet ?",
 ];

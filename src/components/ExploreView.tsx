@@ -58,13 +58,13 @@ export default function ExploreView({
           <a 
             href="/"
             onClick={(e) => { e.preventDefault(); onNavigate("explore"); }}
-            className="flex items-center gap-3 select-none hover:opacity-90 transition-opacity"
+            className="relative flex items-center gap-2.5 sm:gap-3 select-none hover:opacity-90 transition-all shrink-0 py-1 pl-0.5 sm:pl-1 my-auto z-10"
             title="Kongo Explorer – Accueil"
           >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20 shadow-xs">
               <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo Kongo Explorer" />
             </div>
-            <span className="font-sans text-headline-md font-bold text-primary">
+            <span className="font-sans text-headline-sm sm:text-headline-md font-extrabold text-primary tracking-tight">
               Kongo Explorer
             </span>
           </a>
@@ -311,17 +311,18 @@ export default function ExploreView({
         </footer>
       </main>
 
-      {/* Floating Action Button for Map view / Nearby search */}
+      {/* Floating Action Button for Map view / Nearby search (positioned on the left to separate from Guide Kongo AI on the right) */}
       <a 
         href="/carte"
         onClick={(e) => {
           e.preventDefault();
           onNavigate("map");
         }}
-        className="fixed bottom-24 right-5 bg-primary text-white px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 font-sans font-bold text-xs hover:bg-primary-container active:scale-95 transition-all z-40 cursor-pointer border border-white/20"
-        title="Autour de moi - Géolocaliser les sites proches"
+        className="fixed bottom-24 left-4 sm:left-6 bg-primary/95 text-white px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 font-sans font-bold text-xs hover:bg-primary-container active:scale-95 transition-all z-30 cursor-pointer border border-white/20 backdrop-blur-md hover:shadow-primary/30"
+        title="Autour de moi - Explorer les sites sur la carte"
+        data-guide="btn-autour-moi"
       >
-        <span className="material-symbols-outlined text-[20px]">near_me</span>
+        <span className="material-symbols-outlined text-[20px] text-amber-300">near_me</span>
         <span>Autour de moi</span>
       </a>
     </div>

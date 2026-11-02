@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { getCachedImage } from "../lib/indexedDB";
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -24,11 +25,31 @@ export default function LazyImage({
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [cachedSrc, setCachedSrc] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  const effectiveSrc = (hasError || !src || src.trim() === "") 
-    ? (fallbackSrc || DEFAULT_FALLBACK_IMAGE) 
-    : src;
+  // Check IndexedDB offline image cache on mount or when src changes
+  useEffect(() => {
+    let active = true;
+    if (src && !src.startsWith("data:") && !src.startsWith("blob:")) {
+      getCachedImage(src)
+        .then((cached) => {
+          if (active && cached) {
+            setCachedSrc(cached);
+          }
+        })
+        .catch(() => {});
+    } else {
+      setCachedSrc(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [src]);
+
+  const effectiveSrc = (hasError || !src || src.trim() === "")
+    ? (cachedSrc || fallbackSrc || DEFAULT_FALLBACK_IMAGE)
+    : (cachedSrc || src);
 
   useEffect(() => {
     setIsLoaded(false);
@@ -38,7 +59,7 @@ export default function LazyImage({
     if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
       setIsLoaded(true);
     }
-  }, [src, fallbackSrc]);
+  }, [effectiveSrc]);
 
   return (
     <div className={`relative w-full h-full overflow-hidden bg-surface-variant ${containerClassName}`}>
@@ -61,9 +82,25 @@ export default function LazyImage({
           if (onLoad) onLoad(e);
         }}
         onError={(e) => {
-          setIsLoaded(true); // Crucial: guarantee image is marked loaded so opacity-100 displays the fallback
-          if (!hasError && src && src !== fallbackSrc) {
-            setHasError(true);
+          // If online failed, try to check cachedSrc
+          if (!cachedSrc && src && !src.startsWith("data:")) {
+            getCachedImage(src).then((cached) => {
+              if (cached) {
+                setCachedSrc(cached);
+                setIsLoaded(true);
+                return;
+              }
+              setIsLoaded(true);
+              setHasError(true);
+            }).catch(() => {
+              setIsLoaded(true);
+              setHasError(true);
+            });
+          } else {
+            setIsLoaded(true);
+            if (!hasError && src && src !== fallbackSrc) {
+              setHasError(true);
+            }
           }
           if (onError) onError(e);
         }}
@@ -74,4 +111,3 @@ export default function LazyImage({
     </div>
   );
 }
-

@@ -74,10 +74,31 @@
   --shadow-active: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* Dark Mode Tokens Support */
-.dark,
+/* Dark Mode Tokens Support: manual override via .dark class takes precedence */
+:root.dark,
+html.dark {
+  --color-background: #0f1412;
+  --color-on-background: #e1e3e0;
+  --color-surface: #0f1412;
+  --color-on-surface: #e1e3e0;
+  --color-on-surface-variant: #bfc9c4;
+  --color-surface-variant: #262e2a;
+  --color-surface-container-lowest: #141a17;
+  --color-surface-container-low: #19201c;
+  --color-surface-container: #1e2622;
+  --color-surface-container-high: #242d28;
+  --color-surface-container-highest: #2b3530;
+  
+  --color-outline: #8a938e;
+  --color-outline-variant: #3f4945;
+  
+  --color-primary-container: #00342b;
+  --color-on-primary-container: #a3e0d0;
+}
+
+/* Fallback: if user hasn't explicitly chosen light mode, respect system dark mode */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
     --color-background: #0f1412;
     --color-on-background: #e1e3e0;
     --color-surface: #0f1412;

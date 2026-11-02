@@ -31,6 +31,8 @@ export interface Location {
   contactPhone?: string;              // Guide / Resort phone / WhatsApp
   entryFee?: string;                  // Tarif indicatif
   seasonality?: "ALL_YEAR" | "DRY_SEASON" | "RAIN_SEASON";
+  offlineImageDataUrl?: string;       // Cached base64 data URL for offline display
+  offlineGalleryDataUrls?: string[];  // Cached gallery images for offline display
 }
 
 export interface SavedLocation {
