@@ -141,7 +141,15 @@ export default function TourismPostsManager({
 
   // Filter posts
   const filteredPosts = posts.filter((p) => {
-    const matchStatus = statusFilter === "ALL" || p.status === statusFilter;
+    const s = String(p.statut || p.status).toUpperCase();
+    let matchStatus = true;
+    if (statusFilter === "VALIDATED") {
+      matchStatus = s === "VALIDATED" || s === "VALIDÉE";
+    } else if (statusFilter === "PENDING") {
+      matchStatus = s === "PENDING" || s === "EN_ATTENTE";
+    } else if (statusFilter === "REJECTED") {
+      matchStatus = s === "REJECTED" || s === "REJETÉE";
+    }
     const q = searchQuery.toLowerCase().trim();
     const matchSearch =
       !q ||
@@ -153,29 +161,29 @@ export default function TourismPostsManager({
   });
 
   const getStatusBadge = (status: TourismPost["status"]) => {
-    switch (status) {
-      case "VALIDATED":
-        return (
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-            Validée (Publique)
-          </span>
-        );
-      case "PENDING":
-        return (
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-            En attente
-          </span>
-        );
-      case "REJECTED":
-        return (
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
-            Rejetée
-          </span>
-        );
+    const s = String(status).toUpperCase();
+    if (s === "VALIDATED" || s === "VALIDÉE") {
+      return (
+        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+          Validée (Publique)
+        </span>
+      );
     }
+    if (s === "REJECTED" || s === "REJETÉE") {
+      return (
+        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
+          Rejetée
+        </span>
+      );
+    }
+    return (
+      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 flex items-center gap-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+        En attente
+      </span>
+    );
   };
 
   return (

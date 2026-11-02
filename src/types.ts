@@ -115,6 +115,9 @@ export type TourismCategory =
   | "Transport";
 
 export type TourismPostStatus = 
+  | "en_attente" 
+  | "validée" 
+  | "rejetée"
   | "pending" 
   | "validated" 
   | "rejected" 
@@ -135,6 +138,7 @@ export interface TourismPost {
   gallery?: string[];
   summary: string;
   content: string;
+  statut?: "en_attente" | "validée" | "rejetée";
   status: TourismPostStatus;
   rejectionReason?: string;
   contactPhone?: string;

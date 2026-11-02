@@ -53,15 +53,27 @@ export default function TourismModerationView({
 
   // Filtered lists
   const pendingPosts = useMemo(
-    () => posts.filter((p) => String(p.status).toLowerCase() === "pending"),
+    () =>
+      posts.filter((p) => {
+        const s = String(p.statut || p.status).toLowerCase();
+        return s === "en_attente" || s === "pending";
+      }),
     [posts]
   );
   const validatedPosts = useMemo(
-    () => posts.filter((p) => String(p.status).toLowerCase() === "validated"),
+    () =>
+      posts.filter((p) => {
+        const s = String(p.statut || p.status).toLowerCase();
+        return s === "validée" || s === "validated";
+      }),
     [posts]
   );
   const rejectedPosts = useMemo(
-    () => posts.filter((p) => String(p.status).toLowerCase() === "rejected"),
+    () =>
+      posts.filter((p) => {
+        const s = String(p.statut || p.status).toLowerCase();
+        return s === "rejetée" || s === "rejected";
+      }),
     [posts]
   );
   const pendingReports = useMemo(

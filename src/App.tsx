@@ -441,32 +441,56 @@ export function AppContent() {
     }
   };
   
-  // Tourism Posts (Infos Tourisme) state & persistence
+  // Tourism Posts (Infos Tourisme) state & persistence - No mock or default publications
   const [tourismPosts, setTourismPosts] = useState<TourismPost[]>(() => {
     const local = localStorage.getItem("kongo_tourism_posts");
     if (local) {
       try {
         const parsed = JSON.parse(local);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          const legacyIds = new Set([
+            "sentier-zongo-2026",
+            "festival-fleuve-matadi",
+            "eco-lodge-mangroves-muanda",
+            "maboke-royal-boma",
+            "safari-mayombe-reserve",
+            "pont-marechal-conseils-traversee",
+            "navettes-rn1-kinshasa-matadi",
+            "baobab-stanley-musee",
+            "ateliers-botaniques-kisantu",
+          ]);
+          return parsed.filter(
+            (p: any) =>
+              p &&
+              !legacyIds.has(p.id) &&
+              (p.statut === "validée" || p.status === "validée" || String(p.status).toLowerCase() === "validated")
+          );
+        }
       } catch (err) {
         console.error("Failed to parse local tourism posts", err);
       }
     }
-    return DEFAULT_TOURISMPPOSTS;
+    return [];
   });
+
+  // User's own submissions (displayed only in private modal, never in public feed)
+  const [userOwnPosts, setUserOwnPosts] = useState<TourismPost[]>([]);
 
   const [reports, setReports] = useState<TourismReport[]>([]);
 
   const handleAddTourismPost = async (post: TourismPost) => {
-    setTourismPosts(prev => {
-      const next = [post, ...prev.filter(p => p.id !== post.id)];
-      localStorage.setItem("kongo_tourism_posts", JSON.stringify(next));
-      return next;
-    });
+    const formattedPost: TourismPost = {
+      ...post,
+      statut: "en_attente",
+      status: "en_attente",
+    };
+
+    // User's own list is updated immediately for private feedback
+    setUserOwnPosts(prev => [formattedPost, ...prev.filter(p => p.id !== formattedPost.id)]);
 
     if (isFirebaseConfigured) {
       try {
-        await setDoc(doc(db, "tourism_posts", post.id), post);
+        await setDoc(doc(db, "tourism_posts", formattedPost.id), formattedPost);
       } catch (err) {
         console.error("Failed to save tourism post to Firestore:", err);
       }
@@ -506,8 +530,13 @@ export function AppContent() {
   };
 
   const handleValidateTourismPost = async (id: string) => {
-    const updated = { status: "validated" as const, updatedAt: new Date().toISOString() };
+    const updated = {
+      statut: "validée" as const,
+      status: "validée" as const,
+      updatedAt: new Date().toISOString(),
+    };
     setTourismPosts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    setUserOwnPosts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
     if (isFirebaseConfigured) {
       try {
         await updateDoc(doc(db, "tourism_posts", id), updated);
@@ -518,8 +547,14 @@ export function AppContent() {
   };
 
   const handleRejectTourismPost = async (id: string, reason: string) => {
-    const updated = { status: "rejected" as const, rejectionReason: reason, updatedAt: new Date().toISOString() };
+    const updated = {
+      statut: "rejetée" as const,
+      status: "rejetée" as const,
+      rejectionReason: reason,
+      updatedAt: new Date().toISOString(),
+    };
     setTourismPosts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    setUserOwnPosts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
     if (isFirebaseConfigured) {
       try {
         await updateDoc(doc(db, "tourism_posts", id), updated);
@@ -949,23 +984,40 @@ export function AppContent() {
     if (!isFirebaseConfigured) return;
 
     const unsubs: (() => void)[] = [];
+    const legacyMockIds = new Set([
+      "sentier-zongo-2026",
+      "festival-fleuve-matadi",
+      "eco-lodge-mangroves-muanda",
+      "maboke-royal-boma",
+      "safari-mayombe-reserve",
+      "pont-marechal-conseils-traversee",
+      "navettes-rn1-kinshasa-matadi",
+      "baobab-stanley-musee",
+      "ateliers-botaniques-kisantu",
+    ]);
 
     if (isAdmin) {
       // Admin reads ALL posts (pending, validated, rejected)
       const qPosts = query(collection(db, "tourism_posts"));
       const unsubPosts = onSnapshot(qPosts, async (snapshot) => {
         const postsList: TourismPost[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data() as TourismPost;
+        snapshot.forEach((docSnap) => {
+          // If any legacy mock post exists in Firestore, admin automatically purges it
+          if (legacyMockIds.has(docSnap.id)) {
+            deleteDoc(doc(db, "tourism_posts", docSnap.id)).catch(() => {});
+            return;
+          }
+          const data = docSnap.data() as TourismPost;
           postsList.push({
             ...data,
-            id: doc.id,
+            id: docSnap.id,
           });
         });
-        if (postsList.length > 0) {
-          setTourismPosts(postsList);
-          localStorage.setItem("kongo_tourism_posts", JSON.stringify(postsList));
-        }
+
+        // Sort from newest to oldest
+        postsList.sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
+        setTourismPosts(postsList);
+        localStorage.setItem("kongo_tourism_posts", JSON.stringify(postsList));
       }, (error) => {
         console.warn("[Firebase] Failed to listen to all 'tourism_posts' as admin:", error);
       });
@@ -975,11 +1027,11 @@ export function AppContent() {
       const qReports = query(collection(db, "reports"));
       const unsubReports = onSnapshot(qReports, (snapshot) => {
         const reportsList: TourismReport[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data() as TourismReport;
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data() as TourismReport;
           reportsList.push({
             ...data,
-            id: doc.id,
+            id: docSnap.id,
           });
         });
         setReports(reportsList);
@@ -989,54 +1041,76 @@ export function AppContent() {
       unsubs.push(unsubReports);
     } else {
       // Regular user / Public visitor:
-      let publicPosts: TourismPost[] = [];
-      let userOwnPosts: TourismPost[] = [];
+      // STRICT REQUIREMENT: Retrieve ONLY validated posts (where("statut", "==", "validée"))
+      const validatedMap = new Map<string, TourismPost>();
 
-      const syncPosts = () => {
-        const map = new Map<string, TourismPost>();
-        publicPosts.forEach((p) => map.set(p.id, p));
-        userOwnPosts.forEach((p) => map.set(p.id, p));
-        const merged = Array.from(map.values());
-        if (merged.length > 0) {
-          setTourismPosts(merged);
-          localStorage.setItem("kongo_tourism_posts", JSON.stringify(merged));
-        }
+      const updatePublicValidatedPosts = () => {
+        const list = Array.from(validatedMap.values());
+        list.sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
+        setTourismPosts(list);
+        localStorage.setItem("kongo_tourism_posts", JSON.stringify(list));
       };
 
-      // 1. Query only validated posts (publicly permitted by firestore.rules)
-      const qValidated = query(collection(db, "tourism_posts"), where("status", "==", "validated"));
-      const unsubValidated = onSnapshot(qValidated, (snapshot) => {
-        publicPosts = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data() as TourismPost;
-          publicPosts.push({
-            ...data,
-            id: doc.id,
-          });
+      // 1. Primary Firestore query: where("statut", "==", "validée")
+      const qFrenchValidated = query(
+        collection(db, "tourism_posts"), 
+        where("statut", "==", "validée")
+      );
+      const unsubFrenchValidated = onSnapshot(qFrenchValidated, (snapshot) => {
+        snapshot.docChanges().forEach(change => {
+          if (change.type === "removed") {
+            validatedMap.delete(change.doc.id);
+          } else {
+            if (!legacyMockIds.has(change.doc.id)) {
+              validatedMap.set(change.doc.id, { ...(change.doc.data() as TourismPost), id: change.doc.id });
+            }
+          }
         });
-        syncPosts();
+        updatePublicValidatedPosts();
       }, (error) => {
-        console.warn("[Firebase] Failed to listen to validated 'tourism_posts':", error);
+        console.warn("[Firebase] Failed to listen to validated 'tourism_posts' (statut == validée):", error);
       });
-      unsubs.push(unsubValidated);
+      unsubs.push(unsubFrenchValidated);
 
-      // 2. If logged in, also query user's own publications (permitted by authorId == auth.uid)
+      // 2. Compatibility query for any existing posts where status == "validated" or "validée"
+      const qCompatValidated = query(
+        collection(db, "tourism_posts"), 
+        where("status", "in", ["validée", "validated"])
+      );
+      const unsubCompatValidated = onSnapshot(qCompatValidated, (snapshot) => {
+        snapshot.docChanges().forEach(change => {
+          if (change.type === "removed") {
+            validatedMap.delete(change.doc.id);
+          } else {
+            if (!legacyMockIds.has(change.doc.id)) {
+              validatedMap.set(change.doc.id, { ...(change.doc.data() as TourismPost), id: change.doc.id });
+            }
+          }
+        });
+        updatePublicValidatedPosts();
+      }, (error) => {
+        console.warn("[Firebase] Failed to listen to validated 'tourism_posts' (status == validated):", error);
+      });
+      unsubs.push(unsubCompatValidated);
+
+      // 3. User's own submissions (displayed only in private 'Mes publications' modal, NEVER in public list)
       if (currentUser?.uid) {
         const qMyPosts = query(collection(db, "tourism_posts"), where("authorId", "==", currentUser.uid));
         const unsubMyPosts = onSnapshot(qMyPosts, (snapshot) => {
-          userOwnPosts = [];
-          snapshot.forEach((doc) => {
-            const data = doc.data() as TourismPost;
-            userOwnPosts.push({
-              ...data,
-              id: doc.id,
-            });
+          const userList: TourismPost[] = [];
+          snapshot.forEach((docSnap) => {
+            if (!legacyMockIds.has(docSnap.id)) {
+              userList.push({ ...(docSnap.data() as TourismPost), id: docSnap.id });
+            }
           });
-          syncPosts();
+          userList.sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
+          setUserOwnPosts(userList);
         }, (error) => {
           console.warn("[Firebase] Failed to listen to user own 'tourism_posts':", error);
         });
         unsubs.push(unsubMyPosts);
+      } else {
+        setUserOwnPosts([]);
       }
     }
 
@@ -1341,6 +1415,7 @@ export function AppContent() {
                 element={
                   <TourismNewsView
                     posts={tourismPosts}
+                    userPosts={userOwnPosts}
                     onSelectPost={(id) => navigate(`/infos-tourisme/${id}`)}
                     onNavigate={handleNavigate}
                     onPostCreated={handleAddTourismPost}

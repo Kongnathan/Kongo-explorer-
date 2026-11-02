@@ -50,7 +50,10 @@ export default function TourismPostDetailView({
 
   // Related posts from same category or location
   const relatedPosts = posts
-    .filter((p) => p.id !== post.id && p.status === "VALIDATED")
+    .filter((p) => {
+      const s = String(p.statut || p.status).toLowerCase();
+      return p.id !== post.id && (s === "validée" || s === "validated");
+    })
     .slice(0, 3);
 
   const handleShare = async () => {

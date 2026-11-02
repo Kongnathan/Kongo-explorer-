@@ -20,30 +20,28 @@ export default function MyTourismPostsModal({
 
   const getStatusBadge = (status: TourismPost["status"], rejectionReason?: string) => {
     const s = String(status).toLowerCase();
-    switch (s) {
-      case "validated":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-            <span className="material-symbols-outlined text-[14px]">check_circle</span>
-            Validée (Publiée)
-          </span>
-        );
-      case "rejected":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/20">
-            <span className="material-symbols-outlined text-[14px]">cancel</span>
-            Refusée
-          </span>
-        );
-      case "pending":
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-            <span className="material-symbols-outlined text-[14px]">schedule</span>
-            En attente de validation
-          </span>
-        );
+    if (s === "validée" || s === "validated") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+          <span className="material-symbols-outlined text-[14px]">check_circle</span>
+          Validée (Publiée)
+        </span>
+      );
     }
+    if (s === "rejetée" || s === "rejected") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/20">
+          <span className="material-symbols-outlined text-[14px]">cancel</span>
+          Refusée
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+        <span className="material-symbols-outlined text-[14px]">schedule</span>
+        En attente de validation
+      </span>
+    );
   };
 
   return (

@@ -8,6 +8,7 @@ import ReportPostModal from "./ReportPostModal";
 
 interface TourismNewsViewProps {
   posts: TourismPost[];
+  userPosts?: TourismPost[];
   onSelectPost: (id: string) => void;
   onNavigate: (tab: string) => void;
   onPostCreated?: (post: TourismPost) => void;
@@ -37,6 +38,7 @@ const LOCATIONS = [
 
 export default function TourismNewsView({
   posts,
+  userPosts: propUserPosts,
   onSelectPost,
   onNavigate,
   onPostCreated,
@@ -56,8 +58,9 @@ export default function TourismNewsView({
   // User posts calculation for quota & "My posts" list
   const userPosts = useMemo(() => {
     if (!currentUser) return [];
+    if (propUserPosts && propUserPosts.length > 0) return propUserPosts;
     return posts.filter((p) => p.authorId === currentUser.uid);
-  }, [posts, currentUser]);
+  }, [posts, propUserPosts, currentUser]);
 
   const userPostsTodayCount = useMemo(() => {
     if (!currentUser) return 0;
@@ -68,12 +71,15 @@ export default function TourismNewsView({
     }).length;
   }, [userPosts, currentUser]);
 
-  // Only show VALIDATED publications to the public
+  // Only show VALIDATED publications to the public, sorted from most recent to oldest
   const validatedPosts = useMemo(() => {
-    return posts.filter((p) => {
-      const s = String(p.status).toLowerCase();
-      return s === "validated";
-    });
+    return posts
+      .filter((p) => {
+        const statut = String(p.statut || "").toLowerCase();
+        const status = String(p.status || "").toLowerCase();
+        return statut === "validée" || status === "validée" || status === "validated";
+      })
+      .sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
   }, [posts]);
 
   // Filter by category, location, and search keyword
@@ -358,17 +364,38 @@ export default function TourismNewsView({
         </section>
 
         {/* Cards Grid or Empty State */}
-        {filteredPosts.length === 0 ? (
-          <div className="py-20 text-center rounded-3xl bg-surface-container-lowest border border-outline-variant/30 p-8 space-y-4">
+        {validatedPosts.length === 0 ? (
+          <div className="py-20 text-center rounded-3xl bg-surface-container-lowest border border-outline-variant/30 p-8 space-y-3 animate-fade-in">
+            <div className="w-16 h-16 rounded-full bg-surface-container-high mx-auto flex items-center justify-center text-on-surface-variant">
+              <span className="material-symbols-outlined text-3xl">newspaper</span>
+            </div>
+            <h3 className="font-serif text-lg font-bold text-on-surface">
+              Aucune information pour le moment
+            </h3>
+            <p className="text-xs text-on-surface-variant max-w-md mx-auto leading-relaxed">
+              Les publications validées apparaîtront ici. Soyez le premier à proposer une recommandation touristique !
+            </p>
+            <div className="pt-2">
+              <button
+                onClick={handleProposeClick}
+                className="px-5 py-2.5 rounded-full text-xs font-bold bg-primary text-white hover:bg-primary/95 cursor-pointer inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              >
+                <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                <span>Proposer une publication</span>
+              </button>
+            </div>
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="py-16 text-center rounded-3xl bg-surface-container-lowest border border-outline-variant/30 p-8 space-y-4">
             <div className="w-16 h-16 rounded-full bg-surface-container-high mx-auto flex items-center justify-center text-on-surface-variant">
               <span className="material-symbols-outlined text-3xl">search_off</span>
             </div>
             <div className="space-y-1">
               <h3 className="font-serif text-lg font-bold text-on-surface">
-                Aucune publication validée trouvée
+                Aucune information ne correspond à vos filtres
               </h3>
               <p className="text-xs text-on-surface-variant max-w-md mx-auto leading-relaxed">
-                Aucune information ne correspond aux critères sélectionnés. Essayez d'élargir vos filtres ou de modifier vos mots-clés.
+                Essayez d'élargir vos filtres ou de modifier vos mots-clés.
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
@@ -381,13 +408,6 @@ export default function TourismNewsView({
                 className="px-4 py-2 rounded-full text-xs font-semibold bg-surface-container hover:bg-surface-variant text-on-surface cursor-pointer"
               >
                 Réinitialiser les filtres
-              </button>
-              <button
-                onClick={handleProposeClick}
-                className="px-4 py-2 rounded-full text-xs font-bold bg-primary text-white hover:bg-primary/95 cursor-pointer flex items-center gap-1.5"
-              >
-                <span className="material-symbols-outlined text-[16px]">add_circle</span>
-                <span>Proposer une publication</span>
               </button>
             </div>
           </div>
