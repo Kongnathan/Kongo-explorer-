@@ -33,6 +33,15 @@ export interface Location {
   seasonality?: "ALL_YEAR" | "DRY_SEASON" | "RAIN_SEASON";
   offlineImageDataUrl?: string;       // Cached base64 data URL for offline display
   offlineGalleryDataUrls?: string[];  // Cached gallery images for offline display
+  guideWhatsAppEnabled?: boolean;     // Interrupteur guide WhatsApp pour cette destination (défaut: true)
+  guideWhatsAppNumber?: string;       // Numéro WhatsApp propre à la destination (facultatif)
+  guideWhatsAppMessage?: string;      // Message WhatsApp pré-rempli propre à la destination
+}
+
+export interface GuideWhatsAppSettings {
+  guideWhatsAppGlobalEnabled: boolean;
+  guideWhatsAppDefaultNumber: string;
+  guideWhatsAppDefaultMessage: string;
 }
 
 export interface SavedLocation {

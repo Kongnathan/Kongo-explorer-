@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Location, CommunityReport } from "../types";
+import { Location, CommunityReport, GuideWhatsAppSettings } from "../types";
 import RatingSection from "./RatingSection";
 import ReportModal from "./ReportModal";
 import RouteDirectionsModal from "./RouteDirectionsModal";
@@ -17,6 +17,7 @@ interface DetailViewProps {
   onUpdateLocation?: (loc: Location) => void;
   isAdmin?: boolean;
   onSubmitReport?: (report: CommunityReport) => void;
+  guideWhatsAppSettings?: GuideWhatsAppSettings;
 }
 
 const DEFAULT_CATEGORY_PHOTOS: Record<string, string[]> = {
@@ -51,11 +52,39 @@ export default function DetailView({
   onToggleSave,
   onUpdateLocation,
   isAdmin = false,
-  onSubmitReport
+  onSubmitReport,
+  guideWhatsAppSettings
 }: DetailViewProps) {
   const loc = locations.find(l => l.id === locationId) || locations[0];
   const [timerOffset, setTimerOffset] = useState(100);
   const [weatherOpen, setWeatherOpen] = useState(false);
+
+  // Configuration Guide / WhatsApp (Global + Par destination)
+  const isGlobalWhatsAppEnabled = guideWhatsAppSettings?.guideWhatsAppGlobalEnabled ?? true;
+  const isLocWhatsAppEnabled = loc.guideWhatsAppEnabled ?? true;
+  const isWhatsAppActive = isGlobalWhatsAppEnabled && isLocWhatsAppEnabled;
+
+  // Ordre de priorité du numéro : numéro de la destination, puis téléphone de la fiche, puis numéro par défaut
+  const rawTargetNumber = (
+    (loc.guideWhatsAppNumber && loc.guideWhatsAppNumber.trim()) ||
+    (loc.contactPhone && loc.contactPhone.trim()) ||
+    (guideWhatsAppSettings?.guideWhatsAppDefaultNumber && guideWhatsAppSettings.guideWhatsAppDefaultNumber.trim()) ||
+    ""
+  );
+
+  const cleanDigits = rawTargetNumber.replace(/[^0-9]/g, "");
+
+  // Message pré-rempli avec substitution de {destination}
+  const defaultTemplate = (
+    (guideWhatsAppSettings?.guideWhatsAppDefaultMessage && guideWhatsAppSettings.guideWhatsAppDefaultMessage.trim()) ||
+    "Bonjour, je souhaite des infos sur {destination}"
+  );
+  const rawTemplate = (loc.guideWhatsAppMessage && loc.guideWhatsAppMessage.trim()) || defaultTemplate;
+  const resolvedMessage = rawTemplate.replace(/\{destination\}/gi, loc.title);
+
+  // Le bouton ne s'affiche que si l'interrupteur général ET destination sont activés, ET qu'un numéro est configuré (pas de numéro codé en dur)
+  const showWhatsAppButton = isWhatsAppActive && cleanDigits !== "";
+  const whatsAppUrl = `https://wa.me/${cleanDigits}?text=${encodeURIComponent(resolvedMessage)}`;
 
   // Dynamic Photo Gallery States
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
@@ -483,16 +512,19 @@ export default function DetailView({
               <span className="hidden sm:inline">Maps Ext</span>
             </button>
 
-            {/* Contacter Guide / Resort WhatsApp or Tel Button */}
-            <a
-              href={loc.contactPhone ? `tel:${loc.contactPhone}` : `https://wa.me/243810000000?text=${encodeURIComponent(`Bonjour, je souhaite des infos sur ${loc.title}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 min-w-[130px] bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-3.5 rounded-xl font-sans text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
-            >
-              <span className="material-symbols-outlined text-[18px]">call</span>
-              <span>Guide / WhatsApp</span>
-            </a>
+            {/* Contacter Guide / WhatsApp (Affiché uniquement si activé et numéro configuré, sans numéro en dur) */}
+            {showWhatsAppButton && (
+              <a
+                href={whatsAppUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-[130px] bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-3.5 rounded-xl font-sans text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
+                title={`Contacter par WhatsApp : ${rawTargetNumber}`}
+              >
+                <span className="material-symbols-outlined text-[18px]">call</span>
+                <span>Guide / WhatsApp</span>
+              </a>
+            )}
 
             {/* Offline Save Toggle */}
             <button

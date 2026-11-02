@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { Location, SavedLocation, PendingPermit, Circuit, TourismPost, TourismReport } from "./types";
+import { Location, SavedLocation, PendingPermit, Circuit, TourismPost, TourismReport, GuideWhatsAppSettings } from "./types";
 import { DEFAULT_LOCATIONS, DEFAULT_PENDING_PERMITS, DEFAULT_TOURISMPPOSTS } from "./data";
 import { DEFAULT_CIRCUITS } from "./circuitsData";
 import ExploreView from "./components/ExploreView";
@@ -139,6 +139,9 @@ function serializeLocationForFirestore(loc: Location): any {
     safetyGuidelines: typeof loc.safetyGuidelines === "string" ? loc.safetyGuidelines : null,
     ecoResponsibility: typeof loc.ecoResponsibility === "string" ? loc.ecoResponsibility : null,
     localCustoms: typeof loc.localCustoms === "string" ? loc.localCustoms : null,
+    guideWhatsAppEnabled: typeof loc.guideWhatsAppEnabled === "boolean" ? loc.guideWhatsAppEnabled : true,
+    guideWhatsAppNumber: typeof loc.guideWhatsAppNumber === "string" && loc.guideWhatsAppNumber.trim() !== "" ? loc.guideWhatsAppNumber.trim() : null,
+    guideWhatsAppMessage: typeof loc.guideWhatsAppMessage === "string" && loc.guideWhatsAppMessage.trim() !== "" ? loc.guideWhatsAppMessage.trim() : null,
   };
 }
 
@@ -180,6 +183,9 @@ function deserializeLocationFromFirestore(id: string, data: any): Location {
     safetyGuidelines: data.safetyGuidelines || null,
     ecoResponsibility: data.ecoResponsibility || null,
     localCustoms: data.localCustoms || null,
+    guideWhatsAppEnabled: typeof data.guideWhatsAppEnabled === "boolean" ? data.guideWhatsAppEnabled : (typeof defaultLoc?.guideWhatsAppEnabled === "boolean" ? defaultLoc.guideWhatsAppEnabled : true),
+    guideWhatsAppNumber: typeof data.guideWhatsAppNumber === "string" ? data.guideWhatsAppNumber : (defaultLoc?.guideWhatsAppNumber || undefined),
+    guideWhatsAppMessage: typeof data.guideWhatsAppMessage === "string" ? data.guideWhatsAppMessage : (defaultLoc?.guideWhatsAppMessage || undefined),
   };
 }
 
@@ -256,6 +262,12 @@ function deserializeCircuitFromFirestore(id: string, data: any): Circuit {
 }
 
 
+const DEFAULT_GUIDE_WHATSAPP_SETTINGS: GuideWhatsAppSettings = {
+  guideWhatsAppGlobalEnabled: true,
+  guideWhatsAppDefaultNumber: "",
+  guideWhatsAppDefaultMessage: "Bonjour, je souhaite des infos sur {destination}"
+};
+
 function DetailRouteWrapper({
   locations,
   onNavigate,
@@ -263,6 +275,7 @@ function DetailRouteWrapper({
   onToggleSave,
   onUpdateLocation,
   isAdmin,
+  guideWhatsAppSettings,
 }: {
   locations: Location[];
   onNavigate: (tab: string) => void;
@@ -270,6 +283,7 @@ function DetailRouteWrapper({
   onToggleSave: (id: string) => void;
   onUpdateLocation: (loc: Location) => void;
   isAdmin: boolean;
+  guideWhatsAppSettings?: GuideWhatsAppSettings;
 }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -296,6 +310,7 @@ function DetailRouteWrapper({
       onToggleSave={onToggleSave}
       onUpdateLocation={onUpdateLocation}
       isAdmin={isAdmin}
+      guideWhatsAppSettings={guideWhatsAppSettings}
     />
   );
 }
@@ -578,6 +593,59 @@ export function AppContent() {
   // Saved locations IDs (Persistent travel logs/offline bookmarks)
   const [savedLocationIds, setSavedLocationIds] = useState<string[]>([]);
   
+  // Guide WhatsApp Configuration State
+  const [guideWhatsAppSettings, setGuideWhatsAppSettings] = useState<GuideWhatsAppSettings>(() => {
+    try {
+      const saved = localStorage.getItem("kongo_guide_whatsapp_settings");
+      if (saved) {
+        return { ...DEFAULT_GUIDE_WHATSAPP_SETTINGS, ...JSON.parse(saved) };
+      }
+    } catch (e) {
+      // ignore
+    }
+    return DEFAULT_GUIDE_WHATSAPP_SETTINGS;
+  });
+
+  // Sync settings/guide_whatsapp from Firestore (public read)
+  useEffect(() => {
+    if (isFirebaseConfigured) {
+      const unsubscribe = onSnapshot(doc(db, "settings", "guide_whatsapp"), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as Partial<GuideWhatsAppSettings>;
+          setGuideWhatsAppSettings(prev => {
+            const merged: GuideWhatsAppSettings = {
+              guideWhatsAppGlobalEnabled: typeof data.guideWhatsAppGlobalEnabled === "boolean" ? data.guideWhatsAppGlobalEnabled : prev.guideWhatsAppGlobalEnabled,
+              guideWhatsAppDefaultNumber: typeof data.guideWhatsAppDefaultNumber === "string" ? data.guideWhatsAppDefaultNumber : prev.guideWhatsAppDefaultNumber,
+              guideWhatsAppDefaultMessage: typeof data.guideWhatsAppDefaultMessage === "string" ? data.guideWhatsAppDefaultMessage : prev.guideWhatsAppDefaultMessage,
+            };
+            try {
+              localStorage.setItem("kongo_guide_whatsapp_settings", JSON.stringify(merged));
+            } catch (e) {}
+            return merged;
+          });
+        }
+      }, (err) => {
+        console.warn("Settings guide_whatsapp listener notice:", err);
+      });
+      return () => unsubscribe();
+    }
+  }, []);
+
+  const handleSaveGuideWhatsAppSettings = async (newSettings: GuideWhatsAppSettings) => {
+    setGuideWhatsAppSettings(newSettings);
+    try {
+      localStorage.setItem("kongo_guide_whatsapp_settings", JSON.stringify(newSettings));
+    } catch (e) {}
+
+    if (isFirebaseConfigured) {
+      try {
+        await setDoc(doc(db, "settings", "guide_whatsapp"), newSettings);
+      } catch (err) {
+        console.error("Failed to save guide_whatsapp settings to Firestore:", err);
+      }
+    }
+  };
+
   // UI states
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
   const [showSplash, setShowSplash] = useState<boolean>(true);
@@ -1465,6 +1533,7 @@ export function AppContent() {
                     onToggleSave={handleToggleSave}
                     onUpdateLocation={handleUpdateLocation}
                     isAdmin={isAdmin}
+                    guideWhatsAppSettings={guideWhatsAppSettings}
                   />
                 }
               />
@@ -1502,6 +1571,8 @@ export function AppContent() {
                       pendingPermits={pendingPermits}
                       tourismPosts={tourismPosts}
                       reports={reports}
+                      guideWhatsAppSettings={guideWhatsAppSettings}
+                      onSaveGuideWhatsAppSettings={handleSaveGuideWhatsAppSettings}
                       onAddLocation={handleAddLocation}
                       onUpdateLocation={handleUpdateLocation}
                       onDeleteLocation={handleDeleteLocation}

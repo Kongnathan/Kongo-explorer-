@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Location, PendingPermit, SubdomainConfig, Circuit, TourismPost, TourismReport } from "../types";
+import { Location, PendingPermit, SubdomainConfig, Circuit, TourismPost, TourismReport, GuideWhatsAppSettings } from "../types";
 import CircuitManager from "./CircuitManager";
 import TourismPostsManager from "./TourismPostsManager";
 import TourismModerationView from "./TourismModerationView";
@@ -934,6 +934,180 @@ function DedicatedImageUploader({
   );
 }
 
+function DestinationWhatsAppCard({
+  loc,
+  defaultNumber,
+  defaultMessage,
+  onSave,
+  isSaving
+}: {
+  loc: Location;
+  defaultNumber: string;
+  defaultMessage: string;
+  onSave: (loc: Location, enabled: boolean, specificNumber: string, specificMessage: string) => void;
+  isSaving: boolean;
+}) {
+  const [enabled, setEnabled] = useState<boolean>(loc.guideWhatsAppEnabled ?? true);
+  const [specificNumber, setSpecificNumber] = useState<string>(loc.guideWhatsAppNumber || "");
+  const [specificMessage, setSpecificMessage] = useState<string>(loc.guideWhatsAppMessage || "");
+  const [isDirty, setIsDirty] = useState<boolean>(false);
+
+  useEffect(() => {
+    setEnabled(loc.guideWhatsAppEnabled ?? true);
+    setSpecificNumber(loc.guideWhatsAppNumber || "");
+    setSpecificMessage(loc.guideWhatsAppMessage || "");
+    setIsDirty(false);
+  }, [loc.guideWhatsAppEnabled, loc.guideWhatsAppNumber, loc.guideWhatsAppMessage]);
+
+  const effectiveNumber = specificNumber.trim() || loc.contactPhone?.trim() || defaultNumber.trim();
+  const hasEffectiveNumber = effectiveNumber.replace(/[^0-9]/g, "").length > 0;
+
+  return (
+    <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+      enabled 
+        ? "bg-surface-container-lowest border-outline-variant/30 shadow-sm" 
+        : "bg-surface-container/40 border-outline-variant/20 opacity-80"
+    }`}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant/15">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-surface-variant flex-none relative">
+            <img 
+              src={loc.image} 
+              alt={loc.title} 
+              className="w-full h-full object-cover" 
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.src = "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=150&auto=format&fit=crop&q=80";
+              }}
+            />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="font-sans font-bold text-sm sm:text-base text-on-surface">{loc.title}</h4>
+              <span className="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold">
+                {loc.category}
+              </span>
+            </div>
+            <p className="text-xs text-on-surface-variant font-mono mt-0.5">{loc.locationName}, RD Congo</p>
+          </div>
+        </div>
+
+        {/* Switch and Status Indicator */}
+        <div className="flex items-center gap-3">
+          <span className={`text-[10px] sm:text-[11px] font-mono font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${
+            !enabled 
+              ? "bg-error/10 text-error" 
+              : !hasEffectiveNumber 
+              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400" 
+              : specificNumber.trim() 
+              ? "bg-emerald-600/15 text-emerald-700 dark:text-emerald-400" 
+              : "bg-primary/10 text-primary"
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              !enabled ? "bg-error" : !hasEffectiveNumber ? "bg-amber-500 animate-pulse" : "bg-emerald-600"
+            }`}></span>
+            {!enabled 
+              ? "Désactivé" 
+              : !hasEffectiveNumber 
+              ? "Masqué (aucun numéro)" 
+              : specificNumber.trim() 
+              ? "Numéro spécifique" 
+              : "Numéro par défaut"}
+          </span>
+
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={enabled} 
+              onChange={(e) => {
+                setEnabled(e.target.checked);
+                setIsDirty(true);
+              }}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+            <span className="ml-2 font-sans text-xs font-semibold text-on-surface">
+              {enabled ? "Activé" : "Désactivé"}
+            </span>
+          </label>
+        </div>
+      </div>
+
+      {/* Destination Inputs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-3.5">
+        <div>
+          <label className="block text-[11px] font-mono font-semibold text-on-surface-variant mb-1">
+            Numéro propre à cette destination (facultatif)
+          </label>
+          <div className="relative">
+            <span className="material-symbols-outlined text-outline absolute left-3 top-2.5 text-[18px]">call</span>
+            <input 
+              type="text" 
+              value={specificNumber}
+              onChange={(e) => {
+                setSpecificNumber(e.target.value);
+                setIsDirty(true);
+              }}
+              placeholder={loc.contactPhone ? `Téléphone fiche : ${loc.contactPhone}` : defaultNumber ? `Défaut : ${defaultNumber}` : "Ex: 243810000000"}
+              className="w-full bg-surface-container pl-10 pr-3 py-2 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant/30"
+            />
+          </div>
+          <p className="text-[10px] text-outline mt-1 font-mono">
+            {specificNumber.trim() 
+              ? "Ce numéro sera utilisé en priorité." 
+              : loc.contactPhone 
+              ? `Hérite du téléphone de fiche : ${loc.contactPhone}` 
+              : defaultNumber 
+              ? `Hérite du numéro par défaut : ${defaultNumber}` 
+              : "Aucun numéro renseigné (le bouton sera caché)."}
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-mono font-semibold text-on-surface-variant mb-1">
+            Message pré-rempli propre (facultatif)
+          </label>
+          <div className="relative">
+            <span className="material-symbols-outlined text-outline absolute left-3 top-2.5 text-[18px]">chat</span>
+            <input 
+              type="text" 
+              value={specificMessage}
+              onChange={(e) => {
+                setSpecificMessage(e.target.value);
+                setIsDirty(true);
+              }}
+              placeholder={`Défaut: ${defaultMessage.replace('{destination}', loc.title)}`}
+              className="w-full bg-surface-container pl-10 pr-3 py-2 rounded-xl text-xs font-sans focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant/30"
+            />
+          </div>
+          <p className="text-[10px] text-outline mt-1 font-mono">
+            Laisser vide pour utiliser le message par défaut.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3.5 flex justify-end">
+        <button
+          type="button"
+          onClick={() => {
+            onSave(loc, enabled, specificNumber, specificMessage);
+            setIsDirty(false);
+          }}
+          disabled={isSaving}
+          className={`px-4 py-2 rounded-xl text-xs font-sans font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm ${
+            isDirty
+              ? "bg-emerald-600 hover:bg-emerald-700 text-white animate-pulse"
+              : "bg-surface-container-high hover:bg-surface-variant text-on-surface"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[16px]">save</span>
+          <span>{isSaving ? "Enregistrement..." : isDirty ? "Enregistrer les modifications" : "Enregistrer cette destination"}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 interface AdminPanelViewProps {
   locations: Location[];
   circuits?: Circuit[];
@@ -954,6 +1128,8 @@ interface AdminPanelViewProps {
   onValidateTourismPost?: (id: string) => Promise<void> | void;
   onRejectTourismPost?: (id: string, reason: string) => Promise<void> | void;
   onResolveReport?: (id: string) => Promise<void> | void;
+  guideWhatsAppSettings?: GuideWhatsAppSettings;
+  onSaveGuideWhatsAppSettings?: (settings: GuideWhatsAppSettings) => Promise<void> | void;
   onLogout: () => void;
 }
 
@@ -963,6 +1139,8 @@ export default function AdminPanelView({
   pendingPermits,
   tourismPosts = [],
   reports = [],
+  guideWhatsAppSettings,
+  onSaveGuideWhatsAppSettings,
   onAddLocation,
   onUpdateLocation,
   onDeleteLocation,
@@ -983,6 +1161,30 @@ export default function AdminPanelView({
   const [editingLoc, setEditingLoc] = useState<Location | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Guide WhatsApp Management States
+  const [globalWhatsAppEnabled, setGlobalWhatsAppEnabled] = useState<boolean>(() => {
+    return guideWhatsAppSettings?.guideWhatsAppGlobalEnabled ?? true;
+  });
+  const [defaultWhatsAppNumber, setDefaultWhatsAppNumber] = useState<string>(() => {
+    return guideWhatsAppSettings?.guideWhatsAppDefaultNumber ?? "";
+  });
+  const [defaultWhatsAppMessage, setDefaultWhatsAppMessage] = useState<string>(() => {
+    return guideWhatsAppSettings?.guideWhatsAppDefaultMessage ?? "Bonjour, je souhaite des infos sur {destination}";
+  });
+  const [whatsAppFeedback, setWhatsAppFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [whatsAppSearch, setWhatsAppSearch] = useState<string>("");
+  const [isSavingGlobalWhatsApp, setIsSavingGlobalWhatsApp] = useState<boolean>(false);
+  const [savingLocationId, setSavingLocationId] = useState<string | null>(null);
+
+  // Sync state when prop updates
+  useEffect(() => {
+    if (guideWhatsAppSettings) {
+      setGlobalWhatsAppEnabled(guideWhatsAppSettings.guideWhatsAppGlobalEnabled);
+      setDefaultWhatsAppNumber(guideWhatsAppSettings.guideWhatsAppDefaultNumber || "");
+      setDefaultWhatsAppMessage(guideWhatsAppSettings.guideWhatsAppDefaultMessage || "Bonjour, je souhaite des infos sur {destination}");
+    }
+  }, [guideWhatsAppSettings]);
 
   // New Location form states
   const [newTitle, setNewTitle] = useState("");
@@ -1492,6 +1694,27 @@ export default function AdminPanelView({
               ImageUploader
             </span>
           </button>
+
+          <button 
+            onClick={() => setActiveTab("GuideWhatsApp")}
+            className={`w-[calc(100%-16px)] flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all font-sans text-body-md text-left cursor-pointer ${
+              activeTab === "GuideWhatsApp"
+                ? "bg-primary-container text-on-primary-container font-semibold"
+                : "text-on-surface-variant hover:bg-surface-container-high"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px] text-emerald-600">chat</span>
+            <span className="flex-1">Guide WhatsApp</span>
+            {globalWhatsAppEnabled ? (
+              <span className="bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-mono font-bold">
+                Actif
+              </span>
+            ) : (
+              <span className="bg-error/15 text-error text-[10px] px-2 py-0.5 rounded-full font-mono font-bold">
+                Inactif
+              </span>
+            )}
+          </button>
         </nav>
 
         <div className="p-6 mt-auto border-t border-outline-variant/20">
@@ -1537,6 +1760,7 @@ export default function AdminPanelView({
               {activeTab === "Circuits" && "Gestion des Circuits & Médias"}
               {activeTab === "Subdomain" && "Configuration du Sous-Domaine"}
               {activeTab === "Images" && "Gestionnaire Dedié des Images"}
+              {activeTab === "GuideWhatsApp" && "Configuration Guide WhatsApp"}
             </h2>
           </div>
           {activeTab === "Locations" && (

@@ -15,6 +15,9 @@
         "rating": { "type": "number", "description": "Average rating from 1 to 5" },
         "ratingSum": { "type": "number", "description": "Sum of all ratings" },
         "ratingCount": { "type": "number", "description": "Total number of user ratings submitted" },
+        "guideWhatsAppEnabled": { "type": "boolean", "description": "Whether Guide WhatsApp button is enabled for this destination" },
+        "guideWhatsAppNumber": { "type": "string", "description": "Specific WhatsApp number for this destination" },
+        "guideWhatsAppMessage": { "type": "string", "description": "Specific pre-filled message template" },
         "updatedAt": { "type": "string", "description": "ISO timestamp of last update" }
       }
     },
@@ -65,7 +68,10 @@
       "fields": {
         "subdomain": { "type": "string" },
         "fullUrl": { "type": "string" },
-        "status": { "type": "string" }
+        "status": { "type": "string" },
+        "guideWhatsAppGlobalEnabled": { "type": "boolean", "description": "Global master switch for Guide WhatsApp button" },
+        "guideWhatsAppDefaultNumber": { "type": "string", "description": "Global default WhatsApp phone number" },
+        "guideWhatsAppDefaultMessage": { "type": "string", "description": "Global default pre-filled WhatsApp message template" }
       }
     },
     "subdomains": {
