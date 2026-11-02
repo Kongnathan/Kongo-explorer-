@@ -59,6 +59,8 @@ export default function MapView({
   const [mapMode, setMapMode] = useState<"google" | "osm" | "topographic">("google");
   // Map Type Selector: "roadmap" (plan classique) | "satellite" (vue satellite)
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
+  // Panneau d'aide qui explique les modes de la carte en mots simples
+  const [showMapHelp, setShowMapHelp] = useState(false);
 
   // Leaflet references
   const mapRef = useRef<L.Map | null>(null);
@@ -383,7 +385,8 @@ export default function MapView({
       <main className="flex-1 relative overflow-hidden h-full w-full">
         
         {/* Toggle between Google Maps, OpenStreetMap, and Topographic + Plan/Satellite Toggle */}
-        <div className="absolute top-18 left-1/2 -translate-x-1/2 z-20 flex flex-col sm:flex-row items-center gap-2 max-w-[95vw]">
+        <div className="absolute top-18 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 max-w-[95vw]">
+          <div className="flex flex-col sm:flex-row items-center gap-2 max-w-[95vw]">
           <div className="flex bg-surface-container-lowest/90 backdrop-blur-md rounded-full p-1 shadow-lg border border-outline-variant/20 max-w-[90vw] overflow-x-auto no-scrollbar">
             <button
               onClick={() => {
@@ -431,7 +434,7 @@ export default function MapView({
                   ? "bg-primary text-white shadow-sm"
                   : "text-on-surface-variant hover:bg-surface-container-high"
               }`}
-              title="Vue Plan Classique"
+              title="Plan : dessin simple avec les routes et les noms des lieux"
             >
               <span className="material-symbols-outlined text-[15px]">map</span>
               <span>Plan</span>
@@ -443,11 +446,57 @@ export default function MapView({
                   ? "bg-primary text-white shadow-sm"
                   : "text-on-surface-variant hover:bg-surface-container-high"
               }`}
-              title="Vue Satellite Haute Résolution"
+              title="Satellite : photos prises du ciel, pour voir les lieux tels qu'ils sont"
             >
               <span className="material-symbols-outlined text-[15px]">satellite_alt</span>
               <span>Satellite</span>
             </button>
+          </div>
+          </div>
+
+          {/* Explications simples, centrées, pour savoir à quoi sert chaque mode */}
+          <div className="w-[min(92vw,26rem)] text-center space-y-1.5">
+            <p className="inline-block bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl px-3.5 py-2 shadow-lg border border-outline-variant/30 text-xs text-on-surface leading-relaxed">
+              {mapType === "satellite"
+                ? "Vue satellite : des photos prises du ciel. Elles montrent les forêts, les rivières, les chutes et l'état des chemins, tels qu'ils sont vraiment."
+                : "Vue plan : un dessin simple avec les routes et les noms des villes. C'est le plus facile pour se repérer."}
+            </p>
+            <div>
+              <button
+                onClick={() => setShowMapHelp(v => !v)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 hover:bg-primary text-white text-[11px] font-bold shadow-md transition-all cursor-pointer active:scale-95"
+                aria-expanded={showMapHelp}
+              >
+                <span className="material-symbols-outlined text-[15px]">{showMapHelp ? "close" : "help"}</span>
+                {showMapHelp ? "Fermer l'aide" : "À quoi servent ces boutons ?"}
+              </button>
+            </div>
+
+            {showMapHelp && (
+              <div className="bg-surface-container-lowest/97 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-primary/20 text-center space-y-2.5 animate-fade-in max-h-[50vh] overflow-y-auto">
+                <h2 className="font-sans text-sm font-bold text-primary">Bien choisir sa carte</h2>
+                <div className="space-y-2 text-xs text-on-surface-variant leading-relaxed">
+                  <p>
+                    <strong className="text-on-surface">Plan</strong> : un dessin simple avec les routes et les noms des lieux. Idéal pour trouver son chemin en ville.
+                  </p>
+                  <p>
+                    <strong className="text-on-surface">Satellite</strong> : des photos prises du ciel. Très utile pour voir si un lieu est entouré de forêt, s'il y a une rivière ou une chute, et comment est le chemin avant de partir. Si le réseau est faible, les photos peuvent mettre plus de temps à s'afficher.
+                  </p>
+                  <p>
+                    <strong className="text-on-surface">Google Maps</strong> : la carte la plus complète, avec le chemin pour y aller. C'est celle qui s'ouvre au départ.
+                  </p>
+                  <p>
+                    <strong className="text-on-surface">OpenStreetMap</strong> : une carte gratuite faite par des volontaires du monde entier. Elle montre souvent de petits chemins.
+                  </p>
+                  <p>
+                    <strong className="text-on-surface">Carte Topo</strong> : une vue simplifiée qui met en avant les zones naturelles et le relief.
+                  </p>
+                  <p>
+                    <strong className="text-on-surface">Le bouton rond de position</strong> : montre où vous vous trouvez sur la carte. Votre téléphone vous le demandera d'abord.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -685,14 +734,14 @@ export default function MapView({
                 
                 <p className="text-blue-800 font-sans text-xs mt-1 mb-2 leading-relaxed">
                   {userPos.isMocked 
-                    ? "Coordonnées réelles projetées sur notre carte interactive du Kongo Central."
-                    : "Votre appareil est connecté en temps réel aux satellites GPS de la province."}
+                    ? "Votre position est montrée sur la carte du Kongo Central."
+                    : "Votre téléphone a trouvé où vous êtes en ce moment."}
                 </p>
 
                 <div className="bg-white/85 rounded-xl p-2.5 space-y-1 text-[10px] font-mono text-blue-950 border border-blue-200/50">
                   <div>Lat : {userPos.lat.toFixed(5)}°</div>
                   <div>Lng : {userPos.lng.toFixed(5)}°</div>
-                  <div>Précision : ±{Math.round(userPos.accuracy || 10)} m</div>
+                  <div>Précision : environ {Math.round(userPos.accuracy || 10)} m</div>
                 </div>
 
                 <div className="mt-3 flex gap-2">
@@ -801,17 +850,17 @@ export default function MapView({
             
             <h3 className="font-sans text-body-lg font-bold text-on-surface flex items-center gap-2">
               <span className="material-symbols-outlined text-blue-600">my_location</span>
-              Votre position d'exploration
+              Votre position
             </h3>
             
             <p className="text-on-surface-variant font-sans text-xs mt-1 leading-relaxed">
               Latitude : {userPos.lat.toFixed(5)}°<br />
               Longitude : {userPos.lng.toFixed(5)}°<br />
-              Précision : {userPos.accuracy ? `${Math.round(userPos.accuracy)} mètres` : "simulation éco-garde"}
+              Précision : {userPos.accuracy ? `environ ${Math.round(userPos.accuracy)} mètres` : "position d'exemple"}
             </p>
 
             <div className="text-[10px] text-outline font-mono mt-3 border-t border-outline-variant/10 pt-2 flex justify-between items-center">
-              <span>{userPos.isMocked ? "Projeté aux chutes de Zongo." : "Géolocalisation satellite active."}</span>
+              <span>{userPos.isMocked ? "Position d'exemple : chutes de Zongo." : "Position en direct activée."}</span>
               <button 
                 onClick={() => {
                   setUserPos(null);
@@ -836,7 +885,7 @@ export default function MapView({
                 ? "bg-amber-600 text-white border-amber-500 shadow-amber-900/20" 
                 : "bg-surface-container-lowest text-primary border-outline-variant/30"
             }`}
-            title={mapType === "roadmap" ? "Passer en vue Satellite" : "Passer en vue Plan"}
+            title={mapType === "roadmap" ? "Voir les photos du ciel (satellite)" : "Revenir au plan simple"}
           >
             <span className="material-symbols-outlined font-bold">
               {mapType === "satellite" ? "map" : "satellite_alt"}
@@ -853,7 +902,7 @@ export default function MapView({
                   ? "bg-blue-600 text-white border-blue-700" 
                   : "bg-surface-container-lowest text-primary border-outline-variant/30"
             }`}
-            title="Activer la géolocalisation GPS"
+            title="Voir où je me trouve sur la carte"
             disabled={isLocating}
           >
             {isLocating ? (

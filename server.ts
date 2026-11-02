@@ -471,6 +471,11 @@ Ce que le visiteur peut faire sur Kongo Explorer (explique toujours avec des mot
 
 2. La carte (route: '/carte') :
    - Montre où sont les lieux à visiter (Zongo, Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu) et le chemin pour y aller.
+   - Mode « Plan » : un dessin simple avec les routes et les noms des villes, le plus facile pour se repérer en ville.
+   - Mode « Satellite » : des photos prises du ciel. Utile pour voir les forêts, les rivières, les chutes et l'état des chemins avant de partir. Si le réseau est faible, les photos peuvent être plus lentes à s'afficher.
+   - Fonds de carte au choix : Google Maps (le plus complet, ouvert au départ), OpenStreetMap (carte gratuite faite par des volontaires, avec souvent de petits chemins), Carte Topo (vue simplifiée du relief et des zones naturelles).
+   - Le bouton rond de position montre où l'on se trouve sur la carte (le téléphone demande d'abord l'autorisation).
+   - Le bouton « À quoi servent ces boutons ? » explique chaque mode.
    - Action associée : 'carte'.
 
 3. Les circuits (route: '/circuits') :
@@ -543,6 +548,16 @@ app.post("/api/guide-chat", async (req, res) => {
           label: "Voir Infos Tourisme",
           route: "/infos-tourisme",
           tourStepId: "step-infos"
+        }
+      };
+    }
+    if (q.includes("satellite") || q.includes("relief") || q.includes("topo")) {
+      return {
+        reply: "Le mode Satellite affiche des photos prises du ciel : pratique pour voir les forêts, les rivières, les chutes et l'état des chemins avant de partir. Le mode Plan est un dessin simple avec les routes et les noms. Voulez-vous ouvrir la carte ?",
+        suggestedAction: {
+          label: "Ouvrir la carte",
+          route: "/carte",
+          tourStepId: "step-carte"
         }
       };
     }

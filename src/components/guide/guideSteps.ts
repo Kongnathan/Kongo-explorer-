@@ -31,7 +31,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "step-carte",
     title: "La carte",
-    description: "Voyez où se trouvent les lieux à visiter (Zongo, Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu). Touchez un point sur la carte pour lire sa fiche et voir comment s'y rendre.",
+    description: "Voyez où se trouvent les lieux à visiter (Zongo, Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu). Touchez un point pour lire sa fiche. Le bouton « Satellite » affiche des photos prises du ciel : pratique pour voir les forêts, les rivières et les chemins avant de partir.",
     route: "/carte",
     targetSelector: "[data-guide='nav-carte']",
     badge: "3 / 8",

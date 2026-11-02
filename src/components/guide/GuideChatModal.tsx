@@ -123,6 +123,13 @@ export default function GuideChatModal({
           route: "/infos-tourisme",
           tourStepId: "step-infos",
         };
+      } else if (q.includes("satellite") || q.includes("relief") || q.includes("topo")) {
+        fallbackText = "Le mode Satellite affiche des photos prises du ciel : pratique pour voir les forêts, les rivières, les chutes et l'état des chemins avant de partir. Le mode Plan est un dessin simple avec les routes et les noms. Voulez-vous ouvrir la carte ?";
+        fallbackAction = {
+          label: "Ouvrir la carte",
+          route: "/carte",
+          tourStepId: "step-carte",
+        };
       } else if (q.includes("carte") || q.includes("map") || q.includes("itineraire") || q.includes("position") || q.includes("lieu")) {
         fallbackText = "La carte vous montre où se trouvent les lieux à visiter (Zongo, Matadi, Boma, Muanda...) et le chemin pour y aller. Voulez-vous l'ouvrir ?";
         fallbackAction = {

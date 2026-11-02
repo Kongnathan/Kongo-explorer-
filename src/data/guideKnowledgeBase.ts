@@ -32,8 +32,8 @@ export const GUIDE_FEATURES: GuideFeature[] = [
     name: "La carte",
     category: "navigation",
     summary: "Voyez où se trouvent tous les lieux à visiter.",
-    description: "Une carte du Kongo Central avec les villes (Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu, Zongo) et leurs lieux à visiter. Touchez un point pour lire sa fiche et voir le chemin pour y aller.",
-    howToUse: "Déplacez la carte avec votre doigt, agrandissez avec deux doigts, puis touchez un point coloré.",
+    description: "Une carte du Kongo Central avec les villes (Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu, Zongo) et leurs lieux à visiter. Touchez un point pour lire sa fiche et voir le chemin pour y aller. Plusieurs modes sont proposés : « Plan » (un dessin simple avec les routes et les noms) et « Satellite » (des photos prises du ciel, utiles pour voir les forêts, les rivières, les chutes et l'état des chemins avant de partir). On peut aussi choisir Google Maps, OpenStreetMap (carte gratuite faite par des volontaires) ou Carte Topo (vue simplifiée du relief et des zones naturelles).",
+    howToUse: "Déplacez la carte avec votre doigt, agrandissez avec deux doigts, puis touchez un point coloré. Pour changer de mode, touchez « Plan » ou « Satellite » en haut, ou « À quoi servent ces boutons ? » pour une explication.",
     whereToFind: "Bouton « Carte » dans le menu du bas.",
     route: "/carte",
     targetSelector: "[data-guide='nav-carte']",
@@ -173,6 +173,7 @@ export const GUIDE_SUGGESTED_QUESTIONS = [
   "Comment publier une info touristique ?",
   "À quoi servent les boutons d'une fiche ?",
   "Comment utiliser la carte ?",
+  "À quoi sert le mode satellite ?",
   "Comment garder un lieu dans mon carnet ?",
   "Comment passer en mode nuit ?",
 ];
