@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useBackClose } from "../hooks/useBackClose";
 import { CommunityReport, Location } from "../types";
 
 interface ReportModalProps {
@@ -22,6 +23,7 @@ export default function ReportModal({
   const [comment, setComment] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
 
+  useBackClose(isOpen, onClose);
   if (!isOpen) return null;
 
   const activeLoc = locations.find(l => l.id === selectedLocId) || location || locations[0];

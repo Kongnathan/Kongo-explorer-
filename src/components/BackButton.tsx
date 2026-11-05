@@ -50,9 +50,16 @@ export default function BackButton({
 
     // 3. Intelligent History / Fallback Routing Check
     // Checks if the user has in-app browser history or landed directly from external link
+    // React Router garde la position dans l'historique (idx) : plus fiable que document.referrer,
+    // qui est souvent vide dans une application installée.
+    const stateIdx = typeof window !== "undefined" ? window.history.state?.idx : undefined;
     const hasHistory = typeof window !== "undefined" && window.history.length > 1;
+    const hasInAppHistory =
+      typeof stateIdx === "number"
+        ? stateIdx > 0
+        : hasHistory && !!document.referrer && document.referrer.includes(window.location.host);
 
-    if (hasHistory && document.referrer && document.referrer.includes(window.location.host)) {
+    if (hasInAppHistory) {
       window.history.back();
     } else if (onNavigate) {
       onNavigate(fallbackTab);

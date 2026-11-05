@@ -7,13 +7,16 @@ export interface UserPosition {
   isMocked?: boolean;
 }
 
+/** Raison de l'échec de la localisation : refusée, indisponible, trop longue ou non prise en charge. */
+export type GeolocationFailureReason = "denied" | "unavailable" | "timeout" | "unsupported";
+
 export function getUserGeolocation(
   onSuccess: (pos: UserPosition) => void,
-  onError: (errorMsg: string, fallbackPos?: UserPosition) => void,
+  onError: (errorMsg: string, fallbackPos?: UserPosition, reason?: GeolocationFailureReason) => void,
   options: { timeoutMs?: number } = {}
 ) {
   if (!navigator.geolocation) {
-    onError("La géolocalisation n'est pas supportée par votre navigateur.");
+    onError("La localisation ne marche pas sur ce navigateur.", undefined, "unsupported");
     return;
   }
 
@@ -32,7 +35,7 @@ export function getUserGeolocation(
     (err1) => {
       // If user explicitly denied permission (code 1), stop and return friendly error
       if (err1.code === 1) {
-        onError("Permission GPS refusée. Activez la localisation dans la barre d'adresse du navigateur.");
+        onError("La localisation est bloquée pour ce site.", undefined, "denied");
         return;
       }
 
@@ -47,13 +50,16 @@ export function getUserGeolocation(
           });
         },
         (err2) => {
-          let msg = "Impossible d'obtenir le signal GPS précis.";
+          let msg = "Votre position n'a pas pu être trouvée.";
+          let reason: GeolocationFailureReason = "unavailable";
           if (err2.code === 1) {
-            msg = "Permission GPS refusée par le navigateur.";
+            msg = "La localisation est bloquée pour ce site.";
+            reason = "denied";
           } else if (err2.code === 3) {
-            msg = "Délai d'attente de la localisation dépassé.";
+            msg = "La recherche de votre position a pris trop de temps.";
+            reason = "timeout";
           } else if (err2.code === 2) {
-            msg = "Position GPS temporairement indisponible.";
+            msg = "Votre position n'est pas disponible pour le moment.";
           }
 
           // Fallback simulation for Kongo Central (Chutes de Zongo) if device location completely fails
@@ -63,7 +69,7 @@ export function getUserGeolocation(
             accuracy: 100,
             isMocked: true,
           };
-          onError(msg, fallbackPos);
+          onError(msg, fallbackPos, reason);
         },
         { enableHighAccuracy: false, timeout: timeoutMs, maximumAge: 60000 }
       );

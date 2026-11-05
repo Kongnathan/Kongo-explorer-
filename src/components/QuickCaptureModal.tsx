@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useBackClose } from "../hooks/useBackClose";
 import { PendingPermit } from "../types";
 
 interface QuickCaptureModalProps {
@@ -14,6 +15,7 @@ export default function QuickCaptureModal({ isOpen, onClose, onItemAdded }: Quic
   const [isListening, setIsListening] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  useBackClose(isOpen, onClose);
   if (!isOpen) return null;
 
   const startListeningMock = () => {

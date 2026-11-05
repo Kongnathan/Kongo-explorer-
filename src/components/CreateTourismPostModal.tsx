@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useBackClose } from "../hooks/useBackClose";
 import { TourismCategory, TourismPost } from "../types";
 import { useAuth } from "../contexts/AuthContext";
 import { uploadTourismImage } from "../lib/imageCompression";
@@ -61,6 +62,7 @@ export default function CreateTourismPostModal({
 
   const isDailyLimitReached = userPostsTodayCount >= 5;
 
+  useBackClose(isOpen, onClose);
   if (!isOpen) return null;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

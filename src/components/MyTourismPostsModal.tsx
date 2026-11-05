@@ -1,4 +1,5 @@
 import React from "react";
+import { useBackClose } from "../hooks/useBackClose";
 import { TourismPost } from "../types";
 
 interface MyTourismPostsModalProps {
@@ -16,6 +17,7 @@ export default function MyTourismPostsModal({
   onOpenCreate,
   onSelectPost,
 }: MyTourismPostsModalProps) {
+  useBackClose(isOpen, onClose);
   if (!isOpen) return null;
 
   const getStatusBadge = (status: TourismPost["status"], rejectionReason?: string) => {

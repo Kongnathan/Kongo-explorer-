@@ -3,6 +3,10 @@ import {createRoot} from 'react-dom/client';
 import {BrowserRouter} from 'react-router-dom';
 import App from './App.tsx';
 import './index.css';
+import { installNativeApiBridge, isNativeApp } from './lib/native';
+
+// Application Android : les adresses « /api/... » pointent vers le vrai site
+installNativeApiBridge();
 
 // Suppress benign HMR WebSocket or Vite connection errors in the sandbox environment
 window.addEventListener('unhandledrejection', (event) => {
@@ -75,7 +79,8 @@ createRoot(document.getElementById('root')!).render(
 );
 
 // Register Service Worker for PWA (Progressive Web App)
-if ('serviceWorker' in navigator) {
+// (inutile dans l'application Android : le site y est déjà enregistré)
+if ('serviceWorker' in navigator && !isNativeApp()) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(registration => {

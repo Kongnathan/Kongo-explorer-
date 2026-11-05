@@ -1,0 +1,8 @@
+{
+  "appId": "com.kongoexplorer.app",
+  "appName": "Kongo Explorer",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

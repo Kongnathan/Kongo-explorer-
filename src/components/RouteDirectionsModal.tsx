@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Location } from "../types";
 import { getUserGeolocation, UserPosition, calculateDistanceKm } from "../lib/geoUtils";
 import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from "@vis.gl/react-google-maps";
+import { useBackClose } from "../hooks/useBackClose";
 
 const API_KEY =
   process.env.GOOGLE_MAPS_PLATFORM_KEY ||
@@ -185,6 +186,9 @@ export default function RouteDirectionsModal({
   userPosition: initialUserPos,
   onClose,
 }: RouteDirectionsModalProps) {
+  // Cette fenêtre n'existe que lorsqu'elle est ouverte : le bouton « retour » du téléphone la ferme.
+  useBackClose(true, onClose);
+
   const [userPos, setUserPos] = useState<UserPosition | null>(initialUserPos || null);
   const [isLocating, setIsLocating] = useState(false);
   const [travelMode, setTravelMode] = useState<"DRIVING" | "WALKING" | "BICYCLING">("DRIVING");

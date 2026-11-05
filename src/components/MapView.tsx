@@ -3,6 +3,8 @@ import { Location } from "../types";
 import { APIProvider, Map, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps";
 import L from "leaflet";
 import { getUserGeolocation } from "../lib/geoUtils";
+import { getGeoPermissionState } from "../lib/locationPermission";
+import LocationHelpModal, { LocationHelpMode } from "./LocationHelpModal";
 
 const API_KEY =
   process.env.GOOGLE_MAPS_PLATFORM_KEY ||
@@ -76,99 +78,172 @@ export default function MapView({
     lng: number;
     accuracy?: number;
     isMocked?: boolean;
+    label?: string;
   } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const watchIdRef = useRef<number | null>(null);
+  // Fenêtre d'aide pour la localisation (explication, bouton bloqué, réglages, choix d'une ville)
+  const [locationHelp, setLocationHelp] = useState<LocationHelpMode | null>(null);
+  const stuckTimerRef = useRef<number | null>(null);
+
+  const clearStuckTimer = () => {
+    if (stuckTimerRef.current !== null) {
+      window.clearTimeout(stuckTimerRef.current);
+      stuckTimerRef.current = null;
+    }
+  };
+
+  const closeLocationHelp = () => {
+    try {
+      sessionStorage.setItem("kongo_loc_intro_seen", "1");
+    } catch {
+      // Stockage indisponible : ce n'est pas grave.
+    }
+    setLocationHelp(null);
+  };
+
+  // Transforme une position GPS en point sur la carte topographique
+  const projectToTopo = (lat: number, lng: number) => {
+    let x = 50;
+    let y = 50;
+    const inKongoCentral = lat >= -6.2 && lat <= -4.0 && lng >= 12.0 && lng <= 16.0;
+
+    if (inKongoCentral) {
+      x = 10 + ((lng - 12.35) / (15.3 - 12.35)) * 80;
+      y = 15 + ((lat - -4.3) / (-5.9 - -4.3)) * 70;
+    } else {
+      // Projection stable : deux positions différentes donnent deux points différents
+      x = 35 + (Math.abs(lng) % 30);
+      y = 40 + (Math.abs(lat) % 30);
+    }
+
+    return {
+      x: Math.max(10, Math.min(90, x)),
+      y: Math.max(15, Math.min(85, y)),
+    };
+  };
+
+  const applyPosition = (
+    lat: number,
+    lng: number,
+    accuracy: number | undefined,
+    isMocked: boolean,
+    announce: boolean,
+    label?: string
+  ) => {
+    const { x, y } = projectToTopo(lat, lng);
+    setUserPos({ x, y, lat, lng, accuracy, isMocked, label });
+    setIsLocating(false);
+
+    if (announce) {
+      setActiveId("user_gps");
+      setZoomLevel(1.3);
+      if (label) {
+        showToast(`📍 Position choisie : ${label}`);
+      } else if (isMocked) {
+        showToast("ℹ️ Votre position n'a pas été trouvée. Nous montrons un point d'exemple : les chutes de Zongo.");
+      } else {
+        showToast("📍 Votre position a été trouvée.");
+      }
+    }
+  };
 
   const handleGetGPSLocation = (silent = false) => {
     setIsLocating(true);
     setGpsError(null);
+    clearStuckTimer();
 
-    const updatePositionState = (lat: number, lng: number, accuracy?: number, isMocked = false, isFirst = false) => {
-      let x = 50;
-      let y = 50;
+    let finished = false;
 
-      // Project coordinates for topographic map layer
-      const inKongoCentral = (lat >= -6.2 && lat <= -4.0 && lng >= 12.0 && lng <= 16.0);
-
-      if (inKongoCentral) {
-        x = 10 + ((lng - 12.35) / (15.30 - 12.35)) * 80;
-        y = 15 + ((lat - (-4.30)) / ((-5.90) - (-4.30))) * 70;
-      } else {
-        // Deterministic projection so different lat/lng gets different spots on topo map
-        x = 35 + (Math.abs(lng) % 30);
-        y = 40 + (Math.abs(lat) % 30);
-      }
-
-      x = Math.max(10, Math.min(90, x));
-      y = Math.max(15, Math.min(85, y));
-
-      setUserPos({
-        x,
-        y,
-        lat,
-        lng,
-        accuracy,
-        isMocked
-      });
-      
-      setIsLocating(false);
-
-      if (isFirst || !silent) {
-        setActiveId("user_gps");
-        setZoomLevel(1.3);
-        if (isMocked) {
-          showToast(`ℹ️ Signal GPS faible : Position simulée aux Chutes de Zongo (${lat.toFixed(4)}°, ${lng.toFixed(4)}°)`);
-        } else {
-          showToast(`📍 GPS Détecté : ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`);
+    // Si la fenêtre d'autorisation reste sans réponse, c'est souvent une application affichée par-dessus.
+    if (!silent) {
+      stuckTimerRef.current = window.setTimeout(async () => {
+        if (finished) return;
+        if ((await getGeoPermissionState()) === "prompt") {
+          setLocationHelp("stuck");
         }
-      }
-    };
+      }, 8000);
+    }
 
     getUserGeolocation(
       (pos) => {
-        updatePositionState(pos.lat, pos.lng, pos.accuracy, pos.isMocked || false, true);
+        finished = true;
+        clearStuckTimer();
+        setLocationHelp(null);
+        applyPosition(pos.lat, pos.lng, pos.accuracy, pos.isMocked || false, true);
 
-        // Continuous watch for real-time updates
+        // Suivi continu pour mettre la position à jour pendant que vous bougez
         if (watchIdRef.current !== null) {
           navigator.geolocation.clearWatch(watchIdRef.current);
         }
         watchIdRef.current = navigator.geolocation.watchPosition(
           (watchPos) => {
-            updatePositionState(
-              watchPos.coords.latitude,
-              watchPos.coords.longitude,
-              watchPos.coords.accuracy,
-              false,
-              false
-            );
+            applyPosition(watchPos.coords.latitude, watchPos.coords.longitude, watchPos.coords.accuracy, false, false);
           },
           (err) => console.warn("Watch position update error:", err),
           { enableHighAccuracy: false, timeout: 20000, maximumAge: 10000 }
         );
       },
-      (errorMsg, fallbackPos) => {
+      (errorMsg, fallbackPos, reason) => {
+        finished = true;
+        clearStuckTimer();
         setIsLocating(false);
         setGpsError(errorMsg);
 
         if (fallbackPos) {
-          updatePositionState(fallbackPos.lat, fallbackPos.lng, fallbackPos.accuracy, true, true);
+          applyPosition(fallbackPos.lat, fallbackPos.lng, fallbackPos.accuracy, true, true);
         }
 
         if (!silent) {
           showToast(`⚠️ ${errorMsg}`);
+          if (reason === "denied") {
+            setLocationHelp("denied");
+          } else if (reason === "unavailable" || reason === "timeout") {
+            setLocationHelp("unavailable");
+          }
         }
       },
       { timeoutMs: 15000 }
     );
   };
 
-  // Auto-locate on mount
+  // L'utilisateur choisit sa ville à la main (quand la localisation ne marche pas)
+  const handlePickPlace = (place: { name: string; lat: number; lng: number }) => {
+    clearStuckTimer();
+    setLocationHelp(null);
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    applyPosition(place.lat, place.lng, undefined, true, true, place.name);
+  };
+
+  // À l'ouverture de la carte : on cherche la position seulement si elle est déjà autorisée.
+  // Si elle n'a jamais été demandée, on explique d'abord, avant que le téléphone pose la question.
   useEffect(() => {
-    handleGetGPSLocation(true);
+    let cancelled = false;
+
+    (async () => {
+      const state = await getGeoPermissionState();
+      if (cancelled) return;
+
+      if (state === "prompt") {
+        let alreadySeen = false;
+        try {
+          alreadySeen = sessionStorage.getItem("kongo_loc_intro_seen") === "1";
+        } catch {
+          // Stockage indisponible : on affiche l'explication.
+        }
+        if (!alreadySeen) setLocationHelp("intro");
+      } else if (state !== "denied") {
+        handleGetGPSLocation(true);
+      }
+    })();
 
     return () => {
+      cancelled = true;
+      clearStuckTimer();
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
@@ -494,6 +569,17 @@ export default function MapView({
                   <p>
                     <strong className="text-on-surface">Le bouton rond de position</strong> : montre où vous vous trouvez sur la carte. Votre téléphone vous le demandera d'abord.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMapHelp(false);
+                      setLocationHelp("help");
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-on-surface text-[11px] font-bold cursor-pointer active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">location_off</span>
+                    Ma position ne s'affiche pas
+                  </button>
                 </div>
               </div>
             )}
@@ -856,11 +942,11 @@ export default function MapView({
             <p className="text-on-surface-variant font-sans text-xs mt-1 leading-relaxed">
               Latitude : {userPos.lat.toFixed(5)}°<br />
               Longitude : {userPos.lng.toFixed(5)}°<br />
-              Précision : {userPos.accuracy ? `environ ${Math.round(userPos.accuracy)} mètres` : "position d'exemple"}
+              Précision : {userPos.accuracy ? `environ ${Math.round(userPos.accuracy)} mètres` : "non disponible"}
             </p>
 
             <div className="text-[10px] text-outline font-mono mt-3 border-t border-outline-variant/10 pt-2 flex justify-between items-center">
-              <span>{userPos.isMocked ? "Position d'exemple : chutes de Zongo." : "Position en direct activée."}</span>
+              <span>{userPos.label ? `Position choisie : ${userPos.label}.` : userPos.isMocked ? "Position d'exemple : chutes de Zongo." : "Position en direct activée."}</span>
               <button 
                 onClick={() => {
                   setUserPos(null);
@@ -894,7 +980,7 @@ export default function MapView({
 
           {/* GPS Locate Button */}
           <button 
-            onClick={handleGetGPSLocation}
+            onClick={() => handleGetGPSLocation(false)}
             className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center border transition-all active:scale-90 cursor-pointer ${
               isLocating 
                 ? "bg-blue-100 text-blue-600 border-blue-300 animate-pulse" 
@@ -932,6 +1018,16 @@ export default function MapView({
           )}
         </div>
       </main>
+
+      <LocationHelpModal
+        mode={locationHelp}
+        onClose={closeLocationHelp}
+        onRetry={() => {
+          setLocationHelp(null);
+          handleGetGPSLocation(false);
+        }}
+        onPickPlace={handlePickPlace}
+      />
     </div>
   );
 }

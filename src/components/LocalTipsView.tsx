@@ -3,6 +3,7 @@ import { useTheme } from "../hooks/useTheme";
 import { Location } from "../types";
 import { DEFAULT_LOCATIONS } from "../data";
 import OfflineDownloadManager from "./OfflineDownloadManager";
+import LocationHelpModal, { LocationHelpMode } from "./LocationHelpModal";
 
 interface Phrase {
   french: string;
@@ -117,6 +118,7 @@ export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
   const [loadingWeather, setLoadingWeather] = useState<boolean>(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "success" | "denied">("idle");
+  const [locationHelp, setLocationHelp] = useState<LocationHelpMode | null>(null);
   const [selectedCityName, setSelectedCityName] = useState<string>("Matadi");
 
   // Devises / Currency Converter State
@@ -244,7 +246,7 @@ export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
     setGeoStatus("locating");
     if (!navigator.geolocation) {
       setGeoStatus("denied");
-      setWeatherError("La géolocalisation n'est pas supportée par votre navigateur.");
+      setWeatherError("La localisation ne marche pas sur ce navigateur. Choisissez une ville dans la liste.");
       return;
     }
 
@@ -258,7 +260,9 @@ export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
       (err) => {
         console.warn("Geolocation denied or error:", err);
         setGeoStatus("denied");
-        // Fallback to Matadi capital
+        // Explique simplement quoi faire (applications superposées, réglages, choix d'une ville)
+        setLocationHelp(err.code === 1 ? "denied" : "unavailable");
+        // En attendant, on affiche la météo de Matadi
         fetchWeatherForCoords(-5.8422, 13.4542, "Matadi (Capitale Kongo Central)");
       },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
@@ -1111,6 +1115,19 @@ export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
           )}
         </div>
       </main>
+
+      <LocationHelpModal
+        mode={locationHelp}
+        onClose={() => setLocationHelp(null)}
+        onRetry={() => {
+          setLocationHelp(null);
+          handleUseGeolocation();
+        }}
+        onPickPlace={(place) => {
+          setLocationHelp(null);
+          fetchWeatherForCoords(place.lat, place.lng, place.name);
+        }}
+      />
     </div>
   );
 }

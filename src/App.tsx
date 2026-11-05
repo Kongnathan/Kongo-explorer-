@@ -301,7 +301,10 @@ function DetailRouteWrapper({
       locationId={id || ""}
       locations={locations}
       onBack={() => {
-        if (window.history.length > 1) {
+        // Revenir à la page d'avant seulement si elle fait partie du site (sinon, liste des destinations)
+        const stateIdx = window.history.state?.idx;
+        const canGoBackInApp = typeof stateIdx === "number" ? stateIdx > 0 : window.history.length > 1;
+        if (canGoBackInApp) {
           navigate(-1);
         } else {
           navigate("/destinations");

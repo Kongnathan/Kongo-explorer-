@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useBackClose } from "../hooks/useBackClose";
 import { TourismPost } from "../types";
 import { useAuth } from "../contexts/AuthContext";
 import { collection, addDoc } from "firebase/firestore";
@@ -34,6 +35,7 @@ export default function ReportPostModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  useBackClose(isOpen && !!post, onClose);
   if (!isOpen || !post) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {

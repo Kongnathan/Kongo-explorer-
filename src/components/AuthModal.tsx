@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useBackClose } from "../hooks/useBackClose";
 
 export default function AuthModal() {
   const {
@@ -18,6 +19,8 @@ export default function AuthModal() {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useBackClose(isAuthModalOpen, closeAuthModal);
 
   if (!isAuthModalOpen) return null;
 
