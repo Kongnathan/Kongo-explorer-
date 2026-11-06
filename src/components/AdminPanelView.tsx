@@ -1115,7 +1115,7 @@ interface AdminPanelViewProps {
   tourismPosts?: TourismPost[];
   reports?: TourismReport[];
   onAddLocation: (loc: Location) => void;
-  onUpdateLocation: (loc: Location) => void;
+  onUpdateLocation: (loc: Location) => void | Promise<void>;
   onDeleteLocation: (id: string) => void;
   onUpdatePendingPermit: (permit: PendingPermit) => void;
   onDeletePendingPermit: (id: string) => void;
@@ -1185,6 +1185,71 @@ export default function AdminPanelView({
       setDefaultWhatsAppMessage(guideWhatsAppSettings.guideWhatsAppDefaultMessage || "Bonjour, je souhaite des infos sur {destination}");
     }
   }, [guideWhatsAppSettings]);
+
+  const showWhatsAppFeedback = (type: "success" | "error", message: string) => {
+    setWhatsAppFeedback({ type, message });
+    window.setTimeout(() => setWhatsAppFeedback(null), 4000);
+  };
+
+  // Enregistrer les réglages généraux (interrupteur, numéro et message par défaut)
+  const handleSaveGlobalWhatsApp = async (overrideEnabled?: boolean) => {
+    if (!onSaveGuideWhatsAppSettings) return;
+    const enabledValue = typeof overrideEnabled === "boolean" ? overrideEnabled : globalWhatsAppEnabled;
+    setIsSavingGlobalWhatsApp(true);
+    try {
+      await onSaveGuideWhatsAppSettings({
+        guideWhatsAppGlobalEnabled: enabledValue,
+        guideWhatsAppDefaultNumber: defaultWhatsAppNumber.trim(),
+        guideWhatsAppDefaultMessage: defaultWhatsAppMessage.trim() || "Bonjour, je souhaite des infos sur {destination}",
+      });
+      showWhatsAppFeedback("success", "Réglages généraux enregistrés.");
+    } catch (err) {
+      console.error("Save global WhatsApp settings failed:", err);
+      showWhatsAppFeedback("error", "Impossible d'enregistrer les réglages. Réessayez.");
+    } finally {
+      setIsSavingGlobalWhatsApp(false);
+    }
+  };
+
+  // Enregistrer une destination
+  const handleSaveLocationWhatsApp = async (loc: Location, enabled: boolean, specificNumber: string, specificMessage: string) => {
+    setSavingLocationId(loc.id);
+    try {
+      await onUpdateLocation({
+        ...loc,
+        guideWhatsAppEnabled: enabled,
+        guideWhatsAppNumber: specificNumber.trim() || undefined,
+        guideWhatsAppMessage: specificMessage.trim() || undefined,
+      });
+      showWhatsAppFeedback("success", `« ${loc.title} » enregistrée.`);
+    } catch (err) {
+      console.error("Save location WhatsApp failed:", err);
+      showWhatsAppFeedback("error", `Impossible d'enregistrer « ${loc.title} ».`);
+    } finally {
+      setSavingLocationId(null);
+    }
+  };
+
+  // Activer ou désactiver le bouton pour plusieurs destinations d'un coup
+  const handleBulkWhatsApp = async (targets: Location[], enabled: boolean) => {
+    const toChange = targets.filter(l => (l.guideWhatsAppEnabled ?? true) !== enabled);
+    if (toChange.length === 0) {
+      showWhatsAppFeedback("success", enabled ? "Toutes ces destinations sont déjà activées." : "Toutes ces destinations sont déjà désactivées.");
+      return;
+    }
+    setSavingLocationId("__bulk__");
+    try {
+      for (const l of toChange) {
+        await onUpdateLocation({ ...l, guideWhatsAppEnabled: enabled });
+      }
+      showWhatsAppFeedback("success", `${toChange.length} destination(s) ${enabled ? "activée(s)" : "désactivée(s)"}.`);
+    } catch (err) {
+      console.error("Bulk WhatsApp update failed:", err);
+      showWhatsAppFeedback("error", "Une erreur est survenue pendant la mise à jour.");
+    } finally {
+      setSavingLocationId(null);
+    }
+  };
 
   // New Location form states
   const [newTitle, setNewTitle] = useState("");
@@ -2442,6 +2507,136 @@ export default function AdminPanelView({
               onUpdateLocation={onUpdateLocation} 
             />
           )}
+
+          {/* TAB 8: GUIDE WHATSAPP */}
+          {activeTab === "GuideWhatsApp" && (() => {
+            const q = whatsAppSearch.trim().toLowerCase();
+            const filtered = locations.filter(l => !q || l.title.toLowerCase().includes(q) || (l.locationName || "").toLowerCase().includes(q));
+            const activeCount = locations.filter(l => (l.guideWhatsAppEnabled ?? true)).length;
+            const busy = savingLocationId !== null;
+            return (
+              <div className="space-y-6 max-w-4xl">
+                {whatsAppFeedback && (
+                  <div className={`px-4 py-3 rounded-xl text-sm font-sans font-semibold ${
+                    whatsAppFeedback.type === "success" ? "bg-emerald-600/15 text-emerald-700 dark:text-emerald-400" : "bg-error/10 text-error"
+                  }`}>
+                    {whatsAppFeedback.message}
+                  </div>
+                )}
+
+                {/* Réglages généraux */}
+                <div className="p-5 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest shadow-sm space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="font-sans font-bold text-base text-on-surface">Bouton « Écrire au guide » (général)</h3>
+                      <p className="text-xs text-on-surface-variant mt-1">
+                        Cet interrupteur affiche ou cache le bouton sur TOUTES les fiches. Mis sur « Désactivé », aucune fiche ne l'affiche.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer flex-none">
+                      <input
+                        type="checkbox"
+                        checked={globalWhatsAppEnabled}
+                        disabled={isSavingGlobalWhatsApp}
+                        onChange={(e) => {
+                          setGlobalWhatsAppEnabled(e.target.checked);
+                          handleSaveGlobalWhatsApp(e.target.checked);
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                      <span className="ml-2 font-sans text-xs font-semibold text-on-surface">{globalWhatsAppEnabled ? "Activé" : "Désactivé"}</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-[11px] font-mono font-semibold text-on-surface-variant mb-1">Numéro WhatsApp par défaut</label>
+                      <input
+                        type="text"
+                        value={defaultWhatsAppNumber}
+                        onChange={(e) => setDefaultWhatsAppNumber(e.target.value)}
+                        placeholder="Ex: 243810000000 (avec l'indicatif du pays, sans +)"
+                        className="w-full bg-surface-container px-3 py-2 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant/30"
+                      />
+                      <p className="text-[10px] text-outline mt-1 font-mono">Utilisé quand une destination n'a ni numéro propre ni téléphone sur sa fiche.</p>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-mono font-semibold text-on-surface-variant mb-1">Message par défaut</label>
+                      <input
+                        type="text"
+                        value={defaultWhatsAppMessage}
+                        onChange={(e) => setDefaultWhatsAppMessage(e.target.value)}
+                        className="w-full bg-surface-container px-3 py-2 rounded-xl text-xs font-sans focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant/30"
+                      />
+                      <p className="text-[10px] text-outline mt-1 font-mono">Écrivez {"{destination}"} : le nom du lieu sera ajouté automatiquement.</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleSaveGlobalWhatsApp()}
+                      disabled={isSavingGlobalWhatsApp}
+                      className="px-4 py-2 rounded-xl text-xs font-sans font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer active:scale-95 shadow-sm"
+                    >
+                      {isSavingGlobalWhatsApp ? "Enregistrement..." : "Enregistrer le numéro et le message"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Par destination */}
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-sans font-bold text-base text-on-surface">Par destination</h3>
+                      <p className="text-xs text-on-surface-variant">{activeCount} activée(s) sur {locations.length}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => handleBulkWhatsApp(filtered, true)}
+                        className="px-3 py-2 rounded-xl text-xs font-sans font-bold bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-600/25 cursor-pointer disabled:opacity-50"
+                      >
+                        {q ? "Activer ceux de la recherche" : "Tout activer"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => handleBulkWhatsApp(filtered, false)}
+                        className="px-3 py-2 rounded-xl text-xs font-sans font-bold bg-error/10 text-error hover:bg-error/20 cursor-pointer disabled:opacity-50"
+                      >
+                        {q ? "Désactiver ceux de la recherche" : "Tout désactiver"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={whatsAppSearch}
+                    onChange={(e) => setWhatsAppSearch(e.target.value)}
+                    placeholder="Rechercher une destination..."
+                    className="w-full bg-surface-container px-3 py-2 rounded-xl text-sm font-sans focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant/30"
+                  />
+
+                  {filtered.length === 0 ? (
+                    <p className="text-sm text-on-surface-variant text-center py-8">Aucune destination trouvée.</p>
+                  ) : (
+                    filtered.map(l => (
+                      <DestinationWhatsAppCard
+                        key={l.id}
+                        loc={l}
+                        defaultNumber={defaultWhatsAppNumber}
+                        defaultMessage={defaultWhatsAppMessage}
+                        onSave={handleSaveLocationWhatsApp}
+                        isSaving={savingLocationId === l.id || savingLocationId === "__bulk__"}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* TAB 6: CIRCUITS MANAGER */}
           {activeTab === "Circuits" && (
