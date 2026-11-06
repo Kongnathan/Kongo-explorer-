@@ -106,11 +106,18 @@ export default function OnboardingTour({
   const getTooltipStyle = (): React.CSSProperties => {
     if (!targetRect) {
       // Centered on screen
+      // Centrage sans « transform » : l'animation d'apparition (framer-motion) écrase
+      // le transform CSS, ce qui décalait la bulle et la coupait sur les côtés.
       return {
         position: "fixed",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        margin: "auto",
+        height: "fit-content",
+        maxHeight: "calc(100dvh - 32px)",
+        overflowY: "auto",
         maxWidth: "460px",
         width: "calc(100vw - 32px)",
         zIndex: 10001,
@@ -139,6 +146,8 @@ export default function OnboardingTour({
         top: Math.min(windowHeight - 250, targetRect.top + targetRect.height + 12),
         left,
         width: tooltipWidth,
+        maxHeight: "calc(100dvh - 32px)",
+        overflowY: "auto",
         zIndex: 10001,
       };
     } else {
@@ -148,6 +157,8 @@ export default function OnboardingTour({
         bottom: Math.max(16, windowHeight - targetRect.top + 12),
         left,
         width: tooltipWidth,
+        maxHeight: "calc(100dvh - 32px)",
+        overflowY: "auto",
         zIndex: 10001,
       };
     }
@@ -192,7 +203,7 @@ export default function OnboardingTour({
           exit={{ opacity: 0, y: -12, scale: 0.95 }}
           transition={{ duration: 0.22, ease: "easeOut" }}
           style={getTooltipStyle()}
-          className="bg-surface-container-lowest text-on-surface border border-emerald-500/30 rounded-3xl p-5 shadow-2xl pointer-events-auto overflow-hidden flex flex-col gap-3.5 backdrop-blur-md"
+          className="bg-surface-container-lowest text-on-surface border border-emerald-500/30 rounded-3xl p-5 shadow-2xl pointer-events-auto flex flex-col gap-3.5 backdrop-blur-md"
         >
           {/* Header with Step indicator & Skip */}
           <div className="flex items-center justify-between">
