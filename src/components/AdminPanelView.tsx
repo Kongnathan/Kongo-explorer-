@@ -941,10 +941,11 @@ function DestinationWhatsAppCard({
   onSave,
   isSaving
 }: {
+  key?: React.Key;
   loc: Location;
   defaultNumber: string;
   defaultMessage: string;
-  onSave: (loc: Location, enabled: boolean, specificNumber: string, specificMessage: string) => void;
+  onSave: (loc: Location, enabled: boolean, specificNumber: string, specificMessage: string) => void | Promise<void>;
   isSaving: boolean;
 }) {
   const [enabled, setEnabled] = useState<boolean>(loc.guideWhatsAppEnabled ?? true);

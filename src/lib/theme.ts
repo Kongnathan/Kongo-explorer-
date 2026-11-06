@@ -42,6 +42,8 @@ export function applyTheme(theme: ThemeMode) {
     root.classList.add("light");
     root.style.colorScheme = "light";
   }
+  root.classList.add("notranslate");
+  root.setAttribute("translate", "no");
   
   try {
     localStorage.setItem(STORAGE_KEY, theme);

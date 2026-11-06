@@ -49,6 +49,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.lang = language;
+      document.documentElement.setAttribute("translate", "no");
+      document.documentElement.classList.add("notranslate");
     }
   }, [language]);
 
