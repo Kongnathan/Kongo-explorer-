@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Location } from "../types";
+import HelpHint from "./HelpHint";
 import { 
   downloadAllForOffline, 
   getOfflineCacheStatus, 
@@ -111,8 +112,11 @@ export default function OfflineDownloadManager({
               )}
             </div>
             <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-              Enregistrez toutes les destinations et leurs photos sur votre téléphone pour les consulter plus tard, même sans internet. Faites-le quand vous avez du réseau, avant de partir en voyage. Cela prend un peu de place sur votre téléphone.
+              Gardez tous les lieux et leurs photos sur votre téléphone.
             </p>
+            <HelpHint className="mt-1.5" title="En savoir plus" storageKey="kongo_help_offline">
+              <p>Faites-le quand vous avez du réseau, avant de partir en voyage. Ensuite, tout se lit sans internet. Cela prend un peu de place sur votre téléphone, et vous pouvez tout supprimer quand vous voulez.</p>
+            </HelpHint>
           </div>
         </div>
 

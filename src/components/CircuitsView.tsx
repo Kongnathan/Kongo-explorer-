@@ -41,7 +41,7 @@ export default function CircuitsView({
             Circuits & Parcours Thématiques
           </h1>
           <p className="text-white/85 text-xs md:text-body-sm max-w-2xl font-sans leading-relaxed">
-            Explorez la province grâce à nos parcours optimisés de 2 à 3 jours : logements suggérés, durées de trajet réalistes et conseils de route.
+            Des parcours de 2 à 3 jours : logements, durées de trajet et conseils de route.
           </p>
 
           {/* Access Filter Pills */}

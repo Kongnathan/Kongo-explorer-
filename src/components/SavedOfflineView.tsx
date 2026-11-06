@@ -66,7 +66,7 @@ export default function SavedOfflineView({
               Mon carnet de voyage
             </h1>
             <p className="text-on-surface-variant text-sm leading-relaxed">
-              Les destinations que vous avez gardées sont enregistrées sur votre téléphone. Vous pouvez les relire à tout moment, même quand il n'y a pas de réseau, par exemple dans un parc ou au bord d'une cascade.
+              Vos lieux gardés se relisent à tout moment, même sans réseau.
             </p>
           </div>
         </section>

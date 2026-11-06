@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Location, CommunityReport, GuideWhatsAppSettings } from "../types";
+import HelpHint from "./HelpHint";
 import RatingSection from "./RatingSection";
 import ReportModal from "./ReportModal";
 import RouteDirectionsModal from "./RouteDirectionsModal";
@@ -555,12 +556,14 @@ export default function DetailView({
           </div>
 
           {/* Short explanations of each button, in plain words */}
-          <div className="mt-3 px-2 text-center space-y-2">
-            <p className="text-xs text-on-surface-variant leading-relaxed max-w-md mx-auto">
-              <strong>Itinéraire</strong> : voir le chemin pour y aller. <strong>Enregistrer</strong> : garder cette fiche dans votre carnet pour la lire même sans internet.
-              {showWhatsAppButton && <> <strong>Écrire au guide</strong> : discuter avec le guide sur WhatsApp.</>}
-              {" "}<strong>Signaler une erreur</strong> : nous dire si une information est fausse.
-            </p>
+          <div className="mt-3 px-2 flex flex-wrap items-start justify-center gap-2">
+            <HelpHint title="À quoi servent ces boutons ?" storageKey="kongo_help_detail_buttons">
+              <p>
+                <strong>Itinéraire</strong> : le chemin pour y aller. <strong>Enregistrer</strong> : garder la fiche, même sans internet.
+                {showWhatsAppButton && <> <strong>Écrire au guide</strong> : discuter sur WhatsApp.</>}
+                {" "}<strong>Signaler</strong> : dire qu'une info est fausse.
+              </p>
+            </HelpHint>
             {onOpenGuide && (
               <button
                 onClick={onOpenGuide}

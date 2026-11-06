@@ -531,11 +531,6 @@ export default function MapView({
 
           {/* Explications simples, centrées, pour savoir à quoi sert chaque mode */}
           <div className="w-[min(92vw,26rem)] text-center space-y-1.5">
-            <p className="inline-block bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl px-3.5 py-2 shadow-lg border border-outline-variant/30 text-xs text-on-surface leading-relaxed">
-              {mapType === "satellite"
-                ? "Vue satellite : des photos prises du ciel. Elles montrent les forêts, les rivières, les chutes et l'état des chemins, tels qu'ils sont vraiment."
-                : "Vue plan : un dessin simple avec les routes et les noms des villes. C'est le plus facile pour se repérer."}
-            </p>
             <div>
               <button
                 onClick={() => setShowMapHelp(v => !v)}
@@ -552,22 +547,22 @@ export default function MapView({
                 <h2 className="font-sans text-sm font-bold text-primary">Bien choisir sa carte</h2>
                 <div className="space-y-2 text-xs text-on-surface-variant leading-relaxed">
                   <p>
-                    <strong className="text-on-surface">Plan</strong> : un dessin simple avec les routes et les noms des lieux. Idéal pour trouver son chemin en ville.
+                    <strong className="text-on-surface">Plan</strong> : un dessin simple avec les routes et les noms. Idéal en ville.
                   </p>
                   <p>
-                    <strong className="text-on-surface">Satellite</strong> : des photos prises du ciel. Très utile pour voir si un lieu est entouré de forêt, s'il y a une rivière ou une chute, et comment est le chemin avant de partir. Si le réseau est faible, les photos peuvent mettre plus de temps à s'afficher.
+                    <strong className="text-on-surface">Satellite</strong> : des photos prises du ciel : forêts, rivières, chutes, état des chemins. Peut être lent si le réseau est faible.
                   </p>
                   <p>
-                    <strong className="text-on-surface">Google Maps</strong> : la carte la plus complète, avec le chemin pour y aller. C'est celle qui s'ouvre au départ.
+                    <strong className="text-on-surface">Google Maps</strong> : la plus complète, avec le chemin pour y aller.
                   </p>
                   <p>
-                    <strong className="text-on-surface">OpenStreetMap</strong> : une carte gratuite faite par des volontaires du monde entier. Elle montre souvent de petits chemins.
+                    <strong className="text-on-surface">OpenStreetMap</strong> : carte gratuite, avec souvent de petits chemins.
                   </p>
                   <p>
-                    <strong className="text-on-surface">Carte Topo</strong> : une vue simplifiée qui met en avant les zones naturelles et le relief.
+                    <strong className="text-on-surface">Carte Topo</strong> : relief et zones naturelles.
                   </p>
                   <p>
-                    <strong className="text-on-surface">Le bouton rond de position</strong> : montre où vous vous trouvez sur la carte. Votre téléphone vous le demandera d'abord.
+                    <strong className="text-on-surface">Le bouton rond de position</strong> : montre où vous êtes sur la carte.
                   </p>
                   <button
                     type="button"
