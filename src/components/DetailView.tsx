@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Location, CommunityReport, GuideWhatsAppSettings } from "../types";
-import HelpHint from "./HelpHint";
 import RatingSection from "./RatingSection";
 import ReportModal from "./ReportModal";
 import RouteDirectionsModal from "./RouteDirectionsModal";
 import { VideoPlayer } from "./VideoPlayer";
 import { openExternalGpsRoute } from "../lib/geoUtils";
 import BackButton from "./BackButton";
+import { useLanguage } from "../contexts/LanguageContext";
+import LanguageSelector from "./LanguageSelector";
 
 interface DetailViewProps {
   locationId: string;
@@ -58,6 +59,7 @@ export default function DetailView({
   guideWhatsAppSettings,
   onOpenGuide
 }: DetailViewProps) {
+  const { t } = useLanguage();
   const loc = locations.find(l => l.id === locationId) || locations[0];
   const [timerOffset, setTimerOffset] = useState(100);
   const [weatherOpen, setWeatherOpen] = useState(false);
@@ -328,15 +330,18 @@ export default function DetailView({
           <BackButton onClick={onBack} variant="subtle" />
           <span className="font-sans text-headline-md font-bold text-primary">Fiche Destination</span>
           
-          <button 
-            onClick={() => onToggleSave(loc.id)}
-            aria-label={isSaved ? "Retirer du carnet" : "Enregistrer pour lire sans internet"} 
-            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-variant/50 transition-colors active:scale-95 duration-100 cursor-pointer text-primary"
-          >
-            <span className="material-symbols-outlined fill-current">
-              {isSaved ? "bookmark" : "bookmark_border"}
-            </span>
-          </button>
+          <div className="flex items-center gap-2">
+            <LanguageSelector variant="compact" />
+            <button 
+              onClick={() => onToggleSave(loc.id)}
+              aria-label={isSaved ? "Retirer du carnet" : "Enregistrer pour lire sans internet"} 
+              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-variant/50 transition-colors active:scale-95 duration-100 cursor-pointer text-primary"
+            >
+              <span className="material-symbols-outlined fill-current">
+                {isSaved ? "bookmark" : "bookmark_border"}
+              </span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -499,20 +504,20 @@ export default function DetailView({
             <button
               onClick={() => setIsRouteModalOpen(true)}
               className="flex-1 min-w-[150px] bg-primary hover:bg-primary-container text-white py-3 px-4 rounded-xl font-sans text-xs font-bold shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
-              title="Voir le chemin pour aller à cet endroit depuis votre position"
+              title={t.detail.directions}
             >
               <span className="material-symbols-outlined text-[20px]">directions</span>
-              <span>Itinéraire</span>
+              <span>{t.detail.directions}</span>
             </button>
 
             {/* External GPS App Fallback */}
             <button
               onClick={() => openExternalGpsRoute(loc.lat, loc.lng, loc.title)}
               className="py-3 px-3 rounded-xl bg-surface-container hover:bg-surface-variant text-on-surface font-sans text-xs font-bold border border-outline-variant/30 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              title="Ouvrir cet endroit dans l'application Google Maps"
+              title={t.detail.openGoogleMaps}
             >
               <span className="material-symbols-outlined text-[18px]">open_in_new</span>
-              <span className="hidden sm:inline">Ouvrir Google Maps</span>
+              <span className="hidden sm:inline">{t.detail.openGoogleMaps}</span>
             </button>
 
             {/* Contacter Guide / WhatsApp (Affiché uniquement si activé et numéro configuré, sans numéro en dur) */}
@@ -522,10 +527,10 @@ export default function DetailView({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 min-w-[130px] bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-3.5 rounded-xl font-sans text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
-                title={`Écrire au guide sur WhatsApp : ${rawTargetNumber}`}
+                title={`${t.detail.chatWithGuide} : ${rawTargetNumber}`}
               >
                 <span className="material-symbols-outlined text-[18px]">call</span>
-                <span>Écrire au guide</span>
+                <span>{t.detail.chatWithGuide}</span>
               </a>
             )}
 
@@ -541,36 +546,33 @@ export default function DetailView({
               <span className={`material-symbols-outlined text-[18px] ${isSaved ? "fill text-amber-600" : ""}`}>
                 {isSaved ? "bookmark_added" : "bookmark_add"}
               </span>
-              <span className="hidden sm:inline">{isSaved ? "Dans mon carnet" : "Enregistrer"}</span>
+              <span className="hidden sm:inline">{isSaved ? t.detail.savedToLog : t.detail.saveToLog}</span>
             </button>
 
             {/* Community Report Button */}
             <button
               onClick={() => setIsReportModalOpen(true)}
               className="py-3 px-3 rounded-xl font-sans text-xs font-bold bg-surface-container hover:bg-surface-variant border border-outline-variant/30 text-outline hover:text-on-surface transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              title="Dites-nous si une information est fausse ou a changé (route, prix, etc.)"
+              title={t.detail.reportIssue}
             >
               <span className="material-symbols-outlined text-[18px] text-amber-600">report_problem</span>
-              <span className="hidden md:inline">Signaler une erreur</span>
+              <span className="hidden md:inline">{t.detail.reportIssue}</span>
             </button>
           </div>
 
           {/* Short explanations of each button, in plain words */}
-          <div className="mt-3 px-2 flex flex-wrap items-start justify-center gap-2">
-            <HelpHint title="À quoi servent ces boutons ?" storageKey="kongo_help_detail_buttons">
-              <p>
-                <strong>Itinéraire</strong> : le chemin pour y aller. <strong>Enregistrer</strong> : garder la fiche, même sans internet.
-                {showWhatsAppButton && <> <strong>Écrire au guide</strong> : discuter sur WhatsApp.</>}
-                {" "}<strong>Signaler</strong> : dire qu'une info est fausse.
-              </p>
-            </HelpHint>
+          <div className="mt-3 px-2 text-center space-y-2">
+            <p className="text-xs text-on-surface-variant leading-relaxed max-w-md mx-auto">
+              <strong>{t.detail.directions}</strong> : {t.detail.directions}. <strong>{t.detail.saveToLog}</strong> : {t.carnet.readyOffline}.
+              {showWhatsAppButton && <> <strong>{t.detail.chatWithGuide}</strong>.</>}
+            </p>
             {onOpenGuide && (
               <button
                 onClick={onOpenGuide}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all cursor-pointer active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">support_agent</span>
-                Besoin d'aide ?
+                {t.detail.needHelp}
               </button>
             )}
           </div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { GUIDE_SUGGESTED_QUESTIONS } from "../../data/guideKnowledgeBase";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 interface ChatMessage {
   id: string;
@@ -27,17 +27,35 @@ export default function GuideChatModal({
   onStartTour,
   onNavigateTo,
 }: GuideChatModalProps) {
+  const { language, t } = useLanguage();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "initial-welcome",
       sender: "guide",
-      text: "Bonjour et bienvenue sur Kongo Explorer ! Je suis le Guide Kongo. Je peux vous expliquer à quoi sert chaque bouton du site et vous aider à trouver ce que vous cherchez. Que voulez-vous savoir ?",
-      timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+      text: t.guideChat.welcomeMsg,
+      timestamp: new Date().toLocaleTimeString(language === "en" ? "en-US" : "fr-FR", { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Update initial welcome message when language toggles if conversation hasn't started yet
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === "initial-welcome") {
+        return [
+          {
+            id: "initial-welcome",
+            sender: "guide",
+            text: t.guideChat.welcomeMsg,
+            timestamp: new Date().toLocaleTimeString(language === "en" ? "en-US" : "fr-FR", { hour: "2-digit", minute: "2-digit" }),
+          },
+        ];
+      }
+      return prev;
+    });
+  }, [language, t.guideChat.welcomeMsg]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -57,7 +75,7 @@ export default function GuideChatModal({
       id: `user-${Date.now()}`,
       sender: "user",
       text: queryText,
-      timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+      timestamp: new Date().toLocaleTimeString(language === "en" ? "en-US" : "fr-FR", { hour: "2-digit", minute: "2-digit" }),
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -76,6 +94,7 @@ export default function GuideChatModal({
         body: JSON.stringify({
           message: queryText,
           history: historyPayload,
+          language,
         }),
       });
 
@@ -87,8 +106,8 @@ export default function GuideChatModal({
       const guideMsg: ChatMessage = {
         id: `guide-${Date.now()}`,
         sender: "guide",
-        text: data.reply || "Je suis à votre écoute pour vous aider à explorer le Kongo Central.",
-        timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        text: data.reply || (language === "en" ? "I am here to help you explore Kongo Central." : "Je suis à votre écoute pour vous aider à explorer le Kongo Central."),
+        timestamp: new Date().toLocaleTimeString(language === "en" ? "en-US" : "fr-FR", { hour: "2-digit", minute: "2-digit" }),
         suggestedAction: data.suggestedAction || null,
       };
 
@@ -97,57 +116,63 @@ export default function GuideChatModal({
       console.error("Guide chat error:", err);
       // Smart contextual fallback if network or fetch is interrupted
       const q = queryText.toLowerCase();
+      const isEn = language === "en";
 
       // Refusal for off-topic questions
       const offTopicKeywords = ["code", "javascript", "python", "html", "math", "calcul", "devoir", "politique", "macron", "biden", "football europe", "recette pizza"];
       const isOffTopic = offTopicKeywords.some(k => q.includes(k));
 
-      let fallbackText = "Je suis le Guide Kongo ! Que voulez-vous découvrir : la carte, les circuits ou les bons plans du Kongo Central ?";
+      let fallbackText = isEn
+        ? "I am Guide Kongo! What would you like to explore: the map, the circuits, or the top travel tips in Kongo Central?"
+        : "Je suis le Guide Kongo ! Que voulez-vous découvrir : la carte, les circuits ou les bons plans du Kongo Central ?";
       let fallbackAction: ChatMessage["suggestedAction"] = {
-        label: "Lancer la visite guidée",
+        label: isEn ? "Start guided tour" : "Lancer la visite guidée",
         route: "/",
         tourStepId: "start-tour",
       };
 
       if (isOffTopic) {
-        fallbackText = "Désolé, je suis uniquement le Guide de Kongo Explorer pour vous faire découvrir le Kongo Central. Souhaitez-vous voir nos destinations ou la carte ?";
+        fallbackText = isEn
+          ? "Sorry, I am only the guide for Kongo Explorer to help you discover Kongo Central. Would you like to view our destinations or the map?"
+          : "Désolé, je suis uniquement le Guide de Kongo Explorer pour vous faire découvrir le Kongo Central. Souhaitez-vous voir nos destinations ou la carte ?";
         fallbackAction = {
-          label: "Ouvrir la carte",
+          label: isEn ? "Open map" : "Ouvrir la carte",
           route: "/carte",
           tourStepId: "step-carte",
         };
-      } else if (q.includes("publi") || q.includes("proposer") || q.includes("info") || q.includes("article") || q.includes("post")) {
-        fallbackText = "Connectez-vous, puis appuyez sur « Publier une info » dans la rubrique Infos Tourisme. Votre publication sera relue par l'équipe avant d'apparaître sur le site.";
+      } else if (q.includes("publi") || q.includes("proposer") || q.includes("info") || q.includes("post") || q.includes("submit") || q.includes("news")) {
+        fallbackText = isEn
+          ? "Sign in, then tap 'Submit news' in the Tourism News section. Your submission will be reviewed by the team before appearing on the site."
+          : "Connectez-vous, puis appuyez sur « Publier une info » dans la rubrique Infos Tourisme. Votre publication sera relue par l'équipe avant d'apparaître sur le site.";
         fallbackAction = {
-          label: "Voir Infos Tourisme",
+          label: isEn ? "View Tourism News" : "Voir Infos Tourisme",
           route: "/infos-tourisme",
           tourStepId: "step-infos",
         };
-      } else if (q.includes("satellite") || q.includes("relief") || q.includes("topo")) {
-        fallbackText = "Le mode Satellite affiche des photos prises du ciel : pratique pour voir les forêts, les rivières, les chutes et l'état des chemins avant de partir. Le mode Plan est un dessin simple avec les routes et les noms. Voulez-vous ouvrir la carte ?";
+      } else if (q.includes("carte") || q.includes("map") || q.includes("itineraire") || q.includes("position") || q.includes("lieu") || q.includes("where")) {
+        fallbackText = isEn
+          ? "The interactive map shows you where the destinations are (Zongo, Matadi, Boma, Muanda...) and how to get there. Would you like to open it?"
+          : "La carte vous montre où se trouvent les lieux à visiter (Zongo, Matadi, Boma, Muanda...) et le chemin pour y aller. Voulez-vous l'ouvrir ?";
         fallbackAction = {
-          label: "Ouvrir la carte",
+          label: isEn ? "Open map" : "Ouvrir la carte",
           route: "/carte",
           tourStepId: "step-carte",
         };
-      } else if (q.includes("carte") || q.includes("map") || q.includes("itineraire") || q.includes("position") || q.includes("lieu")) {
-        fallbackText = "La carte vous montre où se trouvent les lieux à visiter (Zongo, Matadi, Boma, Muanda...) et le chemin pour y aller. Voulez-vous l'ouvrir ?";
+      } else if (q.includes("circuit") || q.includes("trajet") || q.includes("tour") || q.includes("trip")) {
+        fallbackText = isEn
+          ? "Circuits are ready-made travel itineraries with estimated duration and vehicle recommendations. Would you like to explore them?"
+          : "Les circuits sont des promenades toutes prêtes, avec la durée et le type de véhicule conseillé (voiture ou 4x4). Voulez-vous les voir ?";
         fallbackAction = {
-          label: "Ouvrir la carte",
-          route: "/carte",
-          tourStepId: "step-carte",
-        };
-      } else if (q.includes("circuit") || q.includes("trajet") || q.includes("route")) {
-        fallbackText = "Les circuits sont des promenades toutes prêtes, avec la durée et le type de véhicule conseillé (voiture ou 4x4). Voulez-vous les voir ?";
-        fallbackAction = {
-          label: "Découvrir les circuits",
+          label: isEn ? "Discover circuits" : "Découvrir les circuits",
           route: "/circuits",
           tourStepId: "step-circuits",
         };
-      } else if (q.includes("carnet") || q.includes("hors ligne") || q.includes("offline") || q.includes("sauvegard")) {
-        fallbackText = "Appuyez sur « Enregistrer » sur une fiche pour la garder dans votre carnet. Vous pourrez la relire plus tard, même sans internet. Voulez-vous voir votre carnet ?";
+      } else if (q.includes("carnet") || q.includes("hors ligne") || q.includes("offline") || q.includes("sauvegard") || q.includes("save")) {
+        fallbackText = isEn
+          ? "Tap 'Save' on any destination sheet to keep it in your travel log. You can review it later even without internet. Would you like to open your travel log?"
+          : "Appuyez sur « Enregistrer » sur une fiche pour la garder dans votre carnet. Vous pourrez la relire plus tard, même sans internet. Voulez-vous voir votre carnet ?";
         fallbackAction = {
-          label: "Voir mon carnet",
+          label: isEn ? "View my travel log" : "Voir mon carnet",
           route: "/carnet",
           tourStepId: "step-carnet",
         };
@@ -216,14 +241,14 @@ export default function GuideChatModal({
             <div>
               <div className="flex items-center gap-1.5">
                 <h3 className="font-sans text-body-md font-bold text-on-surface leading-tight">
-                  Guide Kongo
+                  {t.guideChat.headerTitle}
                 </h3>
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-700/10 text-emerald-800 dark:text-emerald-300">
-                  En ligne
+                  {language === "en" ? "Online" : "En ligne"}
                 </span>
               </div>
               <p className="text-[10px] text-on-surface-variant leading-tight">
-                Guide touristique du Kongo Central
+                {t.guideChat.headerSubtitle}
               </p>
             </div>
           </div>
@@ -235,16 +260,16 @@ export default function GuideChatModal({
                 onStartTour();
               }}
               className="px-2 py-1 rounded-xl border border-outline-variant/40 hover:bg-surface-container-high text-[11px] font-semibold text-on-surface-variant flex items-center gap-1 transition-colors cursor-pointer"
-              title="Relancer la visite guidée pas à pas"
+              title={t.guideChat.startTourBtn}
             >
               <span className="material-symbols-outlined text-[15px] text-emerald-600">tour</span>
-              <span className="hidden sm:inline">Visite</span>
+              <span className="hidden sm:inline">{t.guideChat.startTourBtn}</span>
             </button>
             <button
               onClick={onClose}
               className="p-1.5 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
-              aria-label="Fermer le chat"
-              title="Fermer"
+              aria-label={t.common.close}
+              title={t.common.close}
             >
               <span className="material-symbols-outlined text-[20px]">expand_more</span>
             </button>
@@ -278,7 +303,7 @@ export default function GuideChatModal({
                       <span>{msg.suggestedAction.label}</span>
                     </button>
                     <span className="text-[10px] text-on-surface-variant font-mono">
-                      Me montrer
+                      {t.guideChat.showMe}
                     </span>
                   </div>
                 )}
@@ -305,9 +330,9 @@ export default function GuideChatModal({
         <div className="px-4 py-2 bg-surface-container-low/50 border-t border-outline-variant/15 flex items-center gap-2 overflow-x-auto hide-scrollbar shrink-0">
           <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider shrink-0 flex items-center gap-1">
             <span className="material-symbols-outlined text-[14px] text-emerald-600">lightbulb</span>
-            Suggestions :
+            {t.guideChat.suggestionsTitle}
           </span>
-          {GUIDE_SUGGESTED_QUESTIONS.map((question, idx) => (
+          {t.guideChat.suggestedQuestions.map((question, idx) => (
             <button
               key={idx}
               onClick={() => handleSendMessage(question)}
@@ -332,7 +357,7 @@ export default function GuideChatModal({
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Écrivez votre question ici..."
+              placeholder={t.guideChat.inputPlaceholder}
               disabled={isLoading}
               className="w-full bg-transparent border-none focus:outline-none text-body-sm text-on-surface placeholder:text-on-surface-variant/50"
             />
@@ -340,7 +365,7 @@ export default function GuideChatModal({
               type="submit"
               disabled={!input.trim() || isLoading}
               className="p-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 text-white transition-all cursor-pointer flex items-center justify-center shrink-0 active:scale-95"
-              aria-label="Envoyer"
+              aria-label={t.guideChat.send}
             >
               <span className="material-symbols-outlined text-[18px]">send</span>
             </button>

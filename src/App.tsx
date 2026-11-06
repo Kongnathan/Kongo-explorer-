@@ -20,6 +20,7 @@ import IntroSplash from "./components/IntroSplash";
 import NotFoundView from "./components/NotFoundView";
 import RouteSEO from "./components/SEO";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
 import AuthModal from "./components/AuthModal";
 import WelcomeModal from "./components/guide/WelcomeModal";
 import OnboardingTour from "./components/guide/OnboardingTour";
@@ -344,6 +345,7 @@ function TourismPostDetailRouteWrapper({
 
 export function AppContent() {
   const { currentUser, isAdmin, logout } = useAuth();
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -1628,7 +1630,7 @@ export function AppContent() {
             <span className={`material-symbols-outlined text-[22px] ${isExploreActive ? "fill text-primary" : "text-outline"}`}>
               explore
             </span>
-            <span className="text-[10px] font-sans mt-0.5 font-semibold">Explorer</span>
+            <span className="text-[10px] font-sans mt-0.5 font-semibold">{t.nav.explore}</span>
           </Link>
 
           <Link 
@@ -1645,7 +1647,7 @@ export function AppContent() {
             <span className={`material-symbols-outlined text-[22px] ${isNewsActive ? "fill text-primary" : "text-outline"}`}>
               feed
             </span>
-            <span className="text-[10px] font-sans mt-0.5 font-semibold">Infos</span>
+            <span className="text-[10px] font-sans mt-0.5 font-semibold">{t.nav.infos}</span>
           </Link>
 
           <Link 
@@ -1662,7 +1664,7 @@ export function AppContent() {
             <span className={`material-symbols-outlined text-[22px] ${isMapActive ? "fill text-primary" : "text-outline"}`}>
               near_me
             </span>
-            <span className="text-[10px] font-sans mt-0.5 font-semibold">Carte</span>
+            <span className="text-[10px] font-sans mt-0.5 font-semibold">{t.nav.map}</span>
           </Link>
 
           <Link 
@@ -1679,7 +1681,7 @@ export function AppContent() {
             <span className={`material-symbols-outlined text-[22px] ${isCircuitsActive ? "fill text-primary" : "text-outline"}`}>
               route
             </span>
-            <span className="text-[10px] font-sans mt-0.5 font-semibold">Circuits</span>
+            <span className="text-[10px] font-sans mt-0.5 font-semibold">{t.nav.circuits}</span>
           </Link>
 
           <Link 
@@ -1696,7 +1698,7 @@ export function AppContent() {
             <span className={`material-symbols-outlined text-[22px] ${isSavedActive ? "fill text-primary" : "text-outline"}`}>
               bookmark
             </span>
-            <span className="text-[10px] font-sans mt-0.5 font-semibold">Carnet</span>
+            <span className="text-[10px] font-sans mt-0.5 font-semibold">{t.nav.carnet}</span>
           </Link>
 
           <Link 
@@ -1713,7 +1715,7 @@ export function AppContent() {
             <span className={`material-symbols-outlined text-[22px] ${isTipsActive ? "fill text-primary" : "text-outline"}`}>
               info
             </span>
-            <span className="text-[10px] font-sans mt-0.5 font-semibold">Conseils</span>
+            <span className="text-[10px] font-sans mt-0.5 font-semibold">{t.nav.tips}</span>
           </Link>
         </nav>
       )}
@@ -1767,9 +1769,11 @@ export function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

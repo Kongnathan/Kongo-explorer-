@@ -1,5 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useLanguage } from "../../contexts/LanguageContext";
+import LanguageSelector from "../LanguageSelector";
 
 interface WelcomeModalProps {
   isOpen: boolean;
@@ -12,6 +14,7 @@ export default function WelcomeModal({
   onStartTour,
   onDismiss,
 }: WelcomeModalProps) {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -34,7 +37,7 @@ export default function WelcomeModal({
           <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
           {/* Guide Kongo Friendly Avatar */}
-          <div className="relative mx-auto mb-4 w-24 h-24 rounded-3xl bg-emerald-700/15 border-2 border-emerald-500/40 shadow-xl overflow-hidden p-1">
+          <div className="relative mx-auto mb-3 w-24 h-24 rounded-3xl bg-emerald-700/15 border-2 border-emerald-500/40 shadow-xl overflow-hidden p-1">
             <img 
               src="/guide-avatar.jpg" 
               alt="Mascotte Guide Kongo" 
@@ -50,28 +53,34 @@ export default function WelcomeModal({
           </span>
 
           <h2 id="welcome-modal-title" className="font-sans text-headline-sm md:text-headline-md font-extrabold text-primary mb-2">
-            Bienvenue sur Kongo Explorer !
+            {t.welcome.title}
           </h2>
 
-          <p className="text-body-md text-on-surface-variant leading-relaxed mb-6 max-w-sm mx-auto text-center">
-            Découvrez facilement les beaux endroits, l'histoire et les bons plans du Kongo Central.
-            <br />
-            <strong className="text-on-surface font-semibold">Voulez-vous une petite visite pour apprendre à utiliser le site ?</strong>
+          <p className="text-body-md text-on-surface-variant leading-relaxed mb-4 max-w-sm mx-auto text-center whitespace-pre-line">
+            {t.welcome.message}
           </p>
+
+          {/* Language selector chips for instant choice on arrival */}
+          <div className="mb-5 flex flex-col items-center">
+            <span className="text-[11px] font-mono text-on-surface-variant/70 uppercase tracking-wider mb-1.5 font-bold">
+              {t.welcome.selectLanguage}
+            </span>
+            <LanguageSelector variant="chips" />
+          </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={onDismiss}
               className="w-full sm:w-auto px-5 py-3 rounded-xl border border-outline-variant/40 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all text-sm font-semibold cursor-pointer active:scale-95"
             >
-              Plus tard
+              {t.welcome.later}
             </button>
             <button
               onClick={onStartTour}
               className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white shadow-lg hover:shadow-emerald-700/30 transition-all text-sm font-bold flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[18px]">play_circle</span>
-              <span>Commencer la visite</span>
+              <span>{t.welcome.startTour}</span>
             </button>
           </div>
         </motion.div>

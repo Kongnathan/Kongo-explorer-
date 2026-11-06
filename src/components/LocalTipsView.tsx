@@ -3,7 +3,8 @@ import { useTheme } from "../hooks/useTheme";
 import { Location } from "../types";
 import { DEFAULT_LOCATIONS } from "../data";
 import OfflineDownloadManager from "./OfflineDownloadManager";
-import LocationHelpModal, { LocationHelpMode } from "./LocationHelpModal";
+import { useLanguage } from "../contexts/LanguageContext";
+import LanguageSelector from "./LanguageSelector";
 
 interface Phrase {
   french: string;
@@ -113,12 +114,12 @@ interface LocalTipsViewProps {
 export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
   const activeLocations = (locations && locations.length > 0) ? locations : DEFAULT_LOCATIONS;
   const { isDark, toggleTheme, setTheme } = useTheme();
+  const { t } = useLanguage();
   const [activeCategory, setActiveCategory] = useState<"meteo" | "devise" | "culture" | "eco" | "prep" | "lang">("meteo");
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loadingWeather, setLoadingWeather] = useState<boolean>(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "success" | "denied">("idle");
-  const [locationHelp, setLocationHelp] = useState<LocationHelpMode | null>(null);
   const [selectedCityName, setSelectedCityName] = useState<string>("Matadi");
 
   // Devises / Currency Converter State
@@ -246,7 +247,7 @@ export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
     setGeoStatus("locating");
     if (!navigator.geolocation) {
       setGeoStatus("denied");
-      setWeatherError("La localisation ne marche pas sur ce navigateur. Choisissez une ville dans la liste.");
+      setWeatherError("La géolocalisation n'est pas supportée par votre navigateur.");
       return;
     }
 
@@ -260,9 +261,7 @@ export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
       (err) => {
         console.warn("Geolocation denied or error:", err);
         setGeoStatus("denied");
-        // Explique simplement quoi faire (applications superposées, réglages, choix d'une ville)
-        setLocationHelp(err.code === 1 ? "denied" : "unavailable");
-        // En attendant, on affiche la météo de Matadi
+        // Fallback to Matadi capital
         fetchWeatherForCoords(-5.8422, 13.4542, "Matadi (Capitale Kongo Central)");
       },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
@@ -294,6 +293,9 @@ export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
             <span className="font-sans text-headline-md font-bold text-primary">Kongo Explorer</span>
           </a>
           <div className="flex items-center gap-2">
+            {/* Multilingual Selector */}
+            <LanguageSelector variant="compact" />
+
             {/* Quick Night Mode Toggle Button in Header */}
             <button
               onClick={toggleTheme}
@@ -306,11 +308,11 @@ export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
                 {isDark ? "light_mode" : "dark_mode"}
               </span>
               <span className="hidden sm:inline font-mono text-[11px] font-bold">
-                {isDark ? "Mode Jour" : "Mode Nuit"}
+                {isDark ? t.settings.lightMode : t.settings.darkMode}
               </span>
             </button>
 
-            <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-mono font-bold uppercase">
+            <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-mono font-bold uppercase hidden md:inline">
               Guide & Météo
             </span>
           </div>
@@ -400,6 +402,9 @@ export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
             </div>
           </div>
         </section>
+
+        {/* SÉLECTEUR DE LANGUE DE L'APPLICATION (FRANÇAIS & ANGLAIS DISPONIBLES) */}
+        <LanguageSelector variant="full" />
 
         {/* OPTION TOUT TÉLÉCHARGER POUR HORS-LIGNE (INDEXEDDB - DONNÉES & IMAGES) */}
         <OfflineDownloadManager locations={activeLocations} />
@@ -1115,19 +1120,6 @@ export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
           )}
         </div>
       </main>
-
-      <LocationHelpModal
-        mode={locationHelp}
-        onClose={() => setLocationHelp(null)}
-        onRetry={() => {
-          setLocationHelp(null);
-          handleUseGeolocation();
-        }}
-        onPickPlace={(place) => {
-          setLocationHelp(null);
-          fetchWeatherForCoords(place.lat, place.lng, place.name);
-        }}
-      />
     </div>
   );
 }

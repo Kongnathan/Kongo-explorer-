@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Location, PendingPermit } from "../types";
 import LazyImage from "./LazyImage";
+import { useLanguage } from "../contexts/LanguageContext";
+import LanguageSelector from "./LanguageSelector";
 
 interface ExploreViewProps {
   locations: Location[];
@@ -23,15 +25,16 @@ export default function ExploreView({
   onToggleSave,
   onStartTour,
 }: ExploreViewProps) {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Incontournables");
 
   // Filter chips (non-commercial, informative)
   const categories = [
-    { name: "Incontournables", icon: "star" },
-    { name: "Nature", icon: "forest" },
-    { name: "Histoire", icon: "history_edu" },
-    { name: "Urbain", icon: "location_city" }
+    { key: "Incontournables", name: t.explore.categories.highlights, icon: "star" },
+    { key: "Nature", name: t.explore.categories.nature, icon: "forest" },
+    { key: "Histoire", name: t.explore.categories.history, icon: "history_edu" },
+    { key: "Urbain", name: t.explore.categories.urban, icon: "location_city" }
   ];
 
   // Filter locations by search query and category
@@ -59,7 +62,7 @@ export default function ExploreView({
             href="/"
             onClick={(e) => { e.preventDefault(); onNavigate("explore"); }}
             className="relative flex items-center gap-2.5 sm:gap-3 select-none hover:opacity-90 transition-all shrink-0 py-1 pl-0.5 sm:pl-1 my-auto z-10"
-            title="Kongo Explorer – Accueil"
+            title="Kongo Explorer"
           >
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center p-1.5 overflow-hidden border border-primary/20 shadow-xs">
               <img src="/icon.svg" className="w-full h-full object-contain" alt="Logo Kongo Explorer" />
@@ -70,14 +73,17 @@ export default function ExploreView({
           </a>
           
           <div className="flex items-center gap-2">
+            {/* Multilingual Selector */}
+            <LanguageSelector variant="compact" />
+
             {onStartTour && (
               <button
                 onClick={onStartTour}
-                className="px-3 py-1.5 bg-emerald-700/10 text-emerald-800 dark:text-emerald-300 dark:bg-emerald-950/40 border border-emerald-600/20 rounded-full font-sans text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-                title="Revoir la visite guidée interactive"
+                className="px-3 py-1.5 bg-emerald-700/10 text-emerald-800 dark:text-emerald-300 dark:bg-emerald-950/40 border border-emerald-600/20 rounded-full font-sans text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all cursor-pointer hidden md:flex items-center gap-1.5 shadow-xs"
+                title={t.header.guidedTour}
               >
                 <span className="material-symbols-outlined text-[15px]">tour</span>
-                <span className="hidden sm:inline">Visite guidée</span>
+                <span>{t.header.guidedTour}</span>
               </button>
             )}
 
@@ -85,20 +91,20 @@ export default function ExploreView({
               href="/infos-tourisme"
               onClick={(e) => { e.preventDefault(); onNavigate("news"); }}
               className="px-3.5 py-1.5 bg-emerald-700/10 text-emerald-800 dark:text-emerald-300 dark:bg-emerald-950/40 border border-emerald-600/20 rounded-full font-sans text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-              title="Actualités & Bonnes Adresses au Kongo Central"
+              title={t.header.tourismNews}
             >
               <span className="material-symbols-outlined text-[16px]">feed</span>
-              <span>Infos Tourisme</span>
+              <span className="hidden sm:inline">{t.header.tourismNews}</span>
             </a>
 
             <a 
               href="/conseils"
               onClick={(e) => { e.preventDefault(); onNavigate("tips"); }}
-              className="px-3.5 py-1.5 bg-primary/10 text-primary rounded-full font-sans text-xs font-bold hover:bg-primary/20 transition-all cursor-pointer flex items-center gap-1"
-              title="Conseils Pratiques & Météo"
+              className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-sans text-xs font-bold hover:bg-primary/20 transition-all cursor-pointer flex items-center gap-1"
+              title={t.header.tips}
             >
-              <span className="material-symbols-outlined text-[14px]">gavel</span>
-              Conseils
+              <span className="material-symbols-outlined text-[14px]">info</span>
+              <span className="hidden sm:inline">{t.header.tips}</span>
             </a>
           </div>
         </div>
@@ -117,10 +123,10 @@ export default function ExploreView({
             apk by nathan king
           </a>
           <h1 className="font-sans text-headline-lg-mobile md:text-headline-lg text-primary font-extrabold leading-tight tracking-tight">
-            Explorez les merveilles du Kongo Central
+            {t.explore.heroTitle}
           </h1>
           <p className="text-on-surface-variant text-body-md leading-relaxed">
-            Parcourez les paysages sauvages, l'histoire majestueuse et l'incroyable biodiversité de la province du Kongo Central. Une plateforme éducative et collaborative sans intérêt commercial.
+            {t.explore.heroSubtitle}
           </p>
         </section>
 
@@ -130,7 +136,7 @@ export default function ExploreView({
             <span className="material-symbols-outlined text-on-surface-variant mr-3">search</span>
             <input 
               className="bg-transparent border-none focus:ring-0 focus:outline-none w-full font-sans text-body-md text-on-surface placeholder:text-on-surface-variant/50" 
-              placeholder="Rechercher une cascade, une ville, une grotte, un monument..." 
+              placeholder={t.explore.searchPlaceholder} 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -148,16 +154,16 @@ export default function ExploreView({
 
         {/* Category Chips Selector */}
         <section className="space-y-2">
-          <h3 className="font-sans text-body-md font-bold text-on-surface-variant px-1">Filtrer par thématique</h3>
+          <h3 className="font-sans text-body-md font-bold text-on-surface-variant px-1">{t.explore.filterByTheme}</h3>
           <div className="flex space-x-2 overflow-x-auto hide-scrollbar py-1">
             {categories.map((cat) => (
               <button
-                key={cat.name}
+                key={cat.key}
                 onClick={() => {
-                  setSelectedCategory(cat.name);
+                  setSelectedCategory(cat.key);
                 }}
                 className={`flex-none px-5 py-3 rounded-2xl font-sans text-label-md font-bold flex items-center space-x-2 active:scale-95 transition-all cursor-pointer border ${
-                  selectedCategory === cat.name
+                  selectedCategory === cat.key
                     ? "bg-primary text-white border-primary shadow-md"
                     : "bg-surface-container-lowest text-on-surface-variant border-outline-variant/30 hover:bg-surface-variant/40"
                 }`}
@@ -173,14 +179,14 @@ export default function ExploreView({
         <section className="space-y-4">
           <div className="flex justify-between items-end px-1">
             <h3 className="font-sans text-headline-sm text-primary font-bold">
-              {selectedCategory} du Kongo Central ({filteredLocations.length})
+              {categories.find(c => c.key === selectedCategory)?.name || selectedCategory} ({filteredLocations.length})
             </h3>
             {searchQuery && (
               <button 
                 onClick={() => { setSearchQuery(""); setSelectedCategory("Incontournables"); }} 
-                className="text-secondary font-mono text-xs hover:underline"
+                className="text-secondary font-mono text-xs hover:underline cursor-pointer"
               >
-                Réinitialiser
+                {t.explore.resetSearch}
               </button>
             )}
           </div>
@@ -188,12 +194,12 @@ export default function ExploreView({
           {filteredLocations.length === 0 ? (
             <div className="bg-surface-container/50 border border-dashed border-outline-variant/40 rounded-3xl p-10 text-center space-y-2">
               <span className="material-symbols-outlined text-[36px] text-outline">search_off</span>
-              <p className="text-on-surface-variant text-body-md">Aucune fiche ne correspond à votre recherche pour cette catégorie.</p>
+              <p className="text-on-surface-variant text-body-md">{t.explore.emptyResults}</p>
               <button 
-                onClick={() => setSelectedCategory("Incontournables")}
-                className="text-primary font-mono text-xs font-bold underline"
+                onClick={() => { setSelectedCategory("Incontournables"); setSearchQuery(""); }}
+                className="text-primary font-mono text-xs font-bold underline cursor-pointer"
               >
-                Afficher les incontournables
+                {t.explore.showAll}
               </button>
             </div>
           ) : (
@@ -272,7 +278,7 @@ export default function ExploreView({
                           <span className="text-on-surface-variant font-mono text-[11px] font-bold">{loc.timeToVisit}</span>
                         </div>
                         <span className="text-primary font-sans text-xs font-bold group-hover:underline flex items-center gap-0.5">
-                          Découvrir la fiche 
+                          {t.explore.viewDetails} 
                           <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                         </span>
                       </div>
@@ -289,10 +295,10 @@ export default function ExploreView({
           <div className="space-y-1 text-center md:text-left">
             <h4 className="font-sans text-body-lg font-bold text-primary flex items-center gap-2 justify-center md:justify-start">
               <span className="material-symbols-outlined fill text-[20px]">psychology_alt</span>
-              Contributeur Communautaire
+              {t.explore.communityBannerTitle}
             </h4>
             <p className="text-on-surface-variant text-sm max-w-2xl leading-relaxed">
-              Vous connaissez un site d'exception ou possédez des anecdotes historiques vérifiées sur la région ? Enregistrez une note d'exploration en bas à droite pour soumettre vos idées aux écogardes !
+              {t.explore.communityBannerDesc}
             </p>
           </div>
           <button 
@@ -301,13 +307,13 @@ export default function ExploreView({
             className="px-5 py-3 bg-secondary text-white rounded-full font-sans text-xs font-bold hover:brightness-110 active:scale-95 transition-transform flex items-center gap-2 cursor-pointer shadow-md"
           >
             <span className="material-symbols-outlined text-[16px]">add_circle</span>
-            Soumettre une fiche
+            {t.explore.communityBannerBtn}
           </button>
         </section>
 
         {/* Clean Static Footer */}
         <footer className="text-center py-8 border-t border-outline-variant/10 text-xs text-on-surface-variant/40 mt-8">
-          <p>© 2026 Kongo Central Explorer. Portail d'écotourisme et de préservation du patrimoine.</p>
+          <p>© 2026 Kongo Central Explorer. {t.explore.footerText}</p>
         </footer>
       </main>
 
@@ -319,11 +325,11 @@ export default function ExploreView({
           onNavigate("map");
         }}
         className="fixed bottom-24 left-4 sm:left-6 bg-primary/95 text-white px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 font-sans font-bold text-xs hover:bg-primary-container active:scale-95 transition-all z-30 cursor-pointer border border-white/20 backdrop-blur-md hover:shadow-primary/30"
-        title="Autour de moi - Explorer les sites sur la carte"
+        title={t.explore.aroundMe}
         data-guide="btn-autour-moi"
       >
         <span className="material-symbols-outlined text-[20px] text-amber-300">near_me</span>
-        <span>Autour de moi</span>
+        <span>{t.explore.aroundMe}</span>
       </a>
     </div>
   );

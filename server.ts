@@ -31,23 +31,6 @@ const PORT = 3000;
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ limit: "15mb", extended: true }));
 
-// Autorise l'application Android (Capacitor) à appeler l'API du site
-const NATIVE_APP_ORIGINS = new Set(["https://localhost", "capacitor://localhost", "ionic://localhost"]);
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin && NATIVE_APP_ORIGINS.has(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    if (req.method === "OPTIONS") {
-      res.sendStatus(204);
-      return;
-    }
-  }
-  next();
-});
-
 // Ensure uploads folder exists
 const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) {
@@ -488,11 +471,6 @@ Ce que le visiteur peut faire sur Kongo Explorer (explique toujours avec des mot
 
 2. La carte (route: '/carte') :
    - Montre où sont les lieux à visiter (Zongo, Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu) et le chemin pour y aller.
-   - Mode « Plan » : un dessin simple avec les routes et les noms des villes, le plus facile pour se repérer en ville.
-   - Mode « Satellite » : des photos prises du ciel. Utile pour voir les forêts, les rivières, les chutes et l'état des chemins avant de partir. Si le réseau est faible, les photos peuvent être plus lentes à s'afficher.
-   - Fonds de carte au choix : Google Maps (le plus complet, ouvert au départ), OpenStreetMap (carte gratuite faite par des volontaires, avec souvent de petits chemins), Carte Topo (vue simplifiée du relief et des zones naturelles).
-   - Le bouton rond de position montre où l'on se trouve sur la carte (le téléphone demande d'abord l'autorisation).
-   - Le bouton « À quoi servent ces boutons ? » explique chaque mode.
    - Action associée : 'carte'.
 
 3. Les circuits (route: '/circuits') :
@@ -533,12 +511,13 @@ Ce que le visiteur peut faire sur Kongo Explorer (explique toujours avec des mot
 `;
 
 app.post("/api/guide-chat", async (req, res) => {
-  const { message, history } = req.body;
+  const { message, history, language = "fr" } = req.body;
   if (!message || typeof message !== "string") {
     return res.status(400).json({ error: "Le message est requis." });
   }
 
   const client = getGeminiClient();
+  const isEn = language === "en";
 
   // Keyword-based fallback matching if Gemini is unavailable
   const buildFallbackResponse = (queryText: string) => {
@@ -549,79 +528,83 @@ app.post("/api/guide-chat", async (req, res) => {
     const isOffTopic = offTopicKeywords.some(k => q.includes(k));
     if (isOffTopic) {
       return {
-        reply: "Désolé, je suis uniquement le Guide de Kongo Explorer pour vous faire découvrir le Kongo Central. Souhaitez-vous voir nos destinations ou la carte ?",
+        reply: isEn 
+          ? "Sorry, I am only the Guide for Kongo Explorer to help you discover Kongo Central and navigate the site. Would you like to explore our destinations or open the map?"
+          : "Désolé, je suis uniquement le Guide de Kongo Explorer pour vous faire découvrir le Kongo Central. Souhaitez-vous voir nos destinations ou la carte ?",
         suggestedAction: {
-          label: "Ouvrir la carte",
+          label: isEn ? "Open the map" : "Ouvrir la carte",
           route: "/carte",
           tourStepId: "step-carte"
         }
       };
     }
 
-    if (q.includes("publi") || q.includes("proposer") || q.includes("info") || q.includes("article") || q.includes("photo")) {
+    if (q.includes("publi") || q.includes("proposer") || q.includes("info") || q.includes("post") || q.includes("share") || q.includes("photo")) {
       return {
-        reply: "Pour publier, connectez-vous, puis appuyez sur « Publier une info » dans la rubrique Infos Tourisme. Votre publication sera relue par l'équipe avant d'apparaître sur le site. Voulez-vous y aller ?",
+        reply: isEn
+          ? "To publish, sign in, then tap « Share a recommendation » in the Travel News section. Your post will be reviewed by the team before appearing on the site. Would you like to go there?"
+          : "Pour publier, connectez-vous, puis appuyez sur « Publier une info » dans la rubrique Infos Tourisme. Votre publication sera relue par l'équipe avant d'apparaître sur le site. Voulez-vous y aller ?",
         suggestedAction: {
-          label: "Voir Infos Tourisme",
+          label: isEn ? "View Travel News" : "Voir Infos Tourisme",
           route: "/infos-tourisme",
           tourStepId: "step-infos"
         }
       };
     }
-    if (q.includes("satellite") || q.includes("relief") || q.includes("topo")) {
+    if (q.includes("carte") || q.includes("map") || q.includes("position") || q.includes("itineraire") || q.includes("route") || q.includes("direction")) {
       return {
-        reply: "Le mode Satellite affiche des photos prises du ciel : pratique pour voir les forêts, les rivières, les chutes et l'état des chemins avant de partir. Le mode Plan est un dessin simple avec les routes et les noms. Voulez-vous ouvrir la carte ?",
+        reply: isEn
+          ? "The map shows you where the destinations are (Zongo, Matadi, Boma, Muanda...) and the route to get there. Would you like to open it?"
+          : "La carte vous montre où se trouvent les lieux à visiter (Zongo, Matadi, Boma, Muanda...) et le chemin pour y aller. Voulez-vous l'ouvrir ?",
         suggestedAction: {
-          label: "Ouvrir la carte",
+          label: isEn ? "Open the map" : "Ouvrir la carte",
           route: "/carte",
           tourStepId: "step-carte"
         }
       };
     }
-    if (q.includes("carte") || q.includes("map") || q.includes("position") || q.includes("itineraire") || q.includes("localiser")) {
+    if (q.includes("circuit") || q.includes("trajet") || q.includes("tour") || q.includes("itinerary")) {
       return {
-        reply: "La carte vous montre où se trouvent les lieux à visiter (Zongo, Matadi, Boma, Muanda...) et le chemin pour y aller. Voulez-vous l'ouvrir ?",
+        reply: isEn
+          ? "The tours are ready-made itineraries with duration and recommended vehicle (car or 4x4). Would you like to discover them?"
+          : "Les circuits sont des promenades toutes prêtes, avec la durée et le type de véhicule conseillé (voiture ou 4x4). Voulez-vous les découvrir ?",
         suggestedAction: {
-          label: "Ouvrir la carte",
-          route: "/carte",
-          tourStepId: "step-carte"
-        }
-      };
-    }
-    if (q.includes("circuit") || q.includes("trajet") || q.includes("route")) {
-      return {
-        reply: "Les circuits sont des promenades toutes prêtes, avec la durée et le type de véhicule conseillé (voiture ou 4x4). Voulez-vous les découvrir ?",
-        suggestedAction: {
-          label: "Découvrir les circuits",
+          label: isEn ? "Explore tours" : "Découvrir les circuits",
           route: "/circuits",
           tourStepId: "step-circuits"
         }
       };
     }
-    if (q.includes("hors ligne") || q.includes("carnet") || q.includes("enregistr") || q.includes("connexion") || q.includes("offline")) {
+    if (q.includes("hors ligne") || q.includes("carnet") || q.includes("enregistr") || q.includes("offline") || q.includes("save")) {
       return {
-        reply: "Appuyez sur « Enregistrer » sur une fiche pour la garder dans votre carnet. Vous pourrez la relire plus tard, même sans internet. Voulez-vous ouvrir votre carnet ?",
+        reply: isEn
+          ? "Tap « Save » on any destination card to keep it in your travel log. You can read it anytime, even without internet. Would you like to open your log?"
+          : "Appuyez sur « Enregistrer » sur une fiche pour la garder dans votre carnet. Vous pourrez la relire plus tard, même sans internet. Voulez-vous ouvrir votre carnet ?",
         suggestedAction: {
-          label: "Consulter mon carnet",
+          label: isEn ? "View my travel log" : "Consulter mon carnet",
           route: "/carnet",
           tourStepId: "step-carnet"
         }
       };
     }
-    if (q.includes("valid") || q.includes("modéra") || q.includes("admin") || q.includes("refus")) {
+    if (q.includes("valid") || q.includes("modéra") || q.includes("admin") || q.includes("review") || q.includes("approv")) {
       return {
-        reply: "Chaque publication est relue par l'équipe avant d'apparaître, pour que les informations soient fiables. Vous pouvez suivre vos publications dans « Mes publications ». Voulez-vous voir les infos ?",
+        reply: isEn
+          ? "Each post is reviewed by the team before appearing to ensure reliable information. You can track your submissions in « My submissions ». Would you like to check Travel News?"
+          : "Chaque publication est relue par l'équipe avant d'apparaître, pour que les informations soient fiables. Vous pouvez suivre vos publications dans « Mes publications ». Voulez-vous voir les infos ?",
         suggestedAction: {
-          label: "Voir Infos Tourisme",
+          label: isEn ? "View Travel News" : "Voir Infos Tourisme",
           route: "/infos-tourisme",
           tourStepId: "step-infos"
         }
       };
     }
     return {
-      reply: "Bonjour ! Je suis le Guide Kongo. Je peux vous montrer la carte, les circuits ou les bons plans du Kongo Central, et vous expliquer chaque bouton du site. Que voulez-vous voir ?",
+      reply: isEn
+        ? "Hello! I am Guide Kongo. I can show you the map, tours, and scenic spots in Kongo Central, or explain each button on the site. What would you like to see?"
+        : "Bonjour ! Je suis le Guide Kongo. Je peux vous montrer la carte, les circuits ou les bons plans du Kongo Central, et vous expliquer chaque bouton du site. Que voulez-vous voir ?",
       suggestedAction: {
-        label: "Lancer la visite guidée",
+        label: isEn ? "Start guided tour" : "Lancer la visite guidée",
         route: "/",
         tourStepId: "start-tour"
       }
@@ -638,21 +621,29 @@ app.post("/api/guide-chat", async (req, res) => {
   }
 
   try {
+    const replyPlaceholder = isEn
+      ? "Your simple and concise message in English (1 to 3 short sentences max)."
+      : "Ton message très simple et concis (1 à 3 phrases courtes max).";
+    const actionLabelPlaceholder = isEn
+      ? "Short button label in English or null"
+      : "Texte court du bouton d action ou null";
+
     const systemPrompt = `Tu es Guide Kongo, l'assistant d'accueil et de voyage du site Kongo Explorer (Kongo Central, RDC).
 
-RÈGLES IMPÉRATIVES DE RÉPONSE :
-1. SIMPLICITÉ ET CONCISION : Réponds de manière très SIMPLE, CHALEUREUSE et COURTE (1 à 3 phrases courtes maximum), comme si tu parlais à quelqu'un qui n'a pas l'habitude du numérique. Utilise des mots de tous les jours. N'emploie JAMAIS de mots techniques (cache, IndexedDB, PWA, GPS, synchronisation, interface...). Pas de longues listes à puces ni de pavés de texte. Quand on te demande à quoi sert un bouton, dis ce qu'il fait, où le trouver et comment l'utiliser.
+${isEn ? `IMPORTANT LANGUAGE INSTRUCTION:
+The user has chosen ENGLISH. You MUST respond in clear, warm, friendly and simple ENGLISH (1 to 3 short sentences max). Avoid technical jargon (no words like cache, database, indexedDB, sync, PWA...). When asked about buttons or features, explain what they do in plain words. Always end with a helpful direct action suggestion.` : `RÈGLES IMPÉRATIVES DE RÉPONSE :
+1. SIMPLICITÉ ET CONCISION : Réponds de manière très SIMPLE, CHALEUREUSE et COURTE (1 à 3 phrases courtes maximum), comme si tu parlais à quelqu'un qui n'a pas l'habitude du numérique. Utilise des mots de tous les jours. N'emploie JAMAIS de mots techniques (cache, IndexedDB, PWA, GPS, synchronisation, interface...). Pas de longues listes à puces ni de pavés de texte. Quand on te demande à quoi sert un bouton, dis ce qu'il fait, où le trouver et comment l'utiliser.`}
 2. REFUS STRICT DES QUESTIONS HORS-SUJET : Tu es UNIQUEMENT le guide touristique de Kongo Explorer. Si la question ne concerne pas le Kongo Central, le tourisme local ou les fonctionnalités du site (par exemple : mathématiques, code informatique, devoirs, politique générale, cuisine sans rapport, actualités étrangères), TU DOIS REFUSER D'Y RÉPONDRE. Réponds simplement et poliment en 1 phrase :
-"Désolé, je suis uniquement le Guide de Kongo Explorer pour vous faire découvrir le Kongo Central et vous orienter sur le site. Voulez-vous voir nos destinations ou la carte ?" (actionTarget: "carte", actionLabel: "Ouvrir la carte").
+${isEn ? '"Sorry, I am only the Guide for Kongo Explorer to help you discover Kongo Central and navigate the site. Would you like to explore our destinations or open the map?" (actionTarget: "carte", actionLabel: "Open the map").' : '"Désolé, je suis uniquement le Guide de Kongo Explorer pour vous faire découvrir le Kongo Central et vous orienter sur le site. Voulez-vous voir nos destinations ou la carte ?" (actionTarget: "carte", actionLabel: "Ouvrir la carte").'}
 3. PROPOSITION D'ACTION : Termine toujours ta réponse par une proposition d'action directe et concrète vers une option du site.
 
 ${GUIDE_KNOWLEDGE_CONTEXT}
 
 FORMAT DE RÉPONSE OBLIGATOIRE (JSON STRICT) :
 {
-  "reply": "Ton message très simple et concis (1 à 3 phrases courtes max).",
+  "reply": "${replyPlaceholder}",
   "actionTarget": "carte" | "infos-tourisme" | "circuits" | "carnet" | "conseils" | "recherche" | "connexion" | null,
-  "actionLabel": "Texte court du bouton d'action ou null"
+  "actionLabel": "${actionLabelPlaceholder}"
 }`;
 
     // Format chat contents
