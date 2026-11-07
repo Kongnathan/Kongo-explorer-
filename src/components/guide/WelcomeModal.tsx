@@ -15,16 +15,16 @@ export default function WelcomeModal({
   onDismiss,
 }: WelcomeModalProps) {
   const { t } = useLanguage();
-  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      <div 
-        className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="welcome-modal-title"
-      >
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="welcome-modal-title"
+        >
         <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -85,8 +85,9 @@ export default function WelcomeModal({
             </button>
           </div>
         </motion.div>
+          </div>
         </div>
-      </div>
+      )}
     </AnimatePresence>
   );
 }

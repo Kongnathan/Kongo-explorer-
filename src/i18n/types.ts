@@ -319,6 +319,21 @@ export interface Translations {
     suggestionsTitle: string;
     send: string;
     showMe: string;
+    ariaLabel: string;
+    mascotAlt: string;
+    onlineStatus: string;
+    defaultReply: string;
+    fallbackGeneral: string;
+    fallbackOffTopic: string;
+    fallbackNews: string;
+    fallbackMap: string;
+    fallbackCircuits: string;
+    fallbackLog: string;
+    actionStartTour: string;
+    actionOpenMap: string;
+    actionViewNews: string;
+    actionDiscoverCircuits: string;
+    actionViewLog: string;
     suggestedQuestions: string[];
   };
 }

@@ -699,25 +699,25 @@ FORMAT DE RÉPONSE OBLIGATOIRE (JSON STRICT) :
     // Map actionTarget to actual route and tour step
     let suggestedAction = null;
     if (parsed.actionTarget === "carte") {
-      suggestedAction = { label: parsed.actionLabel || "Me montrer la carte", route: "/carte", tourStepId: "step-carte" };
+      suggestedAction = { label: parsed.actionLabel || (isEn ? "Open map" : "Me montrer la carte"), route: "/carte", tourStepId: "step-carte" };
     } else if (parsed.actionTarget === "infos-tourisme") {
-      suggestedAction = { label: parsed.actionLabel || "Me montrer Infos Tourisme", route: "/infos-tourisme", tourStepId: "step-infos" };
+      suggestedAction = { label: parsed.actionLabel || (isEn ? "View Tourism News" : "Me montrer Infos Tourisme"), route: "/infos-tourisme", tourStepId: "step-infos" };
     } else if (parsed.actionTarget === "circuits") {
-      suggestedAction = { label: parsed.actionLabel || "Me montrer les circuits", route: "/circuits", tourStepId: "step-circuits" };
+      suggestedAction = { label: parsed.actionLabel || (isEn ? "Explore circuits" : "Me montrer les circuits"), route: "/circuits", tourStepId: "step-circuits" };
     } else if (parsed.actionTarget === "carnet") {
-      suggestedAction = { label: parsed.actionLabel || "Me montrer le carnet", route: "/carnet", tourStepId: "step-carnet" };
+      suggestedAction = { label: parsed.actionLabel || (isEn ? "View travel log" : "Me montrer le carnet"), route: "/carnet", tourStepId: "step-carnet" };
     } else if (parsed.actionTarget === "conseils") {
-      suggestedAction = { label: parsed.actionLabel || "Voir les conseils", route: "/conseils", tourStepId: "step-conseils" };
+      suggestedAction = { label: parsed.actionLabel || (isEn ? "View travel tips" : "Voir les conseils"), route: "/conseils", tourStepId: "step-conseils" };
     } else if (parsed.actionTarget === "recherche") {
-      suggestedAction = { label: parsed.actionLabel || "Me montrer la recherche", route: "/", tourStepId: "step-search" };
+      suggestedAction = { label: parsed.actionLabel || (isEn ? "Search destinations" : "Me montrer la recherche"), route: "/", tourStepId: "step-search" };
     } else if (parsed.actionTarget === "connexion") {
-      suggestedAction = { label: parsed.actionLabel || "Se connecter", route: "/infos-tourisme", tourStepId: "step-auth" };
+      suggestedAction = { label: parsed.actionLabel || (isEn ? "Sign in" : "Se connecter"), route: "/infos-tourisme", tourStepId: "step-auth" };
     }
 
     return res.json({
       success: true,
       mode: "gemini-ai",
-      reply: parsed.reply || "Bonjour ! Comment puis-je vous aider à explorer le Kongo Central ?",
+      reply: parsed.reply || (isEn ? "Hello! How can I help you explore Kongo Central?" : "Bonjour ! Comment puis-je vous aider à explorer le Kongo Central ?"),
       suggestedAction
     });
   } catch (error: any) {
