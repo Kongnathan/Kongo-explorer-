@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { notify } from "../lib/feedback";
 import { Location, CommunityReport, GuideWhatsAppSettings } from "../types";
 import RatingSection from "./RatingSection";
 import ReportModal from "./ReportModal";
@@ -284,7 +285,7 @@ export default function DetailView({
     e.stopPropagation();
     if (!isAdmin) return;
     if (galleryImages.length <= 1) {
-      alert("La galerie doit conserver au moins une photo principale.");
+      notify("La galerie doit garder au moins une photo principale.", "error");
       return;
     }
     const updated = galleryImages.filter((_, idx) => idx !== indexToDelete);

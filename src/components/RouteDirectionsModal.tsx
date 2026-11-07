@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { notify } from "../lib/feedback";
 import { Location } from "../types";
 import { getUserGeolocation, UserPosition, calculateDistanceKm } from "../lib/geoUtils";
 import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from "@vis.gl/react-google-maps";
@@ -214,7 +215,7 @@ export default function RouteDirectionsModal({
 
   const speakStep = (text: string, index: number) => {
     if (!("speechSynthesis" in window)) {
-      alert("La synthèse vocale n'est pas supportée par votre navigateur.");
+      notify("La lecture à voix haute n'est pas disponible sur votre téléphone ou navigateur.", "error");
       return;
     }
 
@@ -250,7 +251,7 @@ export default function RouteDirectionsModal({
 
   const speakAllSteps = () => {
     if (!("speechSynthesis" in window)) {
-      alert("La synthèse vocale n'est pas supportée par votre navigateur.");
+      notify("La lecture à voix haute n'est pas disponible sur votre téléphone ou navigateur.", "error");
       return;
     }
 

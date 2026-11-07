@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { notify } from "../lib/feedback";
 import { Location } from "../types";
 import { APIProvider, Map, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps";
 import L from "leaflet";
@@ -754,7 +755,7 @@ export default function MapView({
                     </button>
                     <button 
                       onClick={() => {
-                        alert(`Itinéraire : Pour vous rendre aux ${loc.title} (${loc.locationName}), veuillez consulter les Conseils Locaux de préparation (Routier/Rando) ou vous rapprocher des écogardes.`);
+                        notify(`Pour vous rendre à ${loc.title} (${loc.locationName}), consultez les Conseils de préparation (route ou randonnée) ou rapprochez-vous des écogardes.`, "info");
                       }}
                       className="bg-secondary text-white px-3 py-2 rounded-xl font-sans text-[11px] font-bold flex items-center justify-center active:scale-95 transition-all cursor-pointer"
                       title="Conseils d'accès"
@@ -899,7 +900,7 @@ export default function MapView({
                   </button>
                   <button 
                     onClick={() => {
-                      alert(`Coordonnées GPS réelles :\n\n📍 ${selectedLoc.title}\n• Latitude : ${selectedLoc.lat || "N/A"}°\n• Longitude : ${selectedLoc.lng || "N/A"}°\n\nPour vous rendre sur place, contactez les guides éco-responsables régionaux.`);
+                      notify(`📍 ${selectedLoc.title}\nLatitude : ${selectedLoc.lat || "N/A"}°\nLongitude : ${selectedLoc.lng || "N/A"}°\nPour vous rendre sur place, contactez les guides locaux.`, "info");
                     }}
                     className="bg-secondary text-white px-3 py-2 rounded-xl font-sans text-[11px] font-bold flex items-center justify-center active:scale-95 transition-all cursor-pointer"
                     title="Coordonnées GPS"

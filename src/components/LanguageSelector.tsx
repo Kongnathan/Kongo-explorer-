@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { notify } from "../lib/feedback";
 import { useLanguage } from "../contexts/LanguageContext";
 import { SupportedLanguage } from "../i18n";
 
@@ -40,7 +41,7 @@ export default function LanguageSelector({ variant = "compact", className = "" }
                 if (item.available) {
                   setLanguage(item.code);
                 } else {
-                  alert(`${item.name} sera bientôt disponible !`);
+                  notify(`${item.name} sera bientôt disponible !`, "info");
                 }
               }}
               className={`px-3 py-1.5 rounded-full text-xs font-sans font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
@@ -78,7 +79,7 @@ export default function LanguageSelector({ variant = "compact", className = "" }
                 if (item.available) {
                   setLanguage(item.code);
                 } else {
-                  alert(`${item.name} sera bientôt disponible !`);
+                  notify(`${item.name} sera bientôt disponible !`, "info");
                 }
               }}
               className={`p-4 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer ${
@@ -160,7 +161,7 @@ export default function LanguageSelector({ variant = "compact", className = "" }
                     setLanguage(item.code);
                     setIsOpen(false);
                   } else {
-                    alert(`${item.name} sera bientôt disponible !`);
+                    notify(`${item.name} sera bientôt disponible !`, "info");
                   }
                 }}
                 disabled={!item.available}

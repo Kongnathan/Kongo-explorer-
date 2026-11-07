@@ -320,4 +320,20 @@ export const fr: Translations = {
       "Comment garder un lieu dans mon carnet ?",
     ],
   },
+
+  ui: {
+    cancel: "Annuler",
+    confirm: "Confirmer",
+    close: "Fermer",
+  },
+  iosInstall: {
+    button: "Installer sur iPhone",
+    title: "Installer Kongo Explorer",
+    intro: "Ajoutez le site sur votre écran d'accueil pour l'ouvrir comme une vraie application, en plein écran.",
+    step1: "Touchez le bouton Partager de Safari (le carré avec une flèche vers le haut).",
+    step2: "Choisissez « Sur l'écran d'accueil ».",
+    step3: "Touchez « Ajouter » en haut à droite.",
+    safariNote: "Cela ne marche que dans Safari. Si vous êtes dans une autre application, ouvrez d'abord ce site dans Safari.",
+    done: "J'ai compris",
+  },
 };

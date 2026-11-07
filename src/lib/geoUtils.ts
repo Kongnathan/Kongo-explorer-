@@ -1,4 +1,5 @@
 // Utility functions for GPS calculation and formatting
+import { notify } from "./feedback";
 
 export interface UserPosition {
   lat: number;
@@ -120,7 +121,7 @@ export function formatDistanceLabel(distanceKm: number | null): string {
 
 export function openExternalGpsRoute(lat?: number, lng?: number, title?: string) {
   if (lat === undefined || lat === null || lng === undefined || lng === null) {
-    alert("Coordonnées GPS indisponibles pour ce site.");
+    notify("Les coordonnées GPS de ce site ne sont pas disponibles.", "error");
     return;
   }
   const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;

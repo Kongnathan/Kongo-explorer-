@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { notify } from "../lib/feedback";
 import { SupportedLanguage, Translations, getTranslations, DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, LanguageInfo } from "../i18n";
 
 interface LanguageContextType {
@@ -32,7 +33,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const setLanguage = (newLang: SupportedLanguage) => {
     // Only fr and en are currently active, lingala and kikongo can be activated when ready
     if (newLang === "ln" || newLang === "kg") {
-      alert("Lingála et Kikôngo seront bientôt disponibles dans une prochaine mise à jour !");
+      notify(newLang === "ln" ? "Lingála sera bientôt disponible !" : "Kikôngo sera bientôt disponible !", "info");
       return;
     }
     setLanguageState(newLang);

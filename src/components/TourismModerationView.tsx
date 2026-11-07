@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { notify, askConfirm } from "../lib/feedback";
 import { TourismPost, TourismReport, TourismCategory } from "../types";
 
 interface TourismModerationViewProps {
@@ -152,14 +153,15 @@ export default function TourismModerationView({
       });
       setEditingPost(null);
     } catch (err: any) {
-      alert("Erreur lors de la modification : " + err?.message);
+      notify("La modification n'a pas pu être enregistrée. Réessayez dans un instant.", "error");
+      console.error(err);
     } finally {
       setIsSubmittingEdit(false);
     }
   };
 
   const handleDeleteWithConfirm = async (post: TourismPost) => {
-    if (window.confirm(`Confirmer la suppression définitive de : "${post.title}" ?`)) {
+    if (await askConfirm({ message: `Confirmer la suppression définitive de : "${post.title}" ?`, danger: true })) {
       await onDeletePost?.(post.id);
     }
   };

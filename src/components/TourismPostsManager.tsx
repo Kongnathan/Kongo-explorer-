@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { notify, askConfirm } from "../lib/feedback";
 import { TourismPost, TourismCategory } from "../types";
 
 interface TourismPostsManagerProps {
@@ -81,7 +82,7 @@ export default function TourismPostsManager({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitle.trim() || !formLocation.trim() || !formContent.trim()) {
-      alert("Veuillez remplir au moins le titre, le lieu et le contenu.");
+      notify("Veuillez remplir au moins le titre, le lieu et le contenu.", "error");
       return;
     }
 
@@ -319,8 +320,8 @@ export default function TourismPostsManager({
                 </button>
 
                 <button
-                  onClick={() => {
-                    if (confirm(`Confirmez-vous la suppression de « ${post.title} » ?`)) {
+                  onClick={async () => {
+                    if (await askConfirm({ message: `Confirmez-vous la suppression de « ${post.title} » ?`, danger: true })) {
                       onDeletePost(post.id);
                     }
                   }}

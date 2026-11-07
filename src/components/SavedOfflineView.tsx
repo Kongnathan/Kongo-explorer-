@@ -1,4 +1,5 @@
 import React from "react";
+import { notify, askConfirm } from "../lib/feedback";
 import { Location, SavedLocation } from "../types";
 import OfflineDownloadManager from "./OfflineDownloadManager";
 
@@ -144,10 +145,10 @@ export default function SavedOfflineView({
                   {/* Remove Button */}
                   <button 
                     type="button"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      if (confirm(`Retirer "${item.title}" de votre carnet ?`)) {
+                      if (await askConfirm({ message: `Retirer "${item.title}" de votre carnet ?`, danger: true })) {
                         onRemoveSave(item.locationId);
                       }
                     }}
@@ -166,7 +167,7 @@ export default function SavedOfflineView({
               <button
                 type="button"
                 onClick={() => {
-                  alert("Tout va bien : vos destinations sont bien enregistrées sur votre téléphone. Vous pourrez les consulter même si le réseau est coupé.");
+                  notify("Tout va bien : vos destinations sont bien enregistrées sur votre téléphone. Vous pourrez les consulter même si le réseau est coupé.", "success");
                 }}
                 className="text-primary hover:text-primary-container font-mono text-xs font-bold underline cursor-pointer"
               >

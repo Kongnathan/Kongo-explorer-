@@ -1,4 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
+import { notify } from "./lib/feedback";
+import FeedbackHost from "./components/FeedbackHost";
+import IosInstallGuide from "./components/IosInstallGuide";
 import { Routes, Route, Navigate, useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Location, SavedLocation, PendingPermit, Circuit, TourismPost, TourismReport, GuideWhatsAppSettings } from "./types";
@@ -1210,10 +1213,10 @@ export function AppContent() {
     let updatedSaves: string[];
     if (savedLocationIds.includes(locId)) {
       updatedSaves = savedLocationIds.filter(id => id !== locId);
-      alert("Destination retirée de votre carnet.");
+      notify("Destination retirée de votre carnet.", "info");
     } else {
       updatedSaves = [...savedLocationIds, locId];
-      alert("Fiche enregistrée avec succès pour consultation hors-ligne !");
+      notify("Fiche enregistrée : vous pourrez la consulter sans internet.", "success");
     }
     setSavedLocationIds(updatedSaves);
     localStorage.setItem("kongo_saved_locations", JSON.stringify(updatedSaves));
@@ -1777,6 +1780,12 @@ export function AppContent() {
 
       {/* Global Authentication Modal */}
       <AuthModal />
+
+      {/* Guide d'installation iPhone / iPad (Safari n'a pas de bouton Installer) */}
+      <IosInstallGuide />
+
+      {/* Messages et confirmations du site (remplacent les pop-ups du navigateur) */}
+      <FeedbackHost />
     </div>
   );
 }

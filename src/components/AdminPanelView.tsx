@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { notify, askConfirm } from "../lib/feedback";
 import { Location, PendingPermit, SubdomainConfig, Circuit, TourismPost, TourismReport, GuideWhatsAppSettings } from "../types";
 import CircuitManager from "./CircuitManager";
 import TourismPostsManager from "./TourismPostsManager";
@@ -62,7 +63,7 @@ function ImageUploader({
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      alert("Veuillez sélectionner un fichier image valide.");
+      notify("Veuillez choisir un fichier image valide (JPG, PNG ou WEBP).", "error");
       return;
     }
 
@@ -1489,7 +1490,7 @@ export default function AdminPanelView({
       const data = await response.json();
       onUpdateLocation(data);
       setEditingLoc(null);
-      alert("Destination mise à jour avec succès !");
+      notify("Destination mise à jour avec succès !", "success");
     } catch (err) {
       console.error(err);
       onUpdateLocation(editingLoc);
@@ -1540,7 +1541,7 @@ export default function AdminPanelView({
       onAddLocation(data);
       setIsAddOpen(false);
       resetAddForm();
-      alert("Nouvelle destination ajoutée avec succès !");
+      notify("Nouvelle destination ajoutée avec succès !", "success");
     } catch (err) {
       console.error(err);
       onAddLocation(newLoc);
@@ -1562,7 +1563,7 @@ export default function AdminPanelView({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Voulez-vous vraiment supprimer cette destination ?")) return;
+    if (!(await askConfirm({ message: "Voulez-vous vraiment supprimer cette destination ?", danger: true }))) return;
 
     try {
       await fetch(`/api/locations/${id}`, { method: "DELETE" });
@@ -1606,7 +1607,7 @@ export default function AdminPanelView({
 
   // Reject and delete user contribution
   const handleRejectContribution = async (id: string) => {
-    if (!confirm("Voulez-vous rejeter et supprimer définitivement cette proposition utilisateur ?")) return;
+    if (!(await askConfirm({ message: "Voulez-vous rejeter et supprimer définitivement cette proposition ?", danger: true }))) return;
     onDeletePendingPermit(id);
   };
 

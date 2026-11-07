@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { notify, askConfirm } from "../lib/feedback";
 import { Circuit, CircuitStop, Location } from "../types";
 
 interface CircuitManagerProps {
@@ -57,7 +58,7 @@ function SingleImagePicker({
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      alert("Veuillez choisir un fichier image valide (JPG, PNG, WEBP).");
+      notify("Veuillez choisir un fichier image valide (JPG, PNG ou WEBP).", "error");
       return;
     }
     setUploading(true);
@@ -270,9 +271,9 @@ export default function CircuitManager({
     showToast("Modifications du circuit enregistrées !");
   };
 
-  const handleDeleteCurrentCircuit = () => {
+  const handleDeleteCurrentCircuit = async () => {
     if (!editingCircuit) return;
-    if (confirm(`Voulez-vous vraiment supprimer le circuit "${editingCircuit.title}" ?`)) {
+    if (await askConfirm({ message: `Voulez-vous vraiment supprimer le circuit "${editingCircuit.title}" ?`, danger: true })) {
       onDeleteCircuit(editingCircuit.id);
       const remaining = circuits.filter(c => c.id !== editingCircuit.id);
       if (remaining.length > 0) {
@@ -333,7 +334,7 @@ export default function CircuitManager({
   const handleDeleteStop = (index: number) => {
     if (!editingCircuit) return;
     if (editingCircuit.stops.length <= 1) {
-      alert("Un circuit doit contenir au moins une étape.");
+      notify("Un circuit doit contenir au moins une étape.", "error");
       return;
     }
     const updatedStops = editingCircuit.stops.filter((_, idx) => idx !== index);

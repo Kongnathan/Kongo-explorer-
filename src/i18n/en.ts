@@ -320,4 +320,20 @@ export const en: Translations = {
       "How do I save a place to my log?",
     ],
   },
+
+  ui: {
+    cancel: "Cancel",
+    confirm: "Confirm",
+    close: "Close",
+  },
+  iosInstall: {
+    button: "Install on iPhone",
+    title: "Install Kongo Explorer",
+    intro: "Add the site to your home screen to open it like a real app, in full screen.",
+    step1: "Tap the Share button in Safari (the square with an arrow pointing up).",
+    step2: "Choose \"Add to Home Screen\".",
+    step3: "Tap \"Add\" at the top right.",
+    safariNote: "This only works in Safari. If you are in another app, open this site in Safari first.",
+    done: "Got it",
+  },
 };

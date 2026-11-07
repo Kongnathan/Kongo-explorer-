@@ -344,4 +344,23 @@ export interface Translations {
     actionViewLog: string;
     suggestedQuestions: string[];
   };
+
+  // Messages du site (remplacent les pop-ups du navigateur)
+  ui: {
+    cancel: string;
+    confirm: string;
+    close: string;
+  };
+
+  // Installation sur iPhone / iPad
+  iosInstall: {
+    button: string;
+    title: string;
+    intro: string;
+    step1: string;
+    step2: string;
+    step3: string;
+    safariNote: string;
+    done: string;
+  };
 }
