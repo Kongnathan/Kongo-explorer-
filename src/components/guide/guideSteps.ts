@@ -1,3 +1,5 @@
+import { SupportedLanguage } from "../../i18n/types";
+
 export interface TourStep {
   id: string;
   title: string;
@@ -9,83 +11,106 @@ export interface TourStep {
   highlightPadding?: number;
 }
 
-export const TOUR_STEPS: TourStep[] = [
-  {
-    id: "step-intro",
-    title: "Bienvenue sur Kongo Explorer !",
-    description: "Ce site vous aide à découvrir les plus beaux endroits du Kongo Central : nature, histoire et culture. Suivez cette petite visite : en quelques étapes, vous saurez à quoi sert chaque bouton.",
-    route: "/",
-    badge: "1 / 8",
-    tooltipPosition: "center",
-  },
-  {
-    id: "step-search",
-    title: "Chercher un endroit",
-    description: "Tapez le nom d'un lieu (une cascade, une ville, un monument) pour le trouver vite. Vous pouvez aussi choisir un thème : Incontournables, Nature, Histoire ou Ville. Le micro permet de dire sa recherche à voix haute.",
-    route: "/",
-    targetSelector: "[data-guide='search-section']",
-    badge: "2 / 8",
-    tooltipPosition: "bottom",
-    highlightPadding: 10,
-  },
-  {
-    id: "step-carte",
-    title: "La carte",
-    description: "Voyez où se trouvent les lieux à visiter (Zongo, Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu). Touchez un point pour lire sa fiche. Le bouton « Satellite » affiche des photos prises du ciel : pratique pour voir les forêts, les rivières et les chemins avant de partir.",
-    route: "/carte",
-    targetSelector: "[data-guide='nav-carte']",
-    badge: "3 / 8",
-    tooltipPosition: "top",
-    highlightPadding: 12,
-  },
-  {
-    id: "step-circuits",
-    title: "Les circuits",
-    description: "Des idées de promenades toutes prêtes, avec les lieux à voir dans l'ordre. Pour chaque circuit, vous voyez la durée et comment y aller (voiture, 4x4 ou à pied).",
-    route: "/circuits",
-    targetSelector: "[data-guide='nav-circuits']",
-    badge: "4 / 8",
-    tooltipPosition: "top",
-    highlightPadding: 12,
-  },
-  {
-    id: "step-infos",
-    title: "Les infos tourisme",
-    description: "Lisez les bons plans, les hôtels, les restaurants et les événements partagés par d'autres personnes. Vous pouvez aussi publier votre propre info avec des photos. Avant d'apparaître sur le site, chaque publication est relue et acceptée par l'équipe.",
-    route: "/infos-tourisme",
-    targetSelector: "[data-guide='nav-infos']",
-    badge: "5 / 8",
-    tooltipPosition: "top",
-    highlightPadding: 12,
-  },
-  {
-    id: "step-carnet",
-    title: "Mon carnet de voyage",
-    description: "Gardez vos destinations préférées dans votre carnet. Elles sont enregistrées sur votre téléphone : vous pouvez les relire même sans internet, par exemple en pleine nature.",
-    route: "/carnet",
-    targetSelector: "[data-guide='nav-carnet']",
-    badge: "6 / 8",
-    tooltipPosition: "top",
-    highlightPadding: 12,
-  },
-  {
-    id: "step-conseils",
-    title: "Conseils pratiques",
-    description: "Trouvez la meilleure période pour voyager (la saison sèche, de juin à septembre), les règles de politesse locales, ce qu'il faut emporter et les conseils pour rester en sécurité.",
-    route: "/conseils",
-    targetSelector: "[data-guide='nav-conseils']",
-    badge: "7 / 8",
-    tooltipPosition: "top",
-    highlightPadding: 12,
-  },
-  {
-    id: "step-chat",
-    title: "Le Guide Kongo est là pour vous",
-    description: "Une question sur un lieu ou sur un bouton du site ? Touchez le bouton rond en bas à droite pour me parler, ou pour revoir cette visite quand vous voulez.",
-    route: "/",
-    targetSelector: "[data-guide='guide-fab']",
-    badge: "8 / 8",
-    tooltipPosition: "top",
-    highlightPadding: 12,
-  },
-];
+export function getTourSteps(lang: SupportedLanguage = "fr"): TourStep[] {
+  const isEn = lang === "en";
+
+  return [
+    {
+      id: "step-intro",
+      title: isEn ? "Welcome to Kongo Explorer!" : "Bienvenue sur Kongo Explorer !",
+      description: isEn
+        ? "This site helps you discover the most beautiful places in Kongo Central: nature, history, and culture. Follow this quick tour: in a few steps, you'll know what every button does."
+        : "Ce site vous aide à découvrir les plus beaux endroits du Kongo Central : nature, histoire et culture. Suivez cette petite visite : en quelques étapes, vous saurez à quoi sert chaque bouton.",
+      route: "/",
+      badge: "1 / 8",
+      tooltipPosition: "center",
+    },
+    {
+      id: "step-search",
+      title: isEn ? "Find a destination" : "Chercher un endroit",
+      description: isEn
+        ? "Type the name of a place (a waterfall, city, or monument) to find it quickly. You can also pick a theme: Highlights, Nature, History, or Urban. The microphone lets you speak your search aloud."
+        : "Tapez le nom d'un lieu (une cascade, une ville, un monument) pour le trouver vite. Vous pouvez aussi choisir un thème : Incontournables, Nature, Histoire ou Ville. Le micro permet de dire sa recherche à voix haute.",
+      route: "/",
+      targetSelector: "[data-guide='search-section']",
+      badge: "2 / 8",
+      tooltipPosition: "bottom",
+      highlightPadding: 10,
+    },
+    {
+      id: "step-carte",
+      title: isEn ? "Interactive Map" : "La carte",
+      description: isEn
+        ? "See where destinations are located (Zongo, Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu). Tap any pin to open its sheet. The 'Satellite' toggle shows aerial views to preview forests, rivers, and trails before you head out."
+        : "Voyez où se trouvent les lieux à visiter (Zongo, Matadi, Boma, Muanda, Kisantu, Mbanza-Ngungu). Touchez un point pour lire sa fiche. Le bouton « Satellite » affiche des photos prises du ciel : pratique pour voir les forêts, les rivières et les chemins avant de partir.",
+      route: "/carte",
+      targetSelector: "[data-guide='nav-carte']",
+      badge: "3 / 8",
+      tooltipPosition: "top",
+      highlightPadding: 12,
+    },
+    {
+      id: "step-circuits",
+      title: isEn ? "Ready-made Circuits" : "Les circuits",
+      description: isEn
+        ? "Curated self-guided routes with stops arranged in optimal order. For each circuit, check the estimated duration and recommended transport (car, 4x4, or hiking)."
+        : "Des idées de promenades toutes prêtes, avec les lieux à voir dans l'ordre. Pour chaque circuit, vous voyez la durée et comment y aller (voiture, 4x4 ou à pied).",
+      route: "/circuits",
+      targetSelector: "[data-guide='nav-circuits']",
+      badge: "4 / 8",
+      tooltipPosition: "top",
+      highlightPadding: 12,
+    },
+    {
+      id: "step-infos",
+      title: isEn ? "Tourism News & Tips" : "Les infos tourisme",
+      description: isEn
+        ? "Browse local tips, hotels, restaurants, and upcoming events shared by the community. You can also submit your own recommendations with photos, verified by our moderators before publishing."
+        : "Lisez les bons plans, les hôtels, les restaurants et les événements partagés par d'autres personnes. Vous pouvez aussi publier votre propre info avec des photos. Avant d'apparaître sur le site, chaque publication est relue et acceptée par l'équipe.",
+      route: "/infos-tourisme",
+      targetSelector: "[data-guide='nav-infos']",
+      badge: "5 / 8",
+      tooltipPosition: "top",
+      highlightPadding: 12,
+    },
+    {
+      id: "step-carnet",
+      title: isEn ? "My Travel Log" : "Mon carnet de voyage",
+      description: isEn
+        ? "Bookmark your favorite destinations directly to your phone. You can access and read them anytime, even deep in nature without internet coverage."
+        : "Gardez vos destinations préférées dans votre carnet. Elles sont enregistrées sur votre téléphone : vous pouvez les relire même sans internet, par exemple en pleine nature.",
+      route: "/carnet",
+      targetSelector: "[data-guide='nav-carnet']",
+      badge: "6 / 8",
+      tooltipPosition: "top",
+      highlightPadding: 12,
+    },
+    {
+      id: "step-conseils",
+      title: isEn ? "Practical Advice & Weather" : "Conseils pratiques",
+      description: isEn
+        ? "Find the best season to travel (the dry season from June to September), local politeness and customs, packing lists, real-time weather, and safety guidelines."
+        : "Trouvez la meilleure période pour voyager (la saison sèche, de juin à septembre), les règles de politesse locales, ce qu'il faut emporter et les conseils pour rester en sécurité.",
+      route: "/conseils",
+      targetSelector: "[data-guide='nav-conseils']",
+      badge: "7 / 8",
+      tooltipPosition: "top",
+      highlightPadding: 12,
+    },
+    {
+      id: "step-chat",
+      title: isEn ? "Guide Kongo is here for you" : "Le Guide Kongo est là pour vous",
+      description: isEn
+        ? "Have a question about a destination or a feature on the site? Tap the round icon in the bottom right to talk with me, or restart this tour whenever you want."
+        : "Une question sur un lieu ou sur un bouton du site ? Touchez le bouton rond en bas à droite pour me parler, ou pour revoir cette visite quand vous voulez.",
+      route: "/",
+      targetSelector: "[data-guide='guide-fab']",
+      badge: "8 / 8",
+      tooltipPosition: "top",
+      highlightPadding: 12,
+    },
+  ];
+}
+
+// Backward-compatible default export
+export const TOUR_STEPS: TourStep[] = getTourSteps("fr");

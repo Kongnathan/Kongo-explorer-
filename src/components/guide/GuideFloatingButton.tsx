@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 interface GuideFloatingButtonProps {
   onOpenChat: () => void;
@@ -11,6 +12,7 @@ export default function GuideFloatingButton({
   onStartTour,
 }: GuideFloatingButtonProps) {
   const [isOpenMenu, setIsOpenMenu] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <div 
@@ -25,11 +27,11 @@ export default function GuideFloatingButton({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: 10 }}
             transition={{ duration: 0.18 }}
-            className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-2 shadow-2xl flex flex-col gap-1 w-52 mb-2 text-on-surface backdrop-blur-md"
+            className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-2 shadow-2xl flex flex-col gap-1 w-56 mb-2 text-on-surface backdrop-blur-md"
           >
             <div className="px-3 py-1.5 border-b border-outline-variant/20 flex items-center justify-between">
               <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                Guide Kongo
+                {t.guideChat.headerTitle}
               </span>
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
@@ -42,7 +44,7 @@ export default function GuideFloatingButton({
               className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-on-surface hover:bg-emerald-700/10 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors text-left cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px] text-emerald-600">forum</span>
-              <span>Discuter avec l'assistant</span>
+              <span>{t.guideFab.chat}</span>
             </button>
 
             <button
@@ -53,7 +55,7 @@ export default function GuideFloatingButton({
               className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-on-surface hover:bg-emerald-700/10 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors text-left cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px] text-emerald-600">tour</span>
-              <span>Revoir la visite guidée</span>
+              <span>{t.guideFab.tour}</span>
             </button>
           </motion.div>
         )}
@@ -63,8 +65,8 @@ export default function GuideFloatingButton({
       <button
         onClick={() => setIsOpenMenu((prev) => !prev)}
         className="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-800 to-emerald-600 text-white shadow-xl hover:shadow-emerald-700/40 hover:scale-105 active:scale-95 transition-all cursor-pointer border-2 border-emerald-400/60 overflow-hidden p-0.5"
-        title="Guide Kongo – Besoin d'aide ou visite guidée ?"
-        aria-label="Ouvrir le Guide Kongo"
+        title={t.guideFab.ariaLabel}
+        aria-label={t.guideFab.ariaLabel}
       >
         <img 
           src="/guide-avatar.jpg" 
@@ -80,7 +82,7 @@ export default function GuideFloatingButton({
 
         {/* Label on desktop hover */}
         <span className="hidden md:group-hover:inline-block absolute right-16 bg-surface-container-lowest text-on-surface border border-outline-variant/30 text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap pointer-events-none transition-opacity">
-          Guide Kongo (Aide & Visite)
+          {t.guideFab.badge}
         </span>
       </button>
     </div>

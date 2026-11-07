@@ -161,16 +161,105 @@ export interface Translations {
   tips: {
     title: string;
     subtitle: string;
+    heroBadge: string;
+    heroTitle: string;
+    heroSubtitle: string;
     languageCardTitle: string;
     languageCardDesc: string;
     themeCardTitle: string;
     themeCardDesc: string;
+    nightModeActive: string;
+    dayModeActive: string;
     nightMode: string;
     dayMode: string;
+    themeOverrideNote: string;
     bestSeasonTitle: string;
     bestSeasonDesc: string;
     safetyTitle: string;
     cultureTitle: string;
+    tabs: {
+      weather: string;
+      currency: string;
+      customs: string;
+      eco: string;
+      prep: string;
+      lexicon: string;
+    };
+    weather: {
+      headerTitle: string;
+      headerSubtitle: string;
+      myPositionBtn: string;
+      locating: string;
+      citiesHeader: string;
+      loading: string;
+      adviceTitle: string;
+      forecast7Days: string;
+      today: string;
+      humidity: string;
+      wind: string;
+      rain: string;
+      feelsLike: string;
+    };
+    currency: {
+      title: string;
+      subtitle: string;
+      referenceRate: string;
+      updateRate: string;
+      adjustRate: string;
+      adjustTitle: string;
+      cancel: string;
+      apply: string;
+      marketNote: string;
+      usdLabel: string;
+      cdfLabel: string;
+      quickUsd: string;
+      quickCdf: string;
+      estimatedEquiv: string;
+      priceGuideTitle: string;
+      paymentAdviceCDFTitle: string;
+      paymentAdviceCDFDesc: string;
+      paymentAdviceUSDTitle: string;
+      paymentAdviceUSDDesc: string;
+    };
+    customs: {
+      title: string;
+      intro: string;
+      photoTitle: string;
+      photoDesc: string;
+      greetingsTitle: string;
+      greetingsDesc: string;
+      eldersTitle: string;
+      eldersDesc: string;
+      dressTitle: string;
+      dressDesc: string;
+    };
+    eco: {
+      title: string;
+      intro: string;
+      zeroWasteTitle: string;
+      zeroWasteDesc: string;
+      wildlifeTitle: string;
+      wildlifeDesc: string;
+      waterTitle: string;
+      waterDesc: string;
+    };
+    prep: {
+      title: string;
+      intro: string;
+      healthTitle: string;
+      healthDesc: string;
+      permitsTitle: string;
+      permitsDesc: string;
+      luggageTitle: string;
+      luggageDesc: string;
+    };
+    lexicon: {
+      title: string;
+      intro: string;
+      colMeaning: string;
+      colLocal: string;
+      colLang: string;
+    };
   };
 
   // Welcome modal
@@ -181,6 +270,43 @@ export interface Translations {
     startTour: string;
     later: string;
     selectLanguage: string;
+  };
+
+  // Interactive step-by-step tour
+  tour: {
+    stepOf: string;
+    skip: string;
+    prev: string;
+    next: string;
+    finish: string;
+    haveQuestion: string;
+    openChat: string;
+  };
+
+  // Guide floating action button
+  guideFab: {
+    chat: string;
+    tour: string;
+    badge: string;
+    ariaLabel: string;
+  };
+
+  // Offline pre-download manager
+  offlineManager: {
+    title: string;
+    desc: string;
+    saveBtn: string;
+    savingBtn: string;
+    clearBtn: string;
+    readyBadge: string;
+    notReadyBadge: string;
+    successMessage: string;
+    errorMessage: string;
+    clearSuccess: string;
+    clearConfirmTitle: string;
+    clearConfirmDesc: string;
+    confirmYes: string;
+    confirmNo: string;
   };
 
   // Guide Kongo assistant chat

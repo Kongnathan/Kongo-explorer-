@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { TOUR_STEPS, TourStep } from "./guideSteps";
+import { getTourSteps, TourStep } from "./guideSteps";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 interface OnboardingTourProps {
   isOpen: boolean;
@@ -28,9 +29,11 @@ export default function OnboardingTour({
   onComplete,
   onOpenChat,
 }: OnboardingTourProps) {
+  const { language, t } = useLanguage();
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
-  const step = TOUR_STEPS[currentStepIndex] || TOUR_STEPS[0];
-  const totalSteps = TOUR_STEPS.length;
+  const steps = getTourSteps(language);
+  const step = steps[currentStepIndex] || steps[0];
+  const totalSteps = steps.length;
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === totalSteps - 1;
 
@@ -216,7 +219,7 @@ export default function OnboardingTour({
                   Guide Kongo
                 </span>
                 <span className="text-[10px] text-on-surface-variant font-mono">
-                  Étape {currentStepIndex + 1} sur {totalSteps}
+                  {language === "en" ? `Step ${currentStepIndex + 1} of ${totalSteps}` : `Étape ${currentStepIndex + 1} sur ${totalSteps}`}
                 </span>
               </div>
             </div>
@@ -224,10 +227,10 @@ export default function OnboardingTour({
             <button
               onClick={onSkip}
               className="text-xs text-on-surface-variant/70 hover:text-on-surface px-2 py-1 rounded-md hover:bg-surface-container-high transition-colors cursor-pointer"
-              title="Passer la visite guidée (Échap)"
-              aria-label="Passer la visite"
+              title={`${t.tour.skip} (Esc)`}
+              aria-label={t.tour.skip}
             >
-              Passer
+              {t.tour.skip}
             </button>
           </div>
 
@@ -254,7 +257,7 @@ export default function OnboardingTour({
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 rounded-2xl flex flex-col items-center text-center gap-2">
               <div className="flex items-center justify-center gap-2 text-xs text-emerald-900 dark:text-emerald-200">
                 <span className="material-symbols-outlined text-[18px] text-emerald-600">forum</span>
-                <span>Une question ? Écrivez au Guide à tout moment.</span>
+                <span>{t.tour.haveQuestion}</span>
               </div>
               <button
                 onClick={() => {
@@ -263,7 +266,7 @@ export default function OnboardingTour({
                 }}
                 className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors shrink-0"
               >
-                Ouvrir le chat
+                {t.tour.openChat}
               </button>
             </div>
           )}
@@ -278,10 +281,10 @@ export default function OnboardingTour({
                   ? "opacity-30 cursor-not-allowed text-on-surface-variant"
                   : "hover:bg-surface-container-high text-on-surface cursor-pointer active:scale-95"
               }`}
-              aria-label="Étape précédente"
+              aria-label={t.tour.prev}
             >
               <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-              <span>Précédent</span>
+              <span>{t.tour.prev}</span>
             </button>
 
             <div className="flex items-center gap-2">
@@ -289,18 +292,18 @@ export default function OnboardingTour({
                 <button
                   onClick={onComplete}
                   className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-emerald-700/30 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                  aria-label="Terminer la visite guidée"
+                  aria-label={t.tour.finish}
                 >
-                  <span>C'est parti !</span>
+                  <span>{t.tour.finish}</span>
                   <span className="material-symbols-outlined text-[16px]">check_circle</span>
                 </button>
               ) : (
                 <button
                   onClick={onNext}
                   className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-emerald-700/30 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                  aria-label="Étape suivante"
+                  aria-label={t.tour.next}
                 >
-                  <span>Suivant</span>
+                  <span>{t.tour.next}</span>
                   <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </button>
               )}

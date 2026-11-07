@@ -8,6 +8,7 @@ import {
   OfflineDownloadProgress, 
   OfflineCacheStatus 
 } from "../lib/indexedDB";
+import { useLanguage } from "../contexts/LanguageContext";
 
 interface OfflineDownloadManagerProps {
   locations: Location[];
@@ -20,6 +21,9 @@ export default function OfflineDownloadManager({
   onSyncComplete,
   compact = false,
 }: OfflineDownloadManagerProps) {
+  const { language, t } = useLanguage();
+  const isEn = language === "en";
+
   const [status, setStatus] = useState<OfflineCacheStatus | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [progress, setProgress] = useState<OfflineDownloadProgress | null>(null);
@@ -53,16 +57,18 @@ export default function OfflineDownloadManager({
 
       if (result.success) {
         setSuccessMessage(
-          `C'est fait ! ${result.locationsCount} destinations et ${result.imagesCount} photos sont enregistrées sur votre téléphone (${(result.totalBytes / (1024 * 1024)).toFixed(1)} Mo). Vous pouvez maintenant les consulter sans internet.`
+          isEn
+            ? `Done! ${result.locationsCount} destinations and ${result.imagesCount} photos are saved to your device (${(result.totalBytes / (1024 * 1024)).toFixed(1)} MB). You can now view them without internet.`
+            : `C'est fait ! ${result.locationsCount} destinations et ${result.imagesCount} photos sont enregistrées sur votre téléphone (${(result.totalBytes / (1024 * 1024)).toFixed(1)} Mo). Vous pouvez maintenant les consulter sans internet.`
         );
         await loadStatus();
         if (onSyncComplete) onSyncComplete();
       } else {
-        setErrorMessage(result.error || "Un problème est survenu pendant l'enregistrement. Veuillez réessayer.");
+        setErrorMessage(result.error || t.offlineManager.errorMessage);
       }
     } catch (err) {
       console.error("Offline download failed:", err);
-      setErrorMessage("L'enregistrement n'a pas marché. Vérifiez que vous avez internet, puis réessayez.");
+      setErrorMessage(t.offlineManager.errorMessage);
     } finally {
       setIsDownloading(false);
     }
@@ -72,11 +78,12 @@ export default function OfflineDownloadManager({
     try {
       await clearOfflineCache();
       setShowClearConfirm(false);
-      setSuccessMessage("Les données enregistrées sur votre téléphone ont été supprimées.");
+      setSuccessMessage(t.offlineManager.clearSuccess);
       await loadStatus();
       if (onSyncComplete) onSyncComplete();
     } catch (e) {
-      setErrorMessage("Impossible de supprimer les données pour le moment. Veuillez réessayer.");
+      console.error("Failed to clear offline cache:", e);
+      setErrorMessage(isEn ? "Unable to clear offline data right now. Please try again." : "Impossible de supprimer les données pour le moment. Veuillez réessayer.");
     }
   };
 
@@ -98,24 +105,32 @@ export default function OfflineDownloadManager({
           <div className="max-w-md mx-auto">
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <h3 className="font-sans text-sm font-bold text-on-surface">
-                Utiliser le site sans internet
+                {t.offlineManager.title}
               </h3>
               {status?.isFullyCached ? (
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 uppercase flex items-center gap-1 border border-emerald-500/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  Prêt sans internet
+                  {t.offlineManager.readyBadge}
                 </span>
               ) : (
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 uppercase border border-amber-500/30">
-                  Pas encore enregistré
+                  {t.offlineManager.notReadyBadge}
                 </span>
               )}
             </div>
             <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-              Gardez tous les lieux et leurs photos sur votre téléphone.
+              {t.offlineManager.desc}
             </p>
-            <HelpHint className="mt-1.5" title="En savoir plus" storageKey="kongo_help_offline">
-              <p>Faites-le quand vous avez du réseau, avant de partir en voyage. Ensuite, tout se lit sans internet. Cela prend un peu de place sur votre téléphone, et vous pouvez tout supprimer quand vous voulez.</p>
+            <HelpHint 
+              className="mt-1.5" 
+              title={isEn ? "Learn more" : "En savoir plus"} 
+              storageKey="kongo_help_offline"
+            >
+              <p>
+                {isEn 
+                  ? "Download when connected to Wi-Fi or data before your trip. Afterwards, all destination sheets and photos can be opened without network. You can free up storage anytime."
+                  : "Faites-le quand vous avez du réseau, avant de partir en voyage. Ensuite, tout se lit sans internet. Cela prend un peu de place sur votre téléphone, et vous pouvez tout supprimer quand vous voulez."}
+              </p>
             </HelpHint>
           </div>
         </div>
@@ -130,13 +145,15 @@ export default function OfflineDownloadManager({
                 ? "bg-surface-container border border-outline-variant/40 text-on-surface hover:bg-surface-container-high"
                 : "bg-primary text-white hover:bg-primary-container"
             }`}
-            title="Enregistrer toutes les destinations et photos sur votre téléphone pour les voir sans internet"
+            title={isEn ? "Save all destinations and photos to your device for offline reading" : "Enregistrer toutes les destinations et photos sur votre téléphone pour les voir sans internet"}
           >
             <span className="material-symbols-outlined text-[18px]">
               {status?.isFullyCached ? "sync" : "download"}
             </span>
             <span>
-              {status?.isFullyCached ? "Mettre à jour mes données" : "Enregistrer sur mon téléphone"}
+              {status?.isFullyCached 
+                ? (isEn ? "Update my offline data" : "Mettre à jour mes données") 
+                : t.offlineManager.saveBtn}
             </span>
           </button>
         )}
@@ -165,10 +182,14 @@ export default function OfflineDownloadManager({
 
           <div className="flex items-center justify-between text-[11px] text-on-surface-variant font-mono">
             <span>
-              Photos enregistrées : {progress.completedImages} sur {progress.totalImages}
+              {isEn 
+                ? `Saved photos: ${progress.completedImages} of ${progress.totalImages}`
+                : `Photos enregistrées : ${progress.completedImages} sur ${progress.totalImages}`}
             </span>
             <span>
-              Espace utilisé : {(progress.totalBytes / (1024 * 1024)).toFixed(1)} Mo
+              {isEn 
+                ? `Storage used: ${(progress.totalBytes / (1024 * 1024)).toFixed(1)} MB`
+                : `Espace utilisé : ${(progress.totalBytes / (1024 * 1024)).toFixed(1)} Mo`}
             </span>
           </div>
         </div>
@@ -208,16 +229,22 @@ export default function OfflineDownloadManager({
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <span className="flex items-center gap-1.5 font-medium">
               <span className="material-symbols-outlined text-[16px] text-outline">database</span>
-              <span><strong>{status.locationsCount}</strong> destinations enregistrées</span>
+              <span>
+                <strong>{status.locationsCount}</strong> {isEn ? "saved destinations" : "destinations enregistrées"}
+              </span>
             </span>
             <span className="flex items-center gap-1.5 font-medium">
               <span className="material-symbols-outlined text-[16px] text-outline">image</span>
-              <span><strong>{status.imagesCount}</strong> photos enregistrées</span>
+              <span>
+                <strong>{status.imagesCount}</strong> {isEn ? "saved photos" : "photos enregistrées"}
+              </span>
             </span>
             {status.estimatedMb > 0 && (
               <span className="flex items-center gap-1.5 font-medium">
                 <span className="material-symbols-outlined text-[16px] text-outline">hard_drive</span>
-                <span><strong>~{status.estimatedMb} Mo</strong> de place utilisée</span>
+                <span>
+                  <strong>~{status.estimatedMb} {isEn ? "MB" : "Mo"}</strong> {isEn ? "storage used" : "de place utilisée"}
+                </span>
               </span>
             )}
           </div>
@@ -230,22 +257,24 @@ export default function OfflineDownloadManager({
                   onClick={() => setShowClearConfirm(true)}
                   className="text-outline hover:text-rose-600 transition-colors text-[11px] underline cursor-pointer"
                 >
-                  Supprimer les données enregistrées
+                  {t.offlineManager.clearBtn}
                 </button>
               ) : (
                 <div className="inline-flex items-center gap-2 bg-rose-500/10 px-2.5 py-1 rounded-xl border border-rose-500/20">
-                  <span className="text-[11px] text-rose-700 dark:text-rose-300 font-bold">Confirmer ?</span>
+                  <span className="text-[11px] text-rose-700 dark:text-rose-300 font-bold">
+                    {isEn ? "Confirm deletion?" : "Confirmer ?"}
+                  </span>
                   <button
                     onClick={handleClear}
                     className="text-[11px] font-bold text-rose-700 hover:underline cursor-pointer"
                   >
-                    Oui
+                    {t.offlineManager.confirmYes}
                   </button>
                   <button
                     onClick={() => setShowClearConfirm(false)}
                     className="text-[11px] text-on-surface-variant hover:underline cursor-pointer"
                   >
-                    Non
+                    {t.offlineManager.confirmNo}
                   </button>
                 </div>
               )}
