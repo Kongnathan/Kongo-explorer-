@@ -29,7 +29,7 @@ export default function LanguageSelector({ variant = "compact", className = "" }
   // Chips variant (e.g. For Welcome Modal or settings inline)
   if (variant === "chips") {
     return (
-      <div className={`inline-flex items-center gap-1.5 p-1 bg-surface-container rounded-full border border-outline-variant/30 ${className}`}>
+      <div className={`flex flex-wrap items-center justify-center gap-1.5 p-1 bg-surface-container rounded-2xl border border-outline-variant/30 max-w-full ${className}`}>
         {languages.map((item) => {
           const isActive = language === item.code;
           return (
