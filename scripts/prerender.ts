@@ -4,7 +4,7 @@ import { DEFAULT_LOCATIONS, DEFAULT_TOURISMPPOSTS } from "../src/data.js";
 import { DEFAULT_CIRCUITS } from "../src/circuitsData.js";
 
 const BASE_URL = "https://kongo-explorer.vercel.app";
-const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`;
+const DEFAULT_IMAGE = `${BASE_URL}/og-image.jpg`;
 const DIST_DIR = path.join(process.cwd(), "dist");
 const TEMPLATE_PATH = path.join(DIST_DIR, "index.html");
 

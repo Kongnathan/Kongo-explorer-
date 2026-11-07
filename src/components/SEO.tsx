@@ -14,7 +14,7 @@ export interface RouteMetadata {
 }
 
 export const BASE_URL = "https://kongo-explorer.vercel.app";
-export const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`;
+export const DEFAULT_IMAGE = `${BASE_URL}/og-image.jpg`;
 export const DEFAULT_TITLE = "Kongo Explorer – Guide touristique du Kongo Central";
 export const DEFAULT_DESCRIPTION =
   "Explorez le Kongo Central : chutes de Zongo, circuits touristiques, cartes interactives et patrimoine historique de la RDC avec le guide Kongo Explorer.";

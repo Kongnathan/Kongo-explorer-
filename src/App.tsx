@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Location, SavedLocation, PendingPermit, Circuit, TourismPost, TourismReport, GuideWhatsAppSettings } from "./types";
@@ -6,16 +6,6 @@ import { DEFAULT_LOCATIONS, DEFAULT_PENDING_PERMITS, DEFAULT_TOURISMPPOSTS } fro
 import { DEFAULT_CIRCUITS } from "./circuitsData";
 import ExploreView from "./components/ExploreView";
 import ListView from "./components/ListView";
-import DetailView from "./components/DetailView";
-import MapView from "./components/MapView";
-import LocalTipsView from "./components/LocalTipsView";
-import SavedOfflineView from "./components/SavedOfflineView";
-import CircuitsView from "./components/CircuitsView";
-import TourismNewsView from "./components/TourismNewsView";
-import TourismPostDetailView from "./components/TourismPostDetailView";
-import AdminLoginView from "./components/AdminLoginView";
-import AdminPanelView from "./components/AdminPanelView";
-import QuickCaptureModal from "./components/QuickCaptureModal";
 import IntroSplash from "./components/IntroSplash";
 import NotFoundView from "./components/NotFoundView";
 import RouteSEO from "./components/SEO";
@@ -23,8 +13,6 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
 import AuthModal from "./components/AuthModal";
 import WelcomeModal from "./components/guide/WelcomeModal";
-import OnboardingTour from "./components/guide/OnboardingTour";
-import GuideChatModal from "./components/guide/GuideChatModal";
 import GuideFloatingButton from "./components/guide/GuideFloatingButton";
 import { TOUR_STEPS } from "./components/guide/guideSteps";
 import { initTheme } from "./lib/theme";
@@ -36,6 +24,21 @@ import {
   saveSingleLocationToDB, 
   deleteLocationFromDB 
 } from "./lib/indexedDB";
+
+
+// Chargement à la demande : ces écrans ne sont téléchargés que lorsqu'on les ouvre (site plus rapide au démarrage)
+const DetailView = lazy(() => import("./components/DetailView"));
+const MapView = lazy(() => import("./components/MapView"));
+const LocalTipsView = lazy(() => import("./components/LocalTipsView"));
+const SavedOfflineView = lazy(() => import("./components/SavedOfflineView"));
+const CircuitsView = lazy(() => import("./components/CircuitsView"));
+const TourismNewsView = lazy(() => import("./components/TourismNewsView"));
+const TourismPostDetailView = lazy(() => import("./components/TourismPostDetailView"));
+const AdminLoginView = lazy(() => import("./components/AdminLoginView"));
+const AdminPanelView = lazy(() => import("./components/AdminPanelView"));
+const QuickCaptureModal = lazy(() => import("./components/QuickCaptureModal"));
+const GuideChatModal = lazy(() => import("./components/guide/GuideChatModal"));
+const OnboardingTour = lazy(() => import("./components/guide/OnboardingTour"));
 
 enum OperationType {
   CREATE = 'create',
@@ -663,6 +666,13 @@ export function AppContent() {
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [currentTourStep, setCurrentTourStep] = useState<number>(0);
   const [isGuideChatOpen, setIsGuideChatOpen] = useState(false);
+  // Ces fenêtres ne sont téléchargées qu'à la première ouverture, puis restent en place (la conversation est conservée)
+  const [tourLoaded, setTourLoaded] = useState(false);
+  const [chatLoaded, setChatLoaded] = useState(false);
+  const [captureLoaded, setCaptureLoaded] = useState(false);
+  useEffect(() => { if (isTourOpen) setTourLoaded(true); }, [isTourOpen]);
+  useEffect(() => { if (isGuideChatOpen) setChatLoaded(true); }, [isGuideChatOpen]);
+  useEffect(() => { if (isCaptureOpen) setCaptureLoaded(true); }, [isCaptureOpen]);
 
   // Initialize manual / system theme on startup
   useEffect(() => {
@@ -1431,6 +1441,7 @@ export function AppContent() {
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="w-full flex-1 flex flex-col"
           >
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center py-24"><div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" role="status" aria-label="Chargement" /></div>}>
             <Routes location={location}>
               {/* Public Routes from sitemap.xml */}
               <Route
@@ -1610,6 +1621,7 @@ export function AppContent() {
               {/* 404 Fallback Route for non-existent pages */}
               <Route path="*" element={<NotFoundView />} />
             </Routes>
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -1738,7 +1750,7 @@ export function AppContent() {
       />
 
       {/* Interactive Step-by-Step Onboarding Tour */}
-      <OnboardingTour
+      {tourLoaded && <Suspense fallback={null}><OnboardingTour
         isOpen={isTourOpen}
         currentStepIndex={currentTourStep}
         onNext={handleNextTourStep}
@@ -1746,22 +1758,22 @@ export function AppContent() {
         onSkip={handleSkipTour}
         onComplete={handleCompleteTour}
         onOpenChat={() => setIsGuideChatOpen(true)}
-      />
+      /></Suspense>}
 
       {/* Guide Kongo Intelligent Chat Assistant Modal */}
-      <GuideChatModal
+      {chatLoaded && <Suspense fallback={null}><GuideChatModal
         isOpen={isGuideChatOpen}
         onClose={() => setIsGuideChatOpen(false)}
         onStartTour={() => handleStartTour(0)}
         onNavigateTo={handleNavigateFromChat}
-      />
+      /></Suspense>}
 
       {/* Capture Modal overlay */}
-      <QuickCaptureModal
+      {captureLoaded && <Suspense fallback={null}><QuickCaptureModal
         isOpen={isCaptureOpen}
         onClose={() => setIsCaptureOpen(false)}
         onItemAdded={handleItemCaptured}
-      />
+      /></Suspense>}
 
       {/* Global Authentication Modal */}
       <AuthModal />
