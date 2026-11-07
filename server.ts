@@ -714,10 +714,25 @@ FORMAT DE RÉPONSE OBLIGATOIRE (JSON STRICT) :
       suggestedAction = { label: parsed.actionLabel || (isEn ? "Sign in" : "Se connecter"), route: "/infos-tourisme", tourStepId: "step-auth" };
     }
 
+    let finalReply = (parsed.reply || "").trim();
+    if (finalReply) {
+      const lowerReply = finalReply.toLowerCase();
+      if (isEn && (/^(bonjour|salut|désolé|pour|vous pouvez|la carte|les circuits)\b/.test(lowerReply) || lowerReply.includes("kongo explorer pour vous"))) {
+        const fb = buildFallbackResponse(message);
+        finalReply = fb.reply;
+        if (!suggestedAction) suggestedAction = fb.suggestedAction;
+      } else if (!isEn && (/^(hello|hi|sorry|to publish|you can|the map)\b/.test(lowerReply) || lowerReply.includes("guide for kongo explorer"))) {
+        const fb = buildFallbackResponse(message);
+        finalReply = fb.reply;
+        if (!suggestedAction) suggestedAction = fb.suggestedAction;
+      }
+    }
+
     return res.json({
       success: true,
       mode: "gemini-ai",
-      reply: parsed.reply || (isEn ? "Hello! How can I help you explore Kongo Central?" : "Bonjour ! Comment puis-je vous aider à explorer le Kongo Central ?"),
+      reply: finalReply || (isEn ? "Hello! How can I help you explore Kongo Central?" : "Bonjour ! Comment puis-je vous aider à explorer le Kongo Central ?"),
+      actionTarget: parsed.actionTarget || null,
       suggestedAction
     });
   } catch (error: any) {

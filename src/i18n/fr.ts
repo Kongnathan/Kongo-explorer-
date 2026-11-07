@@ -134,6 +134,13 @@ export const fr: Translations = {
     viewSheet: "Ouvrir la fiche",
   },
 
+  settings: {
+    title: "Paramètres d'Affichage",
+    darkMode: "Mode Nuit",
+    lightMode: "Mode Jour",
+    offlineData: "Données hors-ligne",
+  },
+
   tips: {
     title: "Conseils & Préparation",
     subtitle: "Préparez votre voyage en toute sérénité au cœur du Kongo Central.",

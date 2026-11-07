@@ -322,7 +322,7 @@ export default function LocalTipsView({ locations }: LocalTipsViewProps = {}) {
                 {isDark ? "light_mode" : "dark_mode"}
               </span>
               <span className="hidden sm:inline font-mono text-[11px] font-bold">
-                {isDark ? t.settings.lightMode : t.settings.darkMode}
+                {isDark ? t.tips.dayMode : t.tips.nightMode}
               </span>
             </button>
 

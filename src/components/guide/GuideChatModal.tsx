@@ -1,17 +1,27 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../../contexts/LanguageContext";
+import {
+  MessageTemplateId,
+  SuggestedActionId,
+  getMessageTemplate,
+  getActionTemplate,
+  filterOrTranslateResponse,
+  matchIntentTemplate,
+} from "./guideTemplates";
 
-interface ChatMessage {
+export interface ChatMessage {
   id: string;
   sender: "user" | "guide";
   text: string;
-  timestamp: string;
+  templateId?: MessageTemplateId;
   suggestedAction?: {
+    actionId?: SuggestedActionId;
     label: string;
     route: string;
     tourStepId?: string;
   } | null;
+  timestamp: string;
 }
 
 interface GuideChatModalProps {
@@ -41,7 +51,8 @@ export default function GuideChatModal({
     {
       id: "initial-welcome",
       sender: "guide",
-      text: t.guideChat.welcomeMsg,
+      text: getMessageTemplate("welcome", language),
+      templateId: "welcome",
       timestamp: formatTimestamp(),
     },
   ]);
@@ -50,23 +61,7 @@ export default function GuideChatModal({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Update initial welcome message when language toggles if conversation hasn't started yet
-  useEffect(() => {
-    setMessages((prev) => {
-      if (prev.length === 1 && prev[0].id === "initial-welcome") {
-        return [
-          {
-            id: "initial-welcome",
-            sender: "guide",
-            text: t.guideChat.welcomeMsg,
-            timestamp: formatTimestamp(),
-          },
-        ];
-      }
-      return prev;
-    });
-  }, [language, t.guideChat.welcomeMsg]);
-
+  // Auto-scroll on changes
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -79,6 +74,24 @@ export default function GuideChatModal({
       }, 150);
     }
   }, [isOpen, messages, isLoading]);
+
+  // Resolves the actual text to display for a message based on the active language context
+  const getDisplayMessageText = (msg: ChatMessage): string => {
+    if (msg.templateId) {
+      return getMessageTemplate(msg.templateId, language);
+    }
+    return msg.text;
+  };
+
+  // Resolves the actual label to display for a suggested action based on active language
+  const getDisplayActionLabel = (
+    action: NonNullable<ChatMessage["suggestedAction"]>
+  ): string => {
+    if (action.actionId) {
+      return getActionTemplate(action.actionId, language).label;
+    }
+    return action.label;
+  };
 
   const handleSendMessage = async (textToSend?: string) => {
     const queryText = (textToSend || input).trim();
@@ -98,7 +111,7 @@ export default function GuideChatModal({
     try {
       const historyPayload = messages.slice(-4).map((m) => ({
         sender: m.sender,
-        text: m.text,
+        text: getDisplayMessageText(m),
       }));
 
       const res = await fetch("/api/guide-chat", {
@@ -116,107 +129,39 @@ export default function GuideChatModal({
       }
 
       const data = await res.json();
+      
+      // Filter or translate response according to the active language
+      const filtered = filterOrTranslateResponse(
+        data.reply || "",
+        queryText,
+        language,
+        data.actionTarget || data.suggestedAction?.tourStepId,
+        data.suggestedAction?.label
+      );
+
       const guideMsg: ChatMessage = {
         id: `guide-${Date.now()}`,
         sender: "guide",
-        text: data.reply || t.guideChat.defaultReply,
+        text: filtered.text,
+        templateId: filtered.templateId,
         timestamp: formatTimestamp(),
-        suggestedAction: data.suggestedAction || null,
+        suggestedAction: filtered.suggestedAction || null,
       };
 
       setMessages((prev) => [...prev, guideMsg]);
     } catch (err) {
       console.warn("Guide chat network fallback triggered:", err);
-      // Smart contextual fallback using extracted bilingual dictionary
-      const q = queryText.toLowerCase();
 
-      // Refusal for off-topic questions
-      const offTopicKeywords = [
-        "code", "javascript", "python", "html", "math", "calcul",
-        "devoir", "politique", "macron", "biden", "football europe",
-        "recette pizza", "homework", "politics"
-      ];
-      const isOffTopic = offTopicKeywords.some((k) => q.includes(k));
-
-      let fallbackText = t.guideChat.fallbackGeneral;
-      let fallbackAction: ChatMessage["suggestedAction"] = {
-        label: t.guideChat.actionStartTour,
-        route: "/",
-        tourStepId: "start-tour",
-      };
-
-      if (isOffTopic) {
-        fallbackText = t.guideChat.fallbackOffTopic;
-        fallbackAction = {
-          label: t.guideChat.actionOpenMap,
-          route: "/carte",
-          tourStepId: "step-carte",
-        };
-      } else if (
-        q.includes("publi") ||
-        q.includes("proposer") ||
-        q.includes("info") ||
-        q.includes("post") ||
-        q.includes("submit") ||
-        q.includes("news") ||
-        q.includes("share")
-      ) {
-        fallbackText = t.guideChat.fallbackNews;
-        fallbackAction = {
-          label: t.guideChat.actionViewNews,
-          route: "/infos-tourisme",
-          tourStepId: "step-infos",
-        };
-      } else if (
-        q.includes("carte") ||
-        q.includes("map") ||
-        q.includes("itineraire") ||
-        q.includes("position") ||
-        q.includes("lieu") ||
-        q.includes("where") ||
-        q.includes("route")
-      ) {
-        fallbackText = t.guideChat.fallbackMap;
-        fallbackAction = {
-          label: t.guideChat.actionOpenMap,
-          route: "/carte",
-          tourStepId: "step-carte",
-        };
-      } else if (
-        q.includes("circuit") ||
-        q.includes("trajet") ||
-        q.includes("tour") ||
-        q.includes("trip") ||
-        q.includes("itinerary")
-      ) {
-        fallbackText = t.guideChat.fallbackCircuits;
-        fallbackAction = {
-          label: t.guideChat.actionDiscoverCircuits,
-          route: "/circuits",
-          tourStepId: "step-circuits",
-        };
-      } else if (
-        q.includes("carnet") ||
-        q.includes("hors ligne") ||
-        q.includes("offline") ||
-        q.includes("sauvegard") ||
-        q.includes("save") ||
-        q.includes("log")
-      ) {
-        fallbackText = t.guideChat.fallbackLog;
-        fallbackAction = {
-          label: t.guideChat.actionViewLog,
-          route: "/carnet",
-          tourStepId: "step-carnet",
-        };
-      }
+      // Local fallback filtered strictly to the active language
+      const filtered = filterOrTranslateResponse("", queryText, language);
 
       const fallbackMsg: ChatMessage = {
         id: `guide-err-${Date.now()}`,
         sender: "guide",
-        text: fallbackText,
+        text: filtered.text,
+        templateId: filtered.templateId || "fallback_general",
         timestamp: formatTimestamp(),
-        suggestedAction: fallbackAction,
+        suggestedAction: filtered.suggestedAction || null,
       };
       setMessages((prev) => [...prev, fallbackMsg]);
     } finally {
@@ -242,7 +187,7 @@ export default function GuideChatModal({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 pointer-events-none">
-          {/* Background click-away dismiss (transparent so site context remains visible) */}
+          {/* Background click-away dismiss */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -315,41 +260,44 @@ export default function GuideChatModal({
 
             {/* Messages List Area */}
             <div className="flex-1 p-4 overflow-y-auto space-y-4 font-sans text-body-sm">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${
-                    msg.sender === "user" ? "items-end" : "items-start"
-                  }`}
-                >
+              {messages.map((msg) => {
+                const displayText = getDisplayMessageText(msg);
+                return (
                   <div
-                    className={`max-w-[85%] rounded-2xl p-3.5 shadow-sm leading-relaxed ${
-                      msg.sender === "user"
-                        ? "bg-emerald-700 text-white rounded-br-xs"
-                        : "bg-surface-container-high text-on-surface border border-outline-variant/20 rounded-bl-xs"
+                    key={msg.id}
+                    className={`flex flex-col ${
+                      msg.sender === "user" ? "items-end" : "items-start"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap">{msg.text}</p>
-                    {msg.suggestedAction && (
-                      <div className="mt-3 pt-2.5 border-t border-outline-variant/30 flex items-center justify-between gap-2">
-                        <button
-                          onClick={() => handleActionClick(msg.suggestedAction!)}
-                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                        >
-                          <span className="material-symbols-outlined text-[15px]">near_me</span>
-                          <span>{msg.suggestedAction.label}</span>
-                        </button>
-                        <span className="text-[10px] text-on-surface-variant font-mono">
-                          {t.guideChat.showMe}
-                        </span>
-                      </div>
-                    )}
+                    <div
+                      className={`max-w-[85%] rounded-2xl p-3.5 shadow-sm leading-relaxed ${
+                        msg.sender === "user"
+                          ? "bg-emerald-700 text-white rounded-br-xs"
+                          : "bg-surface-container-high text-on-surface border border-outline-variant/20 rounded-bl-xs"
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap">{displayText}</p>
+                      {msg.suggestedAction && (
+                        <div className="mt-3 pt-2.5 border-t border-outline-variant/30 flex items-center justify-between gap-2">
+                          <button
+                            onClick={() => handleActionClick(msg.suggestedAction!)}
+                            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">near_me</span>
+                            <span>{getDisplayActionLabel(msg.suggestedAction)}</span>
+                          </button>
+                          <span className="text-[10px] text-on-surface-variant font-mono">
+                            {t.guideChat.showMe}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-on-surface-variant/70 mt-1 px-1">
+                      {msg.timestamp}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-on-surface-variant/70 mt-1 px-1">
-                    {msg.timestamp}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Typing indicator */}
               {isLoading && (

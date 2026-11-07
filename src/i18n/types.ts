@@ -157,6 +157,14 @@ export interface Translations {
     viewSheet: string;
   };
 
+  // Settings & display
+  settings: {
+    title: string;
+    darkMode: string;
+    lightMode: string;
+    offlineData: string;
+  };
+
   // Conseils & settings
   tips: {
     title: string;
