@@ -33,7 +33,7 @@ export default function AdminLoginView({ onLoginSuccess, onCancel }: AdminLoginV
   const isDenied = !loading && !!currentUser && !isAdmin;
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-5 bg-background relative overflow-hidden bg-pattern font-sans">
+    <div className="min-h-dvh w-full flex items-center justify-center p-5 bg-background relative overflow-hidden bg-pattern font-sans">
       {/* Subtle Background Atmosphere */}
       <div className="fixed inset-0 pointer-events-none opacity-40">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary-fixed blur-[120px] rounded-full"></div>

@@ -1377,7 +1377,7 @@ export function AppContent() {
   const isTipsActive = location.pathname === "/conseils" || location.pathname === "/tips";
 
   return (
-    <div className="min-h-screen bg-background text-on-background relative flex flex-col pb-20">
+    <div className="min-h-dvh bg-background text-on-background relative flex flex-col pb-[calc(5rem+env(safe-area-inset-bottom))]">
       {/* Dynamic SEO Head Manager: updates title, meta description, canonical link, og tags, and twitter cards on each route change */}
       <RouteSEO locations={locations} tourismPosts={tourismPosts} />
 
@@ -1616,7 +1616,7 @@ export function AppContent() {
 
       {/* Global Bottom Navigation Bar */}
       {showBottomNav && (
-        <nav className="fixed bottom-0 left-0 right-0 h-20 bg-surface-container-lowest border-t border-outline-variant/30 z-50 flex items-center justify-around px-2 shadow-2xl backdrop-blur-md">
+        <nav className="fixed bottom-0 left-0 right-0 h-[calc(5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-surface-container-lowest border-t border-outline-variant/30 z-50 flex items-center justify-around px-2 shadow-2xl backdrop-blur-md">
           <Link 
             to="/"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

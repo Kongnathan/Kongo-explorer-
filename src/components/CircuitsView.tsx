@@ -28,7 +28,7 @@ export default function CircuitsView({
   const activeCircuit = activeCircuitsList.find(c => c.id === activeCircuitId) || activeCircuitsList[0];
 
   return (
-    <div className="min-h-screen bg-background text-on-background pb-28">
+    <div className="min-h-dvh bg-background text-on-background pb-28">
       {/* Top Header Banner */}
       <div className="bg-primary text-white pt-8 pb-10 px-4 md:px-8 relative overflow-hidden shadow-lg">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent pointer-events-none" />

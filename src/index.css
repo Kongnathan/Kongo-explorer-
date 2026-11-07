@@ -397,3 +397,12 @@ p, h1, h2, h3, h4, h5, h6, span, input, textarea {
 }
 
 
+
+/* Sur téléphone, les champs de saisie à 16px minimum : évite que l'iPhone zoome tout seul quand on tape */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

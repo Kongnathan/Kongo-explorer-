@@ -428,7 +428,7 @@ export default function MapView({
   };
 
   return (
-    <div className="flex-1 h-screen w-screen flex flex-col bg-background text-on-background relative overflow-hidden animate-fade-in font-sans">
+    <div className="flex-1 h-dvh w-screen flex flex-col bg-background text-on-background relative overflow-hidden animate-fade-in font-sans">
       <h1 className="sr-only">Carte interactive du Kongo Central</h1>
 
       {/* TopAppBar */}

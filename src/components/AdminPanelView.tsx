@@ -1637,7 +1637,7 @@ export default function AdminPanelView({
   const pendingTourismCount = tourismPosts.filter(p => String(p.status).toLowerCase() === "pending").length + reports.filter(r => r.status === "pending").length;
 
   return (
-    <div className="min-h-screen bg-background text-on-surface font-sans flex flex-col md:flex-row relative">
+    <div className="min-h-dvh bg-background text-on-surface font-sans flex flex-col md:flex-row relative">
       {/* Navigation Drawer (SideNav) */}
       <aside className="bg-surface-container-low w-full md:w-72 shadow-sm flex flex-col md:fixed md:inset-y-0 md:left-0 z-30 h-auto md:h-full border-r border-outline-variant/20">
         <div className="p-6 flex flex-col gap-1">
@@ -1814,7 +1814,7 @@ export default function AdminPanelView({
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 md:ml-72 min-h-screen flex flex-col">
+      <main className="flex-1 md:ml-72 min-h-dvh flex flex-col">
         {/* Top App Bar */}
         <header className="sticky top-0 w-full z-20 flex justify-between items-center px-6 h-16 bg-surface/90 backdrop-blur-md border-b border-outline-variant/10">
           <div className="flex items-center gap-4">

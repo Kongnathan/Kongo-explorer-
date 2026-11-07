@@ -1,12 +1,13 @@
-const CACHE_SHELL_NAME = "kongo-explorer-shell-v3";
-const CACHE_IMAGE_NAME = "kongo-explorer-images-v3";
+const CACHE_SHELL_NAME = "kongo-explorer-shell-v4";
+const CACHE_IMAGE_NAME = "kongo-explorer-images-v4";
 
 const ASSETS_TO_CACHE = [
   "/",
   "/index.html",
   "/manifest.json",
   "/icon.svg",
-  "/icon-512.jpg"
+  "/icon-192.png",
+  "/favicon.ico"
 ];
 
 // Offline Fallback SVG Image when network fails and image is uncached

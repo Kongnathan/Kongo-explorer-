@@ -30,7 +30,7 @@ export default function TourismPostDetailView({
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-background text-on-background flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-dvh bg-background text-on-background flex flex-col items-center justify-center p-6 text-center">
         <div className="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-4">
           <span className="material-symbols-outlined text-3xl">error_outline</span>
         </div>
@@ -95,7 +95,7 @@ export default function TourismPostDetailView({
   };
 
   return (
-    <div className="min-h-screen bg-background text-on-background pb-32 animate-fade-in font-sans">
+    <div className="min-h-dvh bg-background text-on-background pb-32 animate-fade-in font-sans">
       {/* Top Bar */}
       <header className="w-full top-0 sticky bg-surface-container-low/95 backdrop-blur-md z-40 shadow-sm h-16">
         <div className="flex items-center justify-between px-5 py-2 w-full max-w-5xl mx-auto h-full">
