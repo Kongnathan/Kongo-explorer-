@@ -250,8 +250,8 @@ export default function GuideChatModal({
                 <button
                   onClick={onClose}
                   className="p-1.5 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
-                  aria-label={t.common.close}
-                  title={t.common.close}
+                  aria-label={t.header.close}
+                  title={t.header.close}
                 >
                   <span className="material-symbols-outlined text-[20px]">expand_more</span>
                 </button>
