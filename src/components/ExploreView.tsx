@@ -13,6 +13,7 @@ interface ExploreViewProps {
   savedLocationIds: string[];
   onToggleSave: (id: string) => void;
   onStartTour?: () => void;
+  onOpenGuide?: () => void;
 }
 
 export default function ExploreView({
@@ -24,6 +25,7 @@ export default function ExploreView({
   savedLocationIds,
   onToggleSave,
   onStartTour,
+  onOpenGuide,
 }: ExploreViewProps) {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,6 +86,17 @@ export default function ExploreView({
               >
                 <span className="material-symbols-outlined text-[15px]">tour</span>
                 <span>{t.header.guidedTour}</span>
+              </button>
+            )}
+
+            {onOpenGuide && (
+              <button
+                onClick={onOpenGuide}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-sans text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs active:scale-95"
+                title="Guide Kongo – Assistant de voyage"
+              >
+                <span className="material-symbols-outlined text-[16px]">support_agent</span>
+                <span className="hidden sm:inline">Guide Kongo</span>
               </button>
             )}
 

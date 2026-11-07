@@ -1,90 +1,69 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../../contexts/LanguageContext";
 
 interface GuideFloatingButtonProps {
   onOpenChat: () => void;
-  onStartTour: () => void;
+  onStartTour?: () => void;
+  hasBottomNav?: boolean;
 }
 
 export default function GuideFloatingButton({
   onOpenChat,
   onStartTour,
+  hasBottomNav = true,
 }: GuideFloatingButtonProps) {
-  const [isOpenMenu, setIsOpenMenu] = useState(false);
   const { t } = useLanguage();
+  const [imgError, setImgError] = useState(false);
 
   return (
-    <div 
-      className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-2"
+    <aside 
+      className={`fixed ${
+        hasBottomNav ? "bottom-24 sm:bottom-24" : "bottom-6 sm:bottom-8"
+      } right-3 sm:right-6 z-[60] flex items-center`}
       data-guide="guide-fab"
+      aria-label="Agent Guide Kongo"
     >
-      {/* Quick Action Flyout Menu */}
-      <AnimatePresence>
-        {isOpenMenu && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.85, y: 10 }}
-            transition={{ duration: 0.18 }}
-            className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-2 shadow-2xl flex flex-col gap-1 w-56 mb-2 text-on-surface backdrop-blur-md"
-          >
-            <div className="px-3 py-1.5 border-b border-outline-variant/20 flex items-center justify-between">
-              <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                {t.guideChat.headerTitle}
-              </span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            </div>
-
-            <button
-              onClick={() => {
-                setIsOpenMenu(false);
-                onOpenChat();
-              }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-on-surface hover:bg-emerald-700/10 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors text-left cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px] text-emerald-600">forum</span>
-              <span>{t.guideFab.chat}</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setIsOpenMenu(false);
-                onStartTour();
-              }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-on-surface hover:bg-emerald-700/10 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors text-left cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px] text-emerald-600">tour</span>
-              <span>{t.guideFab.tour}</span>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Floating Action Button */}
       <button
-        onClick={() => setIsOpenMenu((prev) => !prev)}
-        className="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-800 to-emerald-600 text-white shadow-xl hover:shadow-emerald-700/40 hover:scale-105 active:scale-95 transition-all cursor-pointer border-2 border-emerald-400/60 overflow-hidden p-0.5"
+        onClick={onOpenChat}
+        className="group relative flex items-center gap-2 pl-2 pr-3.5 py-2 rounded-2xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-600 text-white shadow-2xl hover:shadow-emerald-700/50 hover:scale-105 active:scale-95 transition-all cursor-pointer border-2 border-emerald-400/70 backdrop-blur-md"
         title={t.guideFab.ariaLabel}
         aria-label={t.guideFab.ariaLabel}
       >
-        <img 
-          src="/guide-avatar.jpg" 
-          alt="Guide Kongo" 
-          className="w-full h-full object-cover rounded-xl transition-transform duration-200 group-hover:scale-110" 
-        />
+        {/* Avatar with fallback and pulsing online dot */}
+        <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-950/60 overflow-hidden flex items-center justify-center shrink-0 border border-white/20 shadow-inner">
+          {!imgError ? (
+            <img 
+              src="/guide-avatar.jpg" 
+              alt="Guide Kongo" 
+              onError={() => setImgError(true)}
+              className="w-full h-full object-cover rounded-xl transition-transform duration-200 group-hover:scale-110" 
+            />
+          ) : (
+            <span className="material-symbols-outlined text-[24px] text-white">support_agent</span>
+          )}
 
-        {/* Status dot */}
-        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-surface-container-lowest" />
-        </span>
+          {/* Online badge */}
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-400 border-2 border-emerald-900" />
+          </span>
+        </div>
 
-        {/* Label on desktop hover */}
-        <span className="hidden md:group-hover:inline-block absolute right-16 bg-surface-container-lowest text-on-surface border border-outline-variant/30 text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap pointer-events-none transition-opacity">
-          {t.guideFab.badge}
-        </span>
+        {/* Text identification */}
+        <div className="flex flex-col text-left">
+          <div className="flex items-center gap-1.5">
+            <span className="font-sans text-xs font-black tracking-tight text-white leading-tight">
+              Guide Kongo
+            </span>
+            <span className="text-[9px] font-bold bg-white/20 text-white px-1.5 py-0.2 rounded-full uppercase tracking-wider">
+              IA
+            </span>
+          </div>
+          <span className="text-[10px] text-emerald-100/90 font-medium leading-tight">
+            {t.guideFab.chat}
+          </span>
+        </div>
       </button>
-    </div>
+    </aside>
   );
 }

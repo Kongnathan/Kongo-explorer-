@@ -1445,6 +1445,7 @@ export function AppContent() {
                     savedLocationIds={savedLocationIds}
                     onToggleSave={handleToggleSave}
                     onStartTour={() => handleStartTour(0)}
+                    onOpenGuide={() => setIsGuideChatOpen(true)}
                   />
                 }
               />
@@ -1725,6 +1726,7 @@ export function AppContent() {
         <GuideFloatingButton
           onOpenChat={() => setIsGuideChatOpen(true)}
           onStartTour={() => handleStartTour(0)}
+          hasBottomNav={showBottomNav}
         />
       )}
 
